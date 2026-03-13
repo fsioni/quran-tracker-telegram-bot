@@ -41,7 +41,7 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
   }
 
   const ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
-  const tz = (await getConfig(ctx.db, "timezone")) ?? "UTC";
+  const tz = (await getConfig(ctx.db, "timezone")) ?? "America/Cancun";
   const now = new Date()
     .toLocaleString("sv-SE", { timeZone: tz })
     .replace("T", " ")

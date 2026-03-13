@@ -12,6 +12,7 @@ import { formatHistoryLine, formatStats, formatProgress } from "../services/form
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 
 const DEFAULT_TZ = "America/Cancun";
+const MSG_NO_SESSION = "Aucune session enregistree.";
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
@@ -44,7 +45,7 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
   ]);
 
   if (!lastSession) {
-    await ctx.reply("Aucune session enregistree.");
+    await ctx.reply(MSG_NO_SESSION);
     return;
   }
 
@@ -62,7 +63,7 @@ export async function historyHandler(ctx: CustomContext): Promise<void> {
   const sessions = await getHistory(ctx.db);
 
   if (sessions.length === 0) {
-    await ctx.reply("Aucune session enregistree.");
+    await ctx.reply(MSG_NO_SESSION);
     return;
   }
 
