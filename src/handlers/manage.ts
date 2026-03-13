@@ -1,4 +1,3 @@
-// src/handlers/manage.ts
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import {
@@ -6,27 +5,29 @@ import {
   getSessionById,
   deleteSessionById,
 } from "../services/db";
-import { formatError } from "../services/format";
-import { getSurah } from "../data/surahs";
+import { formatError, formatRange } from "../services/format";
 
-function formatSessionShort(session: {
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
-}): string {
-  const startSurah = getSurah(session.surahStart)!;
-  if (session.surahStart === session.surahEnd) {
-    return `${startSurah.nameFr} ${session.surahStart}:${session.ayahStart}-${session.ayahEnd}`;
-  }
-  const endSurah = getSurah(session.surahEnd)!;
-  return `${startSurah.nameFr} ${session.surahStart}:${session.ayahStart} - ${endSurah.nameFr} ${session.surahEnd}:${session.ayahEnd}`;
-}
+const CALLBACK_CONFIRM = "delete_confirm";
+const CALLBACK_CANCEL = "delete_cancel";
+
+export const CALLBACK_CONFIRM_RE = /^delete_confirm:\d+$/;
+export const CALLBACK_CANCEL_RE = /^delete_cancel:\d+$/;
 
 function buildConfirmKeyboard(sessionId: number): InlineKeyboard {
   return new InlineKeyboard()
-    .text("Confirmer", `delete_confirm:${sessionId}`)
-    .text("Annuler", `delete_cancel:${sessionId}`);
+    .text("Confirmer", `${CALLBACK_CONFIRM}:${sessionId}`)
+    .text("Annuler", `${CALLBACK_CANCEL}:${sessionId}`);
+}
+
+async function askDeleteConfirmation(
+  ctx: CustomContext,
+  session: { id: number; surahStart: number; ayahStart: number; surahEnd: number; ayahEnd: number },
+): Promise<void> {
+  const desc = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
+  const keyboard = buildConfirmKeyboard(session.id);
+  await ctx.reply(`Supprimer la session #${session.id} (${desc}) ?`, {
+    reply_markup: keyboard,
+  });
 }
 
 export async function undoHandler(ctx: CustomContext): Promise<void> {
@@ -36,11 +37,7 @@ export async function undoHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const desc = formatSessionShort(session);
-  const keyboard = buildConfirmKeyboard(session.id);
-  await ctx.reply(`Supprimer la session #${session.id} (${desc}) ?`, {
-    reply_markup: keyboard,
-  });
+  await askDeleteConfirmation(ctx, session);
 }
 
 export async function deleteHandler(ctx: CustomContext): Promise<void> {
@@ -63,11 +60,7 @@ export async function deleteHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const desc = formatSessionShort(session);
-  const keyboard = buildConfirmKeyboard(session.id);
-  await ctx.reply(`Supprimer la session #${session.id} (${desc}) ?`, {
-    reply_markup: keyboard,
-  });
+  await askDeleteConfirmation(ctx, session);
 }
 
 export async function confirmDeleteCallback(

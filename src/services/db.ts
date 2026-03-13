@@ -122,7 +122,7 @@ export function getMonthBounds(today: string): { start: string; end: string } {
 
 // --- Session data param ---
 
-type InsertSessionData = {
+export type InsertSessionData = {
   startedAt: string;
   durationSeconds: number;
   surahStart: number;

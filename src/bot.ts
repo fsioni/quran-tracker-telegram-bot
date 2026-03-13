@@ -8,6 +8,8 @@ import {
   deleteHandler,
   confirmDeleteCallback,
   cancelDeleteCallback,
+  CALLBACK_CONFIRM_RE,
+  CALLBACK_CANCEL_RE,
 } from "./handlers/manage";
 
 export interface CustomContext extends Context {
@@ -33,8 +35,8 @@ export function createBot(token: string, db: D1Database): Bot<CustomContext> {
   bot.command("delete", deleteHandler);
 
   // Callbacks inline keyboard
-  bot.callbackQuery(/^delete_confirm:\d+$/, confirmDeleteCallback);
-  bot.callbackQuery(/^delete_cancel:\d+$/, cancelDeleteCallback);
+  bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
+  bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
 
   // Error handler global
   bot.catch((err) => {

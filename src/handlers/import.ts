@@ -2,7 +2,7 @@
 import type { CustomContext } from "../bot";
 import { parseImportLine, formatError } from "../services/format";
 import { validateRange, calculateAyahCount } from "../services/quran";
-import { insertBatch } from "../services/db";
+import { insertBatch, type InsertSessionData } from "../services/db";
 
 export async function importHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
@@ -15,15 +15,7 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
   }
 
   const lines = input.split(/\r?\n/).filter((l) => l.trim() !== "");
-  const valid: Array<{
-    startedAt: string;
-    durationSeconds: number;
-    surahStart: number;
-    ayahStart: number;
-    surahEnd: number;
-    ayahEnd: number;
-    ayahCount: number;
-  }> = [];
+  const valid: InsertSessionData[] = [];
   const errors: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
