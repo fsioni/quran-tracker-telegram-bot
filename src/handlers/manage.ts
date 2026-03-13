@@ -67,7 +67,10 @@ export async function confirmDeleteCallback(
   ctx: CustomContext,
 ): Promise<void> {
   const data = ctx.callbackQuery?.data;
-  if (!data) return;
+  if (!data || !CALLBACK_CONFIRM_RE.test(data)) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
 
   const id = parseInt(data.split(":")[1], 10);
   const deleted = await deleteSessionById(ctx.db, id);

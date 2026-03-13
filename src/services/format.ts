@@ -125,12 +125,12 @@ export function formatRange(
   surahEnd: number,
   ayahEnd: number,
 ): string {
-  const startSurah = getSurah(surahStart)!;
+  const startName = getSurah(surahStart)?.nameFr ?? `Sourate ${surahStart}`;
   if (surahStart === surahEnd) {
-    return `${startSurah.nameFr} ${surahStart}:${ayahStart}-${ayahEnd}`;
+    return `${startName} ${surahStart}:${ayahStart}-${ayahEnd}`;
   }
-  const endSurah = getSurah(surahEnd)!;
-  return `${startSurah.nameFr} ${surahStart}:${ayahStart} - ${endSurah.nameFr} ${surahEnd}:${ayahEnd}`;
+  const endName = getSurah(surahEnd)?.nameFr ?? `Sourate ${surahEnd}`;
+  return `${startName} ${surahStart}:${ayahStart} - ${endName} ${surahEnd}:${ayahEnd}`;
 }
 
 export function formatDuration(seconds: number): string {
@@ -152,15 +152,15 @@ export function formatSessionConfirmation(session: {
   ayahCount: number;
   durationSeconds: number;
 }): string {
-  const surahStartData = getSurah(session.surahStart)!;
-  const surahEndData = getSurah(session.surahEnd)!;
+  const startName = getSurah(session.surahStart)?.nameFr ?? `Sourate ${session.surahStart}`;
+  const endName = getSurah(session.surahEnd)?.nameFr ?? `Sourate ${session.surahEnd}`;
   const duration = formatDuration(session.durationSeconds);
 
   if (session.surahStart === session.surahEnd) {
-    return `Session enregistree : sourate ${surahStartData.nameFr} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+    return `Session enregistree : sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
   }
 
-  return `Session enregistree : sourate ${surahStartData.nameFr} v.${session.ayahStart} a sourate ${surahEndData.nameFr} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+  return `Session enregistree : sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
 }
 
 export function formatHistoryLine(session: {
