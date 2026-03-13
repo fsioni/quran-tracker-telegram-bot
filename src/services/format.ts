@@ -119,6 +119,20 @@ export function parseImportLine(
 
 // --- Formatting functions ---
 
+export function formatRange(
+  surahStart: number,
+  ayahStart: number,
+  surahEnd: number,
+  ayahEnd: number,
+): string {
+  const startName = getSurah(surahStart)?.nameFr ?? `Sourate ${surahStart}`;
+  if (surahStart === surahEnd) {
+    return `${startName} ${surahStart}:${ayahStart}-${ayahEnd}`;
+  }
+  const endName = getSurah(surahEnd)?.nameFr ?? `Sourate ${surahEnd}`;
+  return `${startName} ${surahStart}:${ayahStart} - ${endName} ${surahEnd}:${ayahEnd}`;
+}
+
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -138,15 +152,15 @@ export function formatSessionConfirmation(session: {
   ayahCount: number;
   durationSeconds: number;
 }): string {
-  const surahStartData = getSurah(session.surahStart)!;
-  const surahEndData = getSurah(session.surahEnd)!;
+  const startName = getSurah(session.surahStart)?.nameFr ?? `Sourate ${session.surahStart}`;
+  const endName = getSurah(session.surahEnd)?.nameFr ?? `Sourate ${session.surahEnd}`;
   const duration = formatDuration(session.durationSeconds);
 
   if (session.surahStart === session.surahEnd) {
-    return `Session enregistree : sourate ${surahStartData.nameFr} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+    return `Session enregistree : sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
   }
 
-  return `Session enregistree : sourate ${surahStartData.nameFr} v.${session.ayahStart} a sourate ${surahEndData.nameFr} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+  return `Session enregistree : sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
 }
 
 export function formatHistoryLine(session: {
@@ -167,14 +181,8 @@ export function formatHistoryLine(session: {
   const minute = s.substring(14, 16);
   const duration = formatDuration(session.durationSeconds);
 
-  const surahStartData = getSurah(session.surahStart)!;
-
-  if (session.surahStart === session.surahEnd) {
-    return `#${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${surahStartData.nameFr} ${session.surahStart}:${session.ayahStart}-${session.ayahEnd} (${session.ayahCount}v)`;
-  }
-
-  const surahEndData = getSurah(session.surahEnd)!;
-  return `#${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${surahStartData.nameFr} ${session.surahStart}:${session.ayahStart} - ${surahEndData.nameFr} ${session.surahEnd}:${session.ayahEnd} (${session.ayahCount}v)`;
+  const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
+  return `#${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
 }
 
 export function formatStats(stats: {
