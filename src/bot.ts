@@ -1,5 +1,14 @@
 import { Bot, Context } from "grammy";
 import { startHandler, helpHandler } from "./handlers/config";
+import { sessionHandler } from "./handlers/session";
+import { importHandler } from "./handlers/import";
+import { historyHandler } from "./handlers/stats";
+import {
+  undoHandler,
+  deleteHandler,
+  confirmDeleteCallback,
+  cancelDeleteCallback,
+} from "./handlers/manage";
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -17,6 +26,20 @@ export function createBot(token: string, db: D1Database): Bot<CustomContext> {
   // Register command handlers
   bot.command("start", startHandler);
   bot.command("help", helpHandler);
+  bot.command("session", sessionHandler);
+  bot.command("import", importHandler);
+  bot.command("history", historyHandler);
+  bot.command("undo", undoHandler);
+  bot.command("delete", deleteHandler);
+
+  // Callbacks inline keyboard
+  bot.callbackQuery(/^delete_confirm:\d+$/, confirmDeleteCallback);
+  bot.callbackQuery(/^delete_cancel:\d+$/, cancelDeleteCallback);
+
+  // Error handler global
+  bot.catch((err) => {
+    console.error("Bot error:", err);
+  });
 
   return bot;
 }
