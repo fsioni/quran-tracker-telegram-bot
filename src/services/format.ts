@@ -224,12 +224,16 @@ export function formatProgress(data: {
   lastSurah: number;
   lastAyah: number;
 }): string {
-  const pct = (data.totalAyahsRead / data.totalAyahs) * 100;
-  const filled = Math.round((data.totalAyahsRead / data.totalAyahs) * 20);
+  const pct = data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
+  const filled = data.totalAyahs > 0 ? Math.round((data.totalAyahsRead / data.totalAyahs) * 20) : 0;
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
   const surah = getSurah(data.lastSurah)!;
 
-  return `[${bar}] ${pct.toFixed(1)}%\nDernier point : sourate ${surah.nameFr} v.${data.lastAyah}`;
+  return [
+    `Progression : ${data.totalAyahsRead} / ${data.totalAyahs} versets (${pct.toFixed(1)}%)`,
+    `[${bar}] ${pct.toFixed(1)}%`,
+    `Dernier point : sourate ${surah.nameFr} (${data.lastSurah}), verset ${data.lastAyah}`,
+  ].join("\n");
 }
 
 export function formatReminder(data: {

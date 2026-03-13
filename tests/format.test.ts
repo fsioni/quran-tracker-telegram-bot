@@ -315,29 +315,44 @@ describe("formatStats", () => {
 // --- formatProgress ---
 
 describe("formatProgress", () => {
-  it("formats progress bar with percentage", () => {
+  it("formate la progression avec barre et dernier point", () => {
     const result = formatProgress({
-      totalAyahsRead: 2494,
+      totalAyahsRead: 342,
       totalAyahs: 6236,
-      lastSurah: 2,
-      lastAyah: 83,
+      lastSurah: 3,
+      lastAyah: 10,
     });
-    // 2494/6236 = ~40%, filled = round(8) = 8
+    // 342/6236 = 5.5%, filled = round(1.1) = 1
     expect(result).toBe(
-      "[########------------] 40.0%\nDernier point : sourate Al-Baqara v.83",
+      [
+        "Progression : 342 / 6236 versets (5.5%)",
+        "[#-------------------] 5.5%",
+        "Dernier point : sourate Al-Imran (3), verset 10",
+      ].join("\n"),
     );
   });
 
-  it("formats 0% progress", () => {
+  it("formate 0% de progression", () => {
     const result = formatProgress({
       totalAyahsRead: 0,
       totalAyahs: 6236,
       lastSurah: 1,
       lastAyah: 1,
     });
-    expect(result).toBe(
-      "[--------------------] 0.0%\nDernier point : sourate Al-Fatiha v.1",
-    );
+    expect(result).toContain("0 / 6236 versets (0.0%)");
+    expect(result).toContain("[--------------------]");
+  });
+
+  it("formate ~40% de progression", () => {
+    const result = formatProgress({
+      totalAyahsRead: 2494,
+      totalAyahs: 6236,
+      lastSurah: 2,
+      lastAyah: 83,
+    });
+    expect(result).toContain("2494 / 6236 versets (40.0%)");
+    expect(result).toContain("[########------------] 40.0%");
+    expect(result).toContain("Dernier point : sourate Al-Baqara (2), verset 83");
   });
 });
 
