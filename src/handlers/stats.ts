@@ -1,7 +1,39 @@
 // src/handlers/stats.ts
 import type { CustomContext } from "../bot";
-import { getHistory } from "../services/db";
-import { formatHistoryLine } from "../services/format";
+import {
+  getHistory,
+  getGlobalStats,
+  getPeriodStats,
+  calculateStreak,
+  getConfig,
+} from "../services/db";
+import { formatHistoryLine, formatStats } from "../services/format";
+
+const DEFAULT_TZ = "America/Cancun";
+
+export async function statsHandler(ctx: CustomContext): Promise<void> {
+  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
+
+  const [global, week, month, streak] = await Promise.all([
+    getGlobalStats(ctx.db),
+    getPeriodStats(ctx.db, "week", tz),
+    getPeriodStats(ctx.db, "month", tz),
+    calculateStreak(ctx.db, tz),
+  ]);
+
+  const msg = formatStats({
+    totalAyahs: global.totalAyahs,
+    totalSeconds: global.totalSeconds,
+    currentStreak: streak.currentStreak,
+    bestStreak: streak.bestStreak,
+    weekAyahs: week.ayahs,
+    weekSeconds: week.seconds,
+    monthAyahs: month.ayahs,
+    monthSeconds: month.seconds,
+  });
+
+  await ctx.reply(msg);
+}
 
 export async function historyHandler(ctx: CustomContext): Promise<void> {
   const sessions = await getHistory(ctx.db);
