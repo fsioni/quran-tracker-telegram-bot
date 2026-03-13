@@ -1,6 +1,6 @@
 // tests/handlers/stats.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { historyHandler, statsHandler } from "../../src/handlers/stats";
+import { historyHandler, statsHandler, progressHandler } from "../../src/handlers/stats";
 import type { CustomContext } from "../../src/bot";
 import type { Session } from "../../src/services/db";
 
@@ -142,5 +142,54 @@ describe("statsHandler", () => {
 
     expect(getConfig).toHaveBeenCalledWith(ctx.db, "timezone");
     expect(getPeriodStats).toHaveBeenCalledWith(ctx.db, "week", "America/Cancun");
+  });
+});
+
+// --- progressHandler ---
+
+describe("progressHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("affiche la progression avec barre et dernier point", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({
+      totalSessions: 10,
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      avgAyahsPerSession: 34,
+      avgSecondsPerSession: 1578,
+    });
+    vi.mocked(getLastSession).mockResolvedValue({
+      id: 42,
+      startedAt: "2026-03-10 13:30:00",
+      durationSeconds: 533,
+      surahStart: 2,
+      ayahStart: 280,
+      surahEnd: 3,
+      ayahEnd: 10,
+      ayahCount: 17,
+      createdAt: "2026-03-10 13:30:00",
+    });
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("342 / 6236 versets");
+    expect(msg).toContain("Dernier point : sourate Al-Imran (3), verset 10");
+  });
+
+  it("affiche un message si aucune session", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({
+      totalSessions: 0, totalAyahs: 0, totalSeconds: 0,
+      avgAyahsPerSession: 0, avgSecondsPerSession: 0,
+    });
+    vi.mocked(getLastSession).mockResolvedValue(null);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
   });
 });

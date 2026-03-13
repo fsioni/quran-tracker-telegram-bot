@@ -3,11 +3,13 @@ import type { CustomContext } from "../bot";
 import {
   getHistory,
   getGlobalStats,
+  getLastSession,
   getPeriodStats,
   calculateStreak,
   getConfig,
 } from "../services/db";
-import { formatHistoryLine, formatStats } from "../services/format";
+import { formatHistoryLine, formatStats, formatProgress } from "../services/format";
+import { TOTAL_AYAH_COUNT } from "../data/surahs";
 
 const DEFAULT_TZ = "America/Cancun";
 
@@ -30,6 +32,27 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
     weekSeconds: week.seconds,
     monthAyahs: month.ayahs,
     monthSeconds: month.seconds,
+  });
+
+  await ctx.reply(msg);
+}
+
+export async function progressHandler(ctx: CustomContext): Promise<void> {
+  const [global, lastSession] = await Promise.all([
+    getGlobalStats(ctx.db),
+    getLastSession(ctx.db),
+  ]);
+
+  if (!lastSession) {
+    await ctx.reply("Aucune session enregistree.");
+    return;
+  }
+
+  const msg = formatProgress({
+    totalAyahsRead: global.totalAyahs,
+    totalAyahs: TOTAL_AYAH_COUNT,
+    lastSurah: lastSession.surahEnd,
+    lastAyah: lastSession.ayahEnd,
   });
 
   await ctx.reply(msg);
