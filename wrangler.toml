@@ -5,6 +5,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "quran-tracker"
+# TODO: replace with real UUID from `wrangler d1 create` before deploying
 database_id = "local"
 
 [triggers]

@@ -58,6 +58,7 @@ export function parseRange(input: string): Result<ParsedRange> {
 export function parseImportLine(
   line: string,
   referenceYear?: number,
+  referenceDate?: Date,
 ): Result<ParsedImportLine> {
   // Format: JJ/MM, HHhMM - DUREE - RANGE
   const match = line.match(
@@ -76,15 +77,27 @@ export function parseImportLine(
   const durationStr = match[5].trim();
   const rangeStr = match[6].trim();
 
-  const year = referenceYear ?? new Date().getFullYear();
-
-  // Determine year: if date is in the future relative to referenceYear, use previous year
   const parsedMonth = parseInt(month, 10);
   const parsedDay = parseInt(day, 10);
+
+  // Validate month/day ranges
+  if (parsedMonth < 1 || parsedMonth > 12) {
+    return err(`mois invalide '${month}' (1-12)`);
+  }
+
+  const now = referenceDate ?? new Date();
+  const year = referenceYear ?? now.getFullYear();
+
+  // Validate day against days in month
+  const daysInMonth = new Date(year, parsedMonth, 0).getDate();
+  if (parsedDay < 1 || parsedDay > daysInMonth) {
+    return err(`jour invalide '${day}' pour le mois ${month} (1-${daysInMonth})`);
+  }
+
+  // Determine year: if date is in the future relative to referenceDate, use previous year
   const candidateDate = new Date(year, parsedMonth - 1, parsedDay);
-  const now = new Date();
-  const referenceDate = new Date(year, now.getMonth(), now.getDate());
-  const finalYear = candidateDate > referenceDate ? year - 1 : year;
+  const refDate = new Date(year, now.getMonth(), now.getDate());
+  const finalYear = candidateDate > refDate ? year - 1 : year;
 
   const durationResult = parseDuration(durationStr);
   if (!durationResult.ok) {
@@ -146,11 +159,12 @@ export function formatHistoryLine(session: {
   ayahEnd: number;
   ayahCount: number;
 }): string {
-  const date = new Date(session.startedAt);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const hour = String(date.getUTCHours()).padStart(2, "0");
-  const minute = String(date.getUTCMinutes()).padStart(2, "0");
+  // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
+  const s = session.startedAt;
+  const day = s.substring(8, 10);
+  const month = s.substring(5, 7);
+  const hour = s.substring(11, 13);
+  const minute = s.substring(14, 16);
   const duration = formatDuration(session.durationSeconds);
 
   const surahStartData = getSurah(session.surahStart)!;
@@ -207,9 +221,9 @@ export function formatReminder(data: {
   weekAyahs: number;
   streak: number;
 }): string {
-  const date = new Date(data.lastSessionDate);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
+  const day = data.lastSessionDate.substring(8, 10);
+  const month = data.lastSessionDate.substring(5, 7);
   const surah = getSurah(data.lastSurahNum)!;
   const closing =
     data.streak > 0 ? "Continue comme ca !" : "C'est le moment de reprendre !";

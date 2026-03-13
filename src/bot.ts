@@ -1,4 +1,4 @@
-import { Bot, Context, webhookCallback } from "grammy";
+import { Bot, Context } from "grammy";
 import { startHandler, helpHandler } from "./handlers/config";
 
 export interface CustomContext extends Context {

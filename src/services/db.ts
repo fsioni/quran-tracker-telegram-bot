@@ -382,8 +382,15 @@ export async function setPrayerCache(
 ): Promise<void> {
   await db
     .prepare(
-      `INSERT OR REPLACE INTO prayer_cache (date, fajr, dhuhr, asr, maghrib, isha)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO prayer_cache (date, fajr, dhuhr, asr, maghrib, isha)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(date) DO UPDATE SET
+         fajr = excluded.fajr,
+         dhuhr = excluded.dhuhr,
+         asr = excluded.asr,
+         maghrib = excluded.maghrib,
+         isha = excluded.isha,
+         fetched_at = datetime('now')`,
     )
     .bind(
       times.date,

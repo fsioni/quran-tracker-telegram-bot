@@ -435,12 +435,17 @@ describe("prayerCache", () => {
     expect(cached!.dhuhr_sent).toBe(0);
   });
 
-  it("overwrites prayer cache on re-insert", async () => {
+  it("overwrites prayer times but preserves sent flags on upsert", async () => {
     await setPrayerCache(db, sampleTimes);
+    await markPrayerSent(db, "2026-03-13", "fajr");
+
+    // Re-insert with updated fajr time
     await setPrayerCache(db, { ...sampleTimes, fajr: "05:45" });
 
     const cached = await getPrayerCache(db, "2026-03-13");
     expect(cached!.fajr).toBe("05:45");
+    // Sent flag must be preserved (not reset to 0)
+    expect(cached!.fajr_sent).toBe(1);
   });
 
   it("rejects invalid prayer names at runtime", async () => {

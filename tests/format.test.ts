@@ -102,8 +102,11 @@ describe("parseRange", () => {
 // --- parseImportLine ---
 
 describe("parseImportLine", () => {
+  // Use a fixed referenceDate for deterministic tests
+  const march13 = new Date(2026, 2, 13); // March 13, 2026
+
   it("parses a complete import line", () => {
-    const result = parseImportLine("10/03, 13h30 - 8m53 - 2:77-83", 2026);
+    const result = parseImportLine("10/03, 13h30 - 8m53 - 2:77-83", 2026, march13);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.date).toBe("2026-03-10");
@@ -119,9 +122,9 @@ describe("parseImportLine", () => {
   });
 
   it("deduces previous year when date is in the future", () => {
-    // December date when reference year is 2026 and current month is March
+    // December date when reference year is 2026 and referenceDate is March
     // 15/12 is in the future relative to March, so it should use 2025
-    const result = parseImportLine("15/12, 8h00 - 5m - 1:1-7", 2026);
+    const result = parseImportLine("15/12, 8h00 - 5m - 1:1-7", 2026, march13);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.date).toBe("2025-12-15");
@@ -131,6 +134,30 @@ describe("parseImportLine", () => {
   it("rejects invalid line format", () => {
     const result = parseImportLine("invalid line");
     expect(result.ok).toBe(false);
+  });
+
+  it("rejects invalid month (13)", () => {
+    const result = parseImportLine("15/13, 8h00 - 5m - 1:1-7", 2026, march13);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("mois invalide");
+    }
+  });
+
+  it("rejects invalid day (32) for March", () => {
+    const result = parseImportLine("32/03, 8h00 - 5m - 1:1-7", 2026, march13);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("jour invalide");
+    }
+  });
+
+  it("rejects Feb 30", () => {
+    const result = parseImportLine("30/02, 8h00 - 5m - 1:1-7", 2026, march13);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("jour invalide");
+    }
   });
 });
 
@@ -189,10 +216,10 @@ describe("formatSessionConfirmation", () => {
 // --- formatHistoryLine ---
 
 describe("formatHistoryLine", () => {
-  it("formats same-surah history line", () => {
+  it("formats same-surah history line (DB format)", () => {
     const result = formatHistoryLine({
       id: 42,
-      startedAt: "2026-03-10T13:30:00Z",
+      startedAt: "2026-03-10 13:30:00",
       durationSeconds: 533,
       surahStart: 2,
       ayahStart: 77,
@@ -205,10 +232,10 @@ describe("formatHistoryLine", () => {
     );
   });
 
-  it("formats cross-surah history line", () => {
+  it("formats cross-surah history line (DB format)", () => {
     const result = formatHistoryLine({
       id: 42,
-      startedAt: "2026-03-10T13:30:00Z",
+      startedAt: "2026-03-10 13:30:00",
       durationSeconds: 533,
       surahStart: 2,
       ayahStart: 280,
@@ -218,6 +245,22 @@ describe("formatHistoryLine", () => {
     });
     expect(result).toBe(
       "#42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v)",
+    );
+  });
+
+  it("also works with ISO format", () => {
+    const result = formatHistoryLine({
+      id: 1,
+      startedAt: "2026-03-10T13:30:00Z",
+      durationSeconds: 480,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+    });
+    expect(result).toBe(
+      "#1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v)",
     );
   });
 });
@@ -279,9 +322,9 @@ describe("formatProgress", () => {
 // --- formatReminder ---
 
 describe("formatReminder", () => {
-  it("formats reminder with streak", () => {
+  it("formats reminder with streak (DB format)", () => {
     const result = formatReminder({
-      lastSessionDate: "2026-03-10T13:30:00Z",
+      lastSessionDate: "2026-03-10 13:30:00",
       lastSurahNum: 2,
       lastAyah: 83,
       weekSessions: 5,
@@ -303,7 +346,7 @@ describe("formatReminder", () => {
 
   it("formats reminder without streak", () => {
     const result = formatReminder({
-      lastSessionDate: "2026-03-10T13:30:00Z",
+      lastSessionDate: "2026-03-10 13:30:00",
       lastSurahNum: 2,
       lastAyah: 83,
       weekSessions: 0,
