@@ -28,9 +28,14 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
 
   if (!input) {
-    const city = (await getConfig(ctx.db, "city")) ?? "Non defini";
-    const country = (await getConfig(ctx.db, "country")) ?? "Non defini";
-    const timezone = (await getConfig(ctx.db, "timezone")) ?? "Non defini";
+    const [cityRaw, countryRaw, timezoneRaw] = await Promise.all([
+      getConfig(ctx.db, "city"),
+      getConfig(ctx.db, "country"),
+      getConfig(ctx.db, "timezone"),
+    ]);
+    const city = cityRaw ?? "Non defini";
+    const country = countryRaw ?? "Non defini";
+    const timezone = timezoneRaw ?? "Non defini";
 
     await ctx.reply(
       [

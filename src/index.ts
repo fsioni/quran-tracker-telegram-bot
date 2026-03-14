@@ -11,9 +11,10 @@ import {
   getTodayInTimezone,
   cleanOldCache,
 } from "./services/db";
+import type { PrayerCacheRow } from "./services/db";
 import { fetchPrayerTimes, getDueReminders, getNowInTimezone } from "./services/prayer";
 import { formatReminder } from "./services/format";
-import { DEFAULT_TZ } from "./config";
+import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
   DB: D1Database;
@@ -24,15 +25,21 @@ async function sendTelegramMessage(
   botToken: string,
   chatId: string,
   text: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text }),
     });
+    if (!response.ok) {
+      console.error(`Telegram sendMessage HTTP ${response.status}`);
+      return false;
+    }
+    return true;
   } catch (e) {
     console.error("Telegram sendMessage failed:", (e as Error).message);
+    return false;
   }
 }
 
@@ -40,9 +47,14 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   const chatId = await getConfig(db, "chat_id");
   if (!chatId) return;
 
-  const tz = (await getConfig(db, "timezone")) ?? DEFAULT_TZ;
-  const city = (await getConfig(db, "city")) ?? "Playa del Carmen";
-  const country = (await getConfig(db, "country")) ?? "MX";
+  const [tzRaw, cityRaw, countryRaw] = await Promise.all([
+    getConfig(db, "timezone"),
+    getConfig(db, "city"),
+    getConfig(db, "country"),
+  ]);
+  const tz = tzRaw ?? DEFAULT_TZ;
+  const city = cityRaw ?? DEFAULT_CITY;
+  const country = countryRaw ?? DEFAULT_COUNTRY;
   const today = getTodayInTimezone(tz);
 
   let cache = await getPrayerCache(db, today);
@@ -52,10 +64,19 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
       console.error("Prayer fetch failed:", result.error);
       return;
     }
-    await setPrayerCache(db, result.value);
-    await cleanOldCache(db, today);
-    cache = await getPrayerCache(db, today);
-    if (!cache) return;
+    await Promise.all([
+      setPrayerCache(db, result.value),
+      cleanOldCache(db, today),
+    ]);
+    cache = {
+      ...result.value,
+      fajr_sent: 0,
+      dhuhr_sent: 0,
+      asr_sent: 0,
+      maghrib_sent: 0,
+      isha_sent: 0,
+      fetched_at: new Date().toISOString(),
+    } as PrayerCacheRow;
   }
 
   const nowHHMM = getNowInTimezone(tz);
@@ -82,7 +103,8 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
     message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
   }
 
-  await sendTelegramMessage(botToken, chatId, message);
+  const sent = await sendTelegramMessage(botToken, chatId, message);
+  if (!sent) return;
 
   for (const prayer of duePrayers) {
     await markPrayerSent(db, today, prayer);

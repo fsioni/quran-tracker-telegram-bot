@@ -1,4 +1,3 @@
-// src/services/prayer.ts
 import type { PrayerTimes, PrayerCacheRow, PrayerName } from "./db";
 import { Result, ok, err } from "../types";
 

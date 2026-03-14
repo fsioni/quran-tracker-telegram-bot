@@ -426,8 +426,6 @@ export async function markPrayerSent(
 }
 
 export async function cleanOldCache(db: D1Database, today: string): Promise<void> {
-  const d = new Date(today + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() - 7);
-  const cutoff = d.toISOString().substring(0, 10);
+  const cutoff = addDays(today, -7);
   await db.prepare("DELETE FROM prayer_cache WHERE date < ?").bind(cutoff).run();
 }

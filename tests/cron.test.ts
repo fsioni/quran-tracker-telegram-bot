@@ -155,22 +155,7 @@ describe("handleScheduled", () => {
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
-    vi.mocked(getPrayerCache)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        date: "2026-03-14",
-        fajr: "05:30",
-        dhuhr: "12:00",
-        asr: "15:45",
-        maghrib: "18:30",
-        isha: "20:00",
-        fajr_sent: 0,
-        dhuhr_sent: 0,
-        asr_sent: 0,
-        maghrib_sent: 0,
-        isha_sent: 0,
-        fetched_at: "2026-03-14",
-      });
+    vi.mocked(getPrayerCache).mockResolvedValueOnce(null);
     vi.mocked(fetchPrayerTimes).mockResolvedValue({
       ok: true,
       value: {
@@ -190,6 +175,41 @@ describe("handleScheduled", () => {
     expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-14", "PDC", "MX");
     expect(setPrayerCache).toHaveBeenCalled();
     expect(cleanOldCache).toHaveBeenCalledWith(db, "2026-03-14");
+  });
+
+  it("ne marque pas la priere si Telegram echoue", async () => {
+    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      if (key === "chat_id") return "123";
+      if (key === "timezone") return "America/Cancun";
+      if (key === "city") return "PDC";
+      if (key === "country") return "MX";
+      return null;
+    });
+    vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
+    vi.mocked(getPrayerCache).mockResolvedValue({
+      date: "2026-03-14",
+      fajr: "05:30",
+      dhuhr: "12:00",
+      asr: "15:45",
+      maghrib: "18:30",
+      isha: "20:00",
+      fajr_sent: 0,
+      dhuhr_sent: 0,
+      asr_sent: 0,
+      maghrib_sent: 0,
+      isha_sent: 0,
+      fetched_at: "2026-03-14",
+    });
+    vi.mocked(getNowInTimezone).mockReturnValue("12:12");
+    vi.mocked(getDueReminders).mockReturnValue(["dhuhr"]);
+    vi.mocked(getLastSession).mockResolvedValue(null);
+    vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
+    vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+
+    await handleScheduled(db, "TOKEN");
+
+    expect(markPrayerSent).not.toHaveBeenCalled();
   });
 
   it("envoie message fallback si aucune session", async () => {
