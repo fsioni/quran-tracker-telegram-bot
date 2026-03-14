@@ -1,5 +1,5 @@
 import { Bot, Context } from "grammy";
-import { startHandler, helpHandler } from "./handlers/config";
+import { startHandler, helpHandler, configHandler } from "./handlers/config";
 import { sessionHandler } from "./handlers/session";
 import { importHandler } from "./handlers/import";
 import { historyHandler, statsHandler, progressHandler } from "./handlers/stats";
@@ -35,6 +35,7 @@ export function createBot(token: string, db: D1Database): Bot<CustomContext> {
   bot.command("progress", progressHandler);
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
+  bot.command("config", configHandler);
 
   // Callbacks inline keyboard
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);

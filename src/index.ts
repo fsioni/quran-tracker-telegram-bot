@@ -1,9 +1,120 @@
 import { createBot } from "./bot";
 import { webhookCallback } from "grammy";
+import {
+  getConfig,
+  getPrayerCache,
+  setPrayerCache,
+  markPrayerSent,
+  getLastSession,
+  getPeriodStats,
+  calculateStreak,
+  getTodayInTimezone,
+  cleanOldCache,
+} from "./services/db";
+import type { PrayerCacheRow } from "./services/db";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone } from "./services/prayer";
+import { formatReminder } from "./services/format";
+import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
   DB: D1Database;
   BOT_TOKEN: string;
+}
+
+async function sendTelegramMessage(
+  botToken: string,
+  chatId: string,
+  text: string,
+): Promise<boolean> {
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    });
+    if (!response.ok) {
+      console.error(`Telegram sendMessage HTTP ${response.status}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("Telegram sendMessage failed:", (e as Error).message);
+    return false;
+  }
+}
+
+export async function handleScheduled(db: D1Database, botToken: string): Promise<void> {
+  const chatId = await getConfig(db, "chat_id");
+  if (!chatId) return;
+
+  const [tzRaw, cityRaw, countryRaw] = await Promise.all([
+    getConfig(db, "timezone"),
+    getConfig(db, "city"),
+    getConfig(db, "country"),
+  ]);
+  let tz = tzRaw ?? DEFAULT_TZ;
+  const city = cityRaw ?? DEFAULT_CITY;
+  const country = countryRaw ?? DEFAULT_COUNTRY;
+  let today: string;
+  try {
+    today = getTodayInTimezone(tz);
+  } catch {
+    console.error(`Invalid timezone "${tz}", falling back to ${DEFAULT_TZ}`);
+    tz = DEFAULT_TZ;
+    today = getTodayInTimezone(tz);
+  }
+
+  let cache = await getPrayerCache(db, today);
+  if (!cache) {
+    const result = await fetchPrayerTimes(today, city, country);
+    if (!result.ok) {
+      console.error("Prayer fetch failed:", result.error);
+      return;
+    }
+    await setPrayerCache(db, result.value);
+    cache = {
+      ...result.value,
+      fajr_sent: 0,
+      dhuhr_sent: 0,
+      asr_sent: 0,
+      maghrib_sent: 0,
+      isha_sent: 0,
+      fetched_at: new Date().toISOString(),
+    } as PrayerCacheRow;
+  }
+
+  await cleanOldCache(db, today);
+
+  const nowHHMM = getNowInTimezone(tz);
+  const duePrayers = getDueReminders(cache, nowHHMM);
+  if (duePrayers.length === 0) return;
+
+  const [lastSession, weekStats, streak] = await Promise.all([
+    getLastSession(db),
+    getPeriodStats(db, "week", tz),
+    calculateStreak(db, tz),
+  ]);
+
+  let message: string;
+  if (lastSession) {
+    message = formatReminder({
+      lastSessionDate: lastSession.startedAt,
+      lastSurahNum: lastSession.surahEnd,
+      lastAyah: lastSession.ayahEnd,
+      weekSessions: weekStats.sessions,
+      weekAyahs: weekStats.ayahs,
+      streak: streak.currentStreak,
+    });
+  } else {
+    message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
+  }
+
+  const sent = await sendTelegramMessage(botToken, chatId, message);
+  if (!sent) return;
+
+  for (const prayer of duePrayers) {
+    await markPrayerSent(db, today, prayer);
+  }
 }
 
 export default {
@@ -17,6 +128,6 @@ export default {
     env: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    // TODO: prayer reminder cron logic
+    ctx.waitUntil(handleScheduled(env.DB, env.BOT_TOKEN));
   },
 };

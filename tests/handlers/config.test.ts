@@ -1,35 +1,54 @@
-import { describe, it, expect, vi } from "vitest";
-import { startHandler, helpHandler, WELCOME_MESSAGE } from "../../src/handlers/config";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CustomContext } from "../../src/bot";
 
-function createMockContext(chatId = 12345): CustomContext {
-  const runFn = vi.fn().mockResolvedValue({ meta: { changes: 0 } });
-  const bindFn = vi.fn().mockReturnValue({ run: runFn, first: vi.fn(), all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: runFn, first: vi.fn(), all: vi.fn() });
+vi.mock("../../src/services/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/services/db")>();
+  return {
+    ...actual,
+    getConfig: vi.fn(),
+    setConfig: vi.fn(),
+  };
+});
 
+import { getConfig, setConfig } from "../../src/services/db";
+import {
+  startHandler,
+  helpHandler,
+  configHandler,
+  WELCOME_MESSAGE,
+} from "../../src/handlers/config";
+
+function createMockContext(chatId = 12345): CustomContext {
   return {
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: chatId },
-    db: {
-      prepare: prepareFn,
-      batch: vi.fn(),
-      exec: vi.fn(),
-      dump: vi.fn(),
-    } as unknown as D1Database,
+    db: {} as D1Database,
+  } as unknown as CustomContext;
+}
+
+function makeConfigCtx(match = ""): CustomContext {
+  return {
+    reply: vi.fn().mockResolvedValue(undefined),
+    match,
+    db: {} as D1Database,
   } as unknown as CustomContext;
 }
 
 describe("startHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("replies with WELCOME_MESSAGE", async () => {
     const ctx = createMockContext();
     await startHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledWith(WELCOME_MESSAGE);
   });
 
-  it("calls db.prepare to persist chat_id via setConfig", async () => {
+  it("calls setConfig to persist chat_id", async () => {
     const ctx = createMockContext(99999);
     await startHandler(ctx);
-    expect(ctx.db.prepare).toHaveBeenCalled();
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "chat_id", "99999");
   });
 
   it("calls reply exactly once", async () => {
@@ -40,21 +59,126 @@ describe("startHandler", () => {
 });
 
 describe("helpHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("replies with WELCOME_MESSAGE", async () => {
     const ctx = createMockContext();
     await helpHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledWith(WELCOME_MESSAGE);
   });
 
-  it("does NOT call db.prepare", async () => {
+  it("does NOT call setConfig", async () => {
     const ctx = createMockContext();
     await helpHandler(ctx);
-    expect(ctx.db.prepare).not.toHaveBeenCalled();
+    expect(setConfig).not.toHaveBeenCalled();
   });
 
   it("calls reply exactly once", async () => {
     const ctx = createMockContext();
     await helpHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("configHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("affiche la config actuelle sans arguments", async () => {
+    vi.mocked(getConfig)
+      .mockResolvedValueOnce("Playa del Carmen")
+      .mockResolvedValueOnce("MX")
+      .mockResolvedValueOnce("America/Cancun");
+
+    const ctx = makeConfigCtx("");
+    await configHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Configuration");
+    expect(msg).toContain("Playa del Carmen");
+    expect(msg).toContain("MX");
+    expect(msg).toContain("America/Cancun");
+  });
+
+  it("affiche les valeurs par defaut si config absente", async () => {
+    vi.mocked(getConfig).mockResolvedValue(null);
+    const ctx = makeConfigCtx("");
+    await configHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Playa del Carmen");
+    expect(msg).toContain("(defaut)");
+  });
+
+  it("met a jour la ville", async () => {
+    const ctx = makeConfigCtx("city Cancun");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "city", "Cancun");
+    expect(ctx.reply).toHaveBeenCalledWith("Ville mise a jour : Cancun");
+  });
+
+  it("accepte une ville avec espaces", async () => {
+    const ctx = makeConfigCtx("city Playa del Carmen");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "city", "Playa del Carmen");
+  });
+
+  it("met a jour le pays", async () => {
+    const ctx = makeConfigCtx("country MX");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "country", "MX");
+  });
+
+  it("normalise le pays en majuscules", async () => {
+    const ctx = makeConfigCtx("country mx");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "country", "MX");
+  });
+
+  it("rejette un code pays invalide", async () => {
+    const ctx = makeConfigCtx("country USA");
+    await configHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(msg).toContain("2 lettres");
+  });
+
+  it("met a jour le timezone", async () => {
+    const ctx = makeConfigCtx("timezone America/New_York");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "timezone", "America/New_York");
+  });
+
+  it("accepte tz comme alias de timezone", async () => {
+    const ctx = makeConfigCtx("tz America/New_York");
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "timezone", "America/New_York");
+  });
+
+  it("rejette un fuseau horaire invalide", async () => {
+    const ctx = makeConfigCtx("timezone Invalid/Zone");
+    await configHandler(ctx);
+    expect(setConfig).not.toHaveBeenCalled();
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(msg).toContain("fuseau horaire invalide");
+  });
+
+  it("rejette un parametre inconnu", async () => {
+    const ctx = makeConfigCtx("foo bar");
+    await configHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(msg).toContain("parametre inconnu");
+  });
+
+  it("rejette une valeur manquante", async () => {
+    const ctx = makeConfigCtx("city");
+    await configHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(msg).toContain("valeur manquante");
   });
 });

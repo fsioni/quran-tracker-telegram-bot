@@ -14,6 +14,7 @@ import {
   getPrayerCache,
   setPrayerCache,
   markPrayerSent,
+  cleanOldCache,
   getTodayInTimezone,
   addDays,
   getWeekBounds,
@@ -500,5 +501,26 @@ describe("helper functions", () => {
     const bounds = getMonthBounds("2026-02-10");
     expect(bounds.start).toBe("2026-02-01");
     expect(bounds.end).toBe("2026-02-28");
+  });
+});
+
+// --- cleanOldCache ---
+
+describe("cleanOldCache", () => {
+  const makeTimes = (date: string): PrayerTimes => ({
+    date,
+    fajr: "05:30", dhuhr: "12:15", asr: "15:45", maghrib: "18:30", isha: "20:00",
+  });
+
+  it("supprime les entrees de plus de 7 jours", async () => {
+    await setPrayerCache(db, makeTimes("2026-03-01")); // 13 jours avant le 14
+    await setPrayerCache(db, makeTimes("2026-03-10")); // 4 jours avant
+    await setPrayerCache(db, makeTimes("2026-03-14")); // aujourd'hui
+
+    await cleanOldCache(db, "2026-03-14");
+
+    expect(await getPrayerCache(db, "2026-03-01")).toBeNull();
+    expect(await getPrayerCache(db, "2026-03-10")).not.toBeNull();
+    expect(await getPrayerCache(db, "2026-03-14")).not.toBeNull();
   });
 });
