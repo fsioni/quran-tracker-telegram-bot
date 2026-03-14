@@ -268,54 +268,91 @@ describe("formatHistoryLine", () => {
 // --- formatStats ---
 
 describe("formatStats", () => {
-  it("formats full stats message", () => {
+  it("formate le message stats complet selon la spec", () => {
     const result = formatStats({
-      totalSessions: 50,
-      totalAyahs: 1200,
-      totalSeconds: 18000,
-      avgAyahsPerSession: 24,
-      avgSecondsPerSession: 360,
-      thisWeekSessions: 5,
-      thisWeekAyahs: 120,
+      totalAyahs: 342,
+      totalSeconds: 15780, // 4h23m
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 45,
+      weekSeconds: 2280, // 38m
+      monthAyahs: 187,
+      monthSeconds: 8100, // 2h15m
     });
     expect(result).toBe(
       [
-        "Statistiques :",
-        "- Sessions : 50 (5 cette semaine)",
-        "- Versets : 1200 (120 cette semaine)",
-        "- Temps total : 5h 0m",
-        "- Moyenne : 24 versets/session en 6m",
+        "-- Stats globales --",
+        "Versets lus : 342",
+        "Duree totale : 4h23m",
+        "Vitesse moyenne : 78 versets/heure",
+        "Streak actuel : 5 jours",
+        "Meilleur streak : 12 jours",
+        "",
+        "-- Cette semaine --",
+        "Versets : 45 | Duree : 38m",
+        "-- Ce mois --",
+        "Versets : 187 | Duree : 2h15m",
       ].join("\n"),
     );
+  });
+
+  it("gere 0 sessions (pas de division par zero)", () => {
+    const result = formatStats({
+      totalAyahs: 0,
+      totalSeconds: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      weekAyahs: 0,
+      weekSeconds: 0,
+      monthAyahs: 0,
+      monthSeconds: 0,
+    });
+    expect(result).toContain("Versets lus : 0");
+    expect(result).toContain("Vitesse moyenne : 0 versets/heure");
   });
 });
 
 // --- formatProgress ---
 
 describe("formatProgress", () => {
-  it("formats progress bar with percentage", () => {
+  it("formate la progression avec barre et dernier point", () => {
     const result = formatProgress({
-      totalAyahsRead: 2494,
+      totalAyahsRead: 342,
       totalAyahs: 6236,
-      lastSurah: 2,
-      lastAyah: 83,
+      lastSurah: 3,
+      lastAyah: 10,
     });
-    // 2494/6236 = ~40%, filled = round(8) = 8
+    // 342/6236 = 5.5%, filled = round(1.1) = 1
     expect(result).toBe(
-      "[########------------] 40.0%\nDernier point : sourate Al-Baqara v.83",
+      [
+        "Progression : 342 / 6236 versets (5.5%)",
+        "[#-------------------] 5.5%",
+        "Dernier point : sourate Al-Imran (3), verset 10",
+      ].join("\n"),
     );
   });
 
-  it("formats 0% progress", () => {
+  it("formate 0% de progression", () => {
     const result = formatProgress({
       totalAyahsRead: 0,
       totalAyahs: 6236,
       lastSurah: 1,
       lastAyah: 1,
     });
-    expect(result).toBe(
-      "[--------------------] 0.0%\nDernier point : sourate Al-Fatiha v.1",
-    );
+    expect(result).toContain("0 / 6236 versets (0.0%)");
+    expect(result).toContain("[--------------------]");
+  });
+
+  it("formate ~40% de progression", () => {
+    const result = formatProgress({
+      totalAyahsRead: 2494,
+      totalAyahs: 6236,
+      lastSurah: 2,
+      lastAyah: 83,
+    });
+    expect(result).toContain("2494 / 6236 versets (40.0%)");
+    expect(result).toContain("[########------------] 40.0%");
+    expect(result).toContain("Dernier point : sourate Al-Baqara (2), verset 83");
   });
 });
 

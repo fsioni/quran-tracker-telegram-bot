@@ -185,25 +185,36 @@ export function formatHistoryLine(session: {
   return `#${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
 }
 
-export function formatStats(stats: {
-  totalSessions: number;
+export function formatStats(data: {
   totalAyahs: number;
   totalSeconds: number;
-  avgAyahsPerSession: number;
-  avgSecondsPerSession: number;
-  thisWeekSessions: number;
-  thisWeekAyahs: number;
+  currentStreak: number;
+  bestStreak: number;
+  weekAyahs: number;
+  weekSeconds: number;
+  monthAyahs: number;
+  monthSeconds: number;
 }): string {
-  const totalH = Math.floor(stats.totalSeconds / 3600);
-  const totalM = Math.floor((stats.totalSeconds % 3600) / 60);
-  const avgDuration = formatDuration(stats.avgSecondsPerSession);
+  const totalDuration = formatDuration(data.totalSeconds);
+  const speed =
+    data.totalSeconds > 0
+      ? Math.round((data.totalAyahs / data.totalSeconds) * 3600)
+      : 0;
+  const weekDuration = formatDuration(data.weekSeconds);
+  const monthDuration = formatDuration(data.monthSeconds);
 
   return [
-    "Statistiques :",
-    `- Sessions : ${stats.totalSessions} (${stats.thisWeekSessions} cette semaine)`,
-    `- Versets : ${stats.totalAyahs} (${stats.thisWeekAyahs} cette semaine)`,
-    `- Temps total : ${totalH}h ${totalM}m`,
-    `- Moyenne : ${stats.avgAyahsPerSession} versets/session en ${avgDuration}`,
+    "-- Stats globales --",
+    `Versets lus : ${data.totalAyahs}`,
+    `Duree totale : ${totalDuration}`,
+    `Vitesse moyenne : ${speed} versets/heure`,
+    `Streak actuel : ${data.currentStreak} jours`,
+    `Meilleur streak : ${data.bestStreak} jours`,
+    "",
+    "-- Cette semaine --",
+    `Versets : ${data.weekAyahs} | Duree : ${weekDuration}`,
+    "-- Ce mois --",
+    `Versets : ${data.monthAyahs} | Duree : ${monthDuration}`,
   ].join("\n");
 }
 
@@ -213,12 +224,16 @@ export function formatProgress(data: {
   lastSurah: number;
   lastAyah: number;
 }): string {
-  const pct = (data.totalAyahsRead / data.totalAyahs) * 100;
-  const filled = Math.round((data.totalAyahsRead / data.totalAyahs) * 20);
+  const pct = data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
+  const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
   const surah = getSurah(data.lastSurah)!;
 
-  return `[${bar}] ${pct.toFixed(1)}%\nDernier point : sourate ${surah.nameFr} v.${data.lastAyah}`;
+  return [
+    `Progression : ${data.totalAyahsRead} / ${data.totalAyahs} versets (${pct.toFixed(1)}%)`,
+    `[${bar}] ${pct.toFixed(1)}%`,
+    `Dernier point : sourate ${surah.nameFr} (${data.lastSurah}), verset ${data.lastAyah}`,
+  ].join("\n");
 }
 
 export function formatReminder(data: {
