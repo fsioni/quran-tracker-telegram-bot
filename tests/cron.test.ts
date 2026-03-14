@@ -174,6 +174,7 @@ describe("handleScheduled", () => {
 
     expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-14", "PDC", "MX");
     expect(setPrayerCache).toHaveBeenCalled();
+    // cleanOldCache is called every run, not just on cache miss
     expect(cleanOldCache).toHaveBeenCalledWith(db, "2026-03-14");
   });
 

@@ -1,6 +1,7 @@
 import type { CustomContext } from "../bot";
 import { getConfig, setConfig } from "../services/db";
 import { formatError } from "../services/format";
+import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 
 export const WELCOME_MESSAGE = `Bienvenue sur le Quran Reading Tracker !
 
@@ -33,16 +34,18 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       getConfig(ctx.db, "country"),
       getConfig(ctx.db, "timezone"),
     ]);
-    const city = cityRaw ?? "Non defini";
-    const country = countryRaw ?? "Non defini";
-    const timezone = timezoneRaw ?? "Non defini";
+    const city = cityRaw ?? DEFAULT_CITY;
+    const country = countryRaw ?? DEFAULT_COUNTRY;
+    const timezone = timezoneRaw ?? DEFAULT_TZ;
+    const suffix = (raw: string | null) => (raw ? "" : " (defaut)");
+
 
     await ctx.reply(
       [
         "-- Configuration --",
-        `Ville : ${city}`,
-        `Pays : ${country}`,
-        `Fuseau horaire : ${timezone}`,
+        `Ville : ${city}${suffix(cityRaw)}`,
+        `Pays : ${country}${suffix(countryRaw)}`,
+        `Fuseau horaire : ${timezone}${suffix(timezoneRaw)}`,
       ].join("\n"),
     );
     return;
@@ -77,6 +80,12 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       break;
     case "timezone":
     case "tz":
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: value });
+      } catch {
+        await ctx.reply(formatError("fuseau horaire invalide", "/config timezone America/Cancun"));
+        return;
+      }
       await setConfig(ctx.db, "timezone", value);
       await ctx.reply(`Fuseau horaire mis a jour : ${value}`);
       break;

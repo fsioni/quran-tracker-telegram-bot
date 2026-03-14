@@ -21,11 +21,18 @@ function stripTimezone(time: string): string {
   return time.replace(/\s*\(.*\)$/, "").trim();
 }
 
+const REQUIRED_TIMINGS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
+
 export function parsePrayerResponse(body: AladhanResponse, date: string): Result<PrayerTimes> {
   if (body.code !== 200 || !body.data?.timings) {
     return err("Reponse Aladhan invalide");
   }
   const t = body.data.timings;
+  for (const key of REQUIRED_TIMINGS) {
+    if (typeof t[key] !== "string") {
+      return err(`Champ manquant dans la reponse Aladhan: ${key}`);
+    }
+  }
   return ok({
     date,
     fajr: stripTimezone(t.Fajr),

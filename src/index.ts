@@ -52,10 +52,17 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
     getConfig(db, "city"),
     getConfig(db, "country"),
   ]);
-  const tz = tzRaw ?? DEFAULT_TZ;
+  let tz = tzRaw ?? DEFAULT_TZ;
   const city = cityRaw ?? DEFAULT_CITY;
   const country = countryRaw ?? DEFAULT_COUNTRY;
-  const today = getTodayInTimezone(tz);
+  let today: string;
+  try {
+    today = getTodayInTimezone(tz);
+  } catch {
+    console.error(`Invalid timezone "${tz}", falling back to ${DEFAULT_TZ}`);
+    tz = DEFAULT_TZ;
+    today = getTodayInTimezone(tz);
+  }
 
   let cache = await getPrayerCache(db, today);
   if (!cache) {
@@ -64,10 +71,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
       console.error("Prayer fetch failed:", result.error);
       return;
     }
-    await Promise.all([
-      setPrayerCache(db, result.value),
-      cleanOldCache(db, today),
-    ]);
+    await setPrayerCache(db, result.value);
     cache = {
       ...result.value,
       fajr_sent: 0,
@@ -78,6 +82,8 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
       fetched_at: new Date().toISOString(),
     } as PrayerCacheRow;
   }
+
+  await cleanOldCache(db, today);
 
   const nowHHMM = getNowInTimezone(tz);
   const duePrayers = getDueReminders(cache, nowHHMM);

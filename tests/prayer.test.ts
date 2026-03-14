@@ -62,6 +62,22 @@ describe("parsePrayerResponse", () => {
     const result = parsePrayerResponse(body as any, "2026-03-14");
     expect(result.ok).toBe(false);
   });
+
+  it("retourne erreur si un champ requis manque", () => {
+    const body = {
+      code: 200,
+      data: {
+        timings: {
+          Fajr: "05:30", Dhuhr: "12:15", Asr: "15:45",
+          Maghrib: "18:30",
+          // Isha missing
+        },
+      },
+    };
+    const result = parsePrayerResponse(body as any, "2026-03-14");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Isha");
+  });
 });
 
 describe("buildAladhanUrl", () => {

@@ -103,12 +103,13 @@ describe("configHandler", () => {
     expect(msg).toContain("America/Cancun");
   });
 
-  it("affiche 'Non defini' si config absente", async () => {
+  it("affiche les valeurs par defaut si config absente", async () => {
     vi.mocked(getConfig).mockResolvedValue(null);
     const ctx = makeConfigCtx("");
     await configHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Non defini");
+    expect(msg).toContain("Playa del Carmen");
+    expect(msg).toContain("(defaut)");
   });
 
   it("met a jour la ville", async () => {
@@ -154,6 +155,15 @@ describe("configHandler", () => {
     const ctx = makeConfigCtx("tz America/New_York");
     await configHandler(ctx);
     expect(setConfig).toHaveBeenCalledWith(ctx.db, "timezone", "America/New_York");
+  });
+
+  it("rejette un fuseau horaire invalide", async () => {
+    const ctx = makeConfigCtx("timezone Invalid/Zone");
+    await configHandler(ctx);
+    expect(setConfig).not.toHaveBeenCalled();
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(msg).toContain("fuseau horaire invalide");
   });
 
   it("rejette un parametre inconnu", async () => {
