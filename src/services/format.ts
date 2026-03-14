@@ -225,7 +225,7 @@ export function formatProgress(data: {
   lastAyah: number;
 }): string {
   const pct = data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
-  const filled = Math.round(pct / 5);
+  const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
   const surah = getSurah(data.lastSurah)!;
 

@@ -10,8 +10,7 @@ import {
 } from "../services/db";
 import { formatHistoryLine, formatStats, formatProgress } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
-
-const DEFAULT_TZ = "America/Cancun";
+import { DEFAULT_TZ } from "../config";
 const MSG_NO_SESSION = "Aucune session enregistree.";
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
