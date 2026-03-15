@@ -15,7 +15,7 @@ import {
   setConfig,
 } from "./services/db";
 import type { PrayerCacheRow } from "./services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderTime } from "./services/prayer";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "./services/prayer";
 import { formatReminder, formatKahfReminder } from "./services/format";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
@@ -128,7 +128,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   if (dayOfWeek === "Friday") {
     const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
     if (kahfReminderLast !== today) {
-      if (isReminderTime(nowHHMM, cache.fajr)) {
+      if (isReminderDue(nowHHMM, cache.fajr)) {
         const kahfStats = await getKahfStats(db);
         const kahfMsg = formatKahfReminder({
           lastDate: kahfStats.lastDate ?? undefined,
