@@ -82,9 +82,16 @@ describe("parsePrayerResponse", () => {
 
 describe("buildAladhanUrl", () => {
   it("convertit YYYY-MM-DD en DD-MM-YYYY pour Aladhan", () => {
-    const url = buildAladhanUrl("2026-03-14", "Playa del Carmen", "MX");
+    const url = buildAladhanUrl("2026-03-14", "Playa del Carmen", "MX", "2");
     expect(url).toBe(
       "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=2",
+    );
+  });
+
+  it("utilise la methode de calcul specifiee", () => {
+    const url = buildAladhanUrl("2026-03-14", "Playa del Carmen", "MX", "5");
+    expect(url).toBe(
+      "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=5",
     );
   });
 });
@@ -107,20 +114,20 @@ describe("fetchPrayerTimes", () => {
       }),
     }));
 
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", "2");
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.fajr).toBe("05:30");
   });
 
   it("retourne erreur si HTTP echoue", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", "2");
     expect(result.ok).toBe(false);
   });
 
   it("retourne erreur si fetch throw", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", "2");
     expect(result.ok).toBe(false);
   });
 });
