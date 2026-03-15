@@ -443,6 +443,55 @@ export async function calculateStreak(
   return { currentStreak, bestStreak };
 }
 
+// --- Timer state ---
+
+export type TimerType = 'normal_page' | 'normal_verse' | 'extra_page' | 'extra_verse' | 'kahf';
+
+export type TimerState = {
+  startedAt: string;
+  startedEpoch: number;
+  type: TimerType;
+  args: string;
+  awaitingResponse: boolean;
+  durationSeconds?: number;
+};
+
+const TIMER_CONFIG_KEY = 'timer_state';
+
+export async function getTimerState(db: D1Database): Promise<TimerState | null> {
+  const raw = await getConfig(db, TIMER_CONFIG_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as TimerState;
+  } catch {
+    console.error("getTimerState: corrupted timer state, clearing");
+    await db.prepare("DELETE FROM config WHERE key = ?").bind(TIMER_CONFIG_KEY).run();
+    return null;
+  }
+}
+
+export async function setTimerState(db: D1Database, state: TimerState): Promise<void> {
+  await setConfig(db, TIMER_CONFIG_KEY, JSON.stringify(state));
+}
+
+export async function clearTimerState(db: D1Database): Promise<void> {
+  await db
+    .prepare("DELETE FROM config WHERE key = ?")
+    .bind(TIMER_CONFIG_KEY)
+    .run();
+}
+
+// --- Kahf helpers ---
+
+export function calculateKahfPagesRead(sessions: Session[]): number {
+  return sessions.reduce((sum, s) => {
+    if (s.pageStart !== null && s.pageEnd !== null) {
+      return sum + (s.pageEnd - s.pageStart + 1);
+    }
+    return sum;
+  }, 0);
+}
+
 // --- Config ---
 
 export async function getConfig(
