@@ -150,6 +150,9 @@ export default {
       if (request.method !== "POST") {
         return new Response("Method not allowed", { status: 405 });
       }
+      if (url.searchParams.get("token") !== env.BOT_TOKEN) {
+        return new Response("Unauthorized", { status: 401 });
+      }
       try {
         const bot = new Bot(env.BOT_TOKEN);
         await bot.api.setMyCommands(BOT_COMMANDS);
