@@ -1,3 +1,4 @@
+# Secrets requis : BOT_TOKEN, ALLOWED_USER_ID
 name = "quran-telegram-bot"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"

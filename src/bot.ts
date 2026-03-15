@@ -35,8 +35,18 @@ export const BOT_COMMANDS = [
   { command: "config", description: "Configurer ville, pays, fuseau horaire" },
 ];
 
-export function createBot(token: string, db: D1Database): Bot<CustomContext> {
+export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
   const bot = new Bot<CustomContext>(token);
+
+  // Auth middleware — restrict to allowed user
+  const parsedUserId = Number(allowedUserId);
+  if (!Number.isInteger(parsedUserId)) {
+    throw new Error(`ALLOWED_USER_ID is not a valid integer: "${allowedUserId}"`);
+  }
+  bot.use((ctx, next) => {
+    if (ctx.from?.id !== parsedUserId) return;
+    return next();
+  });
 
   // Middleware to inject db into context
   bot.use((ctx, next) => {
