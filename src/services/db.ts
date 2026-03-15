@@ -461,18 +461,19 @@ export async function getRecentPace(
   const row = await db
     .prepare(
       `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages,
-              MIN(substr(started_at, 1, 10)) AS first_date
+              MIN(started_at) AS first_started_at
        FROM sessions
        WHERE type = 'normal'
          AND page_start IS NOT NULL
          AND page_end IS NOT NULL
-         AND substr(started_at, 1, 10) >= ?`,
+         AND started_at >= ?`,
     )
-    .bind(startDate)
-    .first<{ total_pages: number; first_date: string }>();
+    .bind(`${startDate} 00:00:00`)
+    .first<{ total_pages: number; first_started_at: string | null }>();
   if (!row || row.total_pages === 0) return 0;
 
-  const effectiveDays = diffDays(row.first_date, today) + 1;
+  const firstDate = row.first_started_at!.substring(0, 10);
+  const effectiveDays = diffDays(firstDate, today) + 1;
   return row.total_pages / Math.min(days, effectiveDays);
 }
 
