@@ -40,8 +40,8 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
 
   // Auth middleware — restrict to allowed user
   const parsedUserId = Number(allowedUserId);
-  if (!Number.isInteger(parsedUserId)) {
-    throw new Error(`ALLOWED_USER_ID is not a valid integer: "${allowedUserId}"`);
+  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    throw new Error("ALLOWED_USER_ID is not a valid integer");
   }
   bot.use((ctx, next) => {
     if (ctx.from?.id !== parsedUserId) return;

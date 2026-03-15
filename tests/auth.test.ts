@@ -52,4 +52,10 @@ describe("auth middleware", () => {
       "ALLOWED_USER_ID is not a valid integer",
     );
   });
+
+  it("rejects empty ALLOWED_USER_ID", () => {
+    expect(() => createBot("fake-token", {} as D1Database, "")).toThrow(
+      "ALLOWED_USER_ID is not a valid integer",
+    );
+  });
 });
