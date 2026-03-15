@@ -9,7 +9,7 @@ import {
   getTimezone,
   type SessionType,
 } from "../services/db";
-import { formatHistoryLine, formatStats, formatProgress } from "../services/format";
+import { formatHistoryLine, formatStats, formatProgress, formatError } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
 const MSG_NO_SESSION = "Aucune session enregistree.";
@@ -17,29 +17,33 @@ const MSG_NO_SESSION = "Aucune session enregistree.";
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const tz = await getTimezone(ctx.db);
 
-  const [global, week, month, streak] = await Promise.all([
+  const [globalResult, weekResult, monthResult, streak] = await Promise.all([
     getGlobalStats(ctx.db),
     getPeriodStats(ctx.db, "week", tz),
     getPeriodStats(ctx.db, "month", tz),
     calculateStreak(ctx.db, tz),
   ]);
 
+  if (!globalResult.ok) { await ctx.reply(formatError(globalResult.error)); return; }
+  if (!weekResult.ok) { await ctx.reply(formatError(weekResult.error)); return; }
+  if (!monthResult.ok) { await ctx.reply(formatError(monthResult.error)); return; }
+
   const msg = formatStats({
-    totalAyahs: global.totalAyahs,
-    totalSeconds: global.totalSeconds,
+    totalAyahs: globalResult.value.totalAyahs,
+    totalSeconds: globalResult.value.totalSeconds,
     currentStreak: streak.currentStreak,
     bestStreak: streak.bestStreak,
-    weekAyahs: week.ayahs,
-    weekSeconds: week.seconds,
-    monthAyahs: month.ayahs,
-    monthSeconds: month.seconds,
+    weekAyahs: weekResult.value.ayahs,
+    weekSeconds: weekResult.value.seconds,
+    monthAyahs: monthResult.value.ayahs,
+    monthSeconds: monthResult.value.seconds,
   });
 
   await ctx.reply(msg);
 }
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
-  const [global, lastSession] = await Promise.all([
+  const [globalResult, lastSession] = await Promise.all([
     getGlobalStats(ctx.db),
     getLastSession(ctx.db, 'normal'),
   ]);
@@ -49,8 +53,13 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
+  if (!globalResult.ok) {
+    await ctx.reply(formatError(globalResult.error));
+    return;
+  }
+
   let msg = formatProgress({
-    totalAyahsRead: global.totalAyahs,
+    totalAyahsRead: globalResult.value.totalAyahs,
     totalAyahs: TOTAL_AYAH_COUNT,
     lastSurah: lastSession.surahEnd,
     lastAyah: lastSession.ayahEnd,

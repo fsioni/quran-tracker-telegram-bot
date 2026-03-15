@@ -1,4 +1,5 @@
 import { DEFAULT_TZ } from "../config";
+import { ok, err, type Result } from "../types";
 
 // --- Row types (D1 snake_case) ---
 
@@ -164,7 +165,7 @@ export type InsertSessionData = {
 export async function insertSession(
   db: D1Database,
   data: InsertSessionData,
-): Promise<Session> {
+): Promise<Result<Session>> {
   const result = await db
     .prepare(
       `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
@@ -184,7 +185,8 @@ export async function insertSession(
       data.pageEnd ?? null,
     )
     .first<SessionRow>();
-  return mapRow(result!);
+  if (!result) return err("insertSession: D1 returned no row after INSERT");
+  return ok(mapRow(result));
 }
 
 export async function getSessionById(
@@ -288,7 +290,7 @@ export async function getKahfSessionsThisWeek(
 export async function getLastWeekKahfTotal(
   db: D1Database,
   tz: string,
-): Promise<number> {
+): Promise<Result<number>> {
   const today = getTodayInTimezone(tz);
   const lastWeekDay = addDays(today, -7);
   const { start, end } = getWeekBounds(lastWeekDay);
@@ -300,7 +302,8 @@ export async function getLastWeekKahfTotal(
     )
     .bind(start, end)
     .first<{ total: number }>();
-  return row!.total;
+  if (!row) return err("getLastWeekKahfTotal: D1 returned no row for aggregate query");
+  return ok(row.total);
 }
 
 export async function getKahfStats(db: D1Database): Promise<{
@@ -323,7 +326,7 @@ export async function getKahfStats(db: D1Database): Promise<{
 export async function getGlobalStats(
   db: D1Database,
   type?: SessionType,
-): Promise<GlobalStats> {
+): Promise<Result<GlobalStats>> {
   const query = type
     ? `SELECT
         COALESCE(COUNT(*), 0) AS total_sessions,
@@ -348,13 +351,14 @@ export async function getGlobalStats(
     avg_seconds: number;
   }>();
 
-  return {
-    totalSessions: row!.total_sessions,
-    totalAyahs: row!.total_ayahs,
-    totalSeconds: row!.total_seconds,
-    avgAyahsPerSession: Math.round(row!.avg_ayahs),
-    avgSecondsPerSession: Math.round(row!.avg_seconds),
-  };
+  if (!row) return err("getGlobalStats: D1 returned no row for aggregate query");
+  return ok({
+    totalSessions: row.total_sessions,
+    totalAyahs: row.total_ayahs,
+    totalSeconds: row.total_seconds,
+    avgAyahsPerSession: Math.round(row.avg_ayahs),
+    avgSecondsPerSession: Math.round(row.avg_seconds),
+  });
 }
 
 export const getStatsByType = getGlobalStats;
@@ -363,7 +367,7 @@ export async function getPeriodStats(
   db: D1Database,
   period: "week" | "month",
   tz: string,
-): Promise<PeriodStats> {
+): Promise<Result<PeriodStats>> {
   const today = getTodayInTimezone(tz);
   const bounds =
     period === "week" ? getWeekBounds(today) : getMonthBounds(today);
@@ -380,11 +384,8 @@ export async function getPeriodStats(
     .bind(bounds.start, bounds.end)
     .first<{ sessions: number; ayahs: number; seconds: number }>();
 
-  return {
-    sessions: row!.sessions,
-    ayahs: row!.ayahs,
-    seconds: row!.seconds,
-  };
+  if (!row) return err("getPeriodStats: D1 returned no row for aggregate query");
+  return ok(row);
 }
 
 // --- Streak ---
