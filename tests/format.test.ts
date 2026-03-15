@@ -2,12 +2,16 @@ import {
   parseDuration,
   parseRange,
   parseImportLine,
+  parsePage,
   formatDuration,
   formatSessionConfirmation,
   formatHistoryLine,
   formatStats,
   formatProgress,
   formatReminder,
+  formatReadConfirmation,
+  formatKahfPageConfirmation,
+  formatKahfReminder,
   formatError,
 } from "../src/services/format";
 
@@ -228,7 +232,7 @@ describe("formatHistoryLine", () => {
       ayahCount: 7,
     });
     expect(result).toBe(
-      "#42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)",
+      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)",
     );
   });
 
@@ -244,7 +248,7 @@ describe("formatHistoryLine", () => {
       ayahCount: 17,
     });
     expect(result).toBe(
-      "#42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v)",
+      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v)",
     );
   });
 
@@ -260,7 +264,7 @@ describe("formatHistoryLine", () => {
       ayahCount: 7,
     });
     expect(result).toBe(
-      "#1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v)",
+      "[N] #1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v)",
     );
   });
 });
@@ -391,6 +395,230 @@ describe("formatReminder", () => {
       streak: 0,
     });
     expect(result).toContain("C'est le moment de reprendre !");
+  });
+});
+
+// --- parsePage ---
+
+describe("parsePage", () => {
+  it("parses single page: 300", () => {
+    const result = parsePage("300");
+    expect(result).toEqual({ ok: true, value: { pageStart: 300, pageEnd: 300 } });
+  });
+
+  it("parses page range: 300-304", () => {
+    const result = parsePage("300-304");
+    expect(result).toEqual({ ok: true, value: { pageStart: 300, pageEnd: 304 } });
+  });
+
+  it("rejects page 0", () => {
+    const result = parsePage("0");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("page invalide");
+    }
+  });
+
+  it("rejects page 605", () => {
+    const result = parsePage("605");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("page invalide");
+    }
+  });
+
+  it("rejects abc", () => {
+    const result = parsePage("abc");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("format de page invalide");
+    }
+  });
+
+  it("rejects range with end out of bounds: 300-605", () => {
+    const result = parsePage("300-605");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("page invalide");
+    }
+  });
+});
+
+// --- formatReadConfirmation ---
+
+describe("formatReadConfirmation", () => {
+  it("formats single page read", () => {
+    const result = formatReadConfirmation({
+      pageStart: 42,
+      pageEnd: 42,
+      durationSeconds: 300,
+      totalPagesRead: 42,
+      totalPages: 604,
+    });
+    expect(result).toBe("Page 42 lue en 5m (42/604)\nProchaine page : 43");
+  });
+
+  it("formats multi-page read", () => {
+    const result = formatReadConfirmation({
+      pageStart: 42,
+      pageEnd: 44,
+      durationSeconds: 900,
+      totalPagesRead: 44,
+      totalPages: 604,
+    });
+    expect(result).toBe("Pages 42-44 lues en 15m (44/604)\nProchaine page : 45");
+  });
+
+  it("formats last page (604)", () => {
+    const result = formatReadConfirmation({
+      pageStart: 604,
+      pageEnd: 604,
+      durationSeconds: 300,
+      totalPagesRead: 604,
+      totalPages: 604,
+    });
+    expect(result).toBe("Page 604 lue en 5m (604/604)\nCoran termine ! Alhamdulillah !");
+  });
+});
+
+// --- formatKahfPageConfirmation ---
+
+describe("formatKahfPageConfirmation", () => {
+  it("formats in progress (3/12)", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 3,
+      kahfTotal: 12,
+      durationSeconds: 300,
+      weekPagesRead: 3,
+      weekTotalSeconds: 840,
+      isComplete: false,
+    });
+    expect(result).toBe("Al-Kahf page 3/12 lue en 5m\nCette semaine : 3/12 pages, 14m au total");
+  });
+
+  it("formats completion (12/12) without comparisons", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 12,
+      kahfTotal: 12,
+      durationSeconds: 300,
+      weekPagesRead: 12,
+      weekTotalSeconds: 3120,
+      isComplete: true,
+    });
+    expect(result).toBe("Al-Kahf terminee ! 12/12 pages en 52m");
+  });
+
+  it("formats completion with last week comparison (faster)", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 12,
+      kahfTotal: 12,
+      durationSeconds: 300,
+      weekPagesRead: 12,
+      weekTotalSeconds: 3120,
+      isComplete: true,
+      lastWeekTotalSeconds: 3480,
+    });
+    expect(result).toBe(
+      "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 58m (-6m, bravo !)",
+    );
+  });
+
+  it("formats completion with last week comparison (slower)", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 12,
+      kahfTotal: 12,
+      durationSeconds: 300,
+      weekPagesRead: 12,
+      weekTotalSeconds: 3480,
+      isComplete: true,
+      lastWeekTotalSeconds: 3300,
+    });
+    expect(result).toBe(
+      "Al-Kahf terminee ! 12/12 pages en 58m\nSemaine derniere : 55m (+3m)",
+    );
+  });
+
+  it("formats completion with same time as last week", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 12,
+      kahfTotal: 12,
+      durationSeconds: 300,
+      weekPagesRead: 12,
+      weekTotalSeconds: 3120,
+      isComplete: true,
+      lastWeekTotalSeconds: 3120,
+    });
+    expect(result).toBe(
+      "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 52m",
+    );
+  });
+});
+
+// --- formatKahfReminder ---
+
+describe("formatKahfReminder", () => {
+  it("formats with history", () => {
+    const result = formatKahfReminder({
+      lastDate: "2026-03-07 14:00:00",
+      lastDuration: 1500,
+    });
+    expect(result).toBe(
+      "Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.\n\nDerniere lecture : 07/03 en 25m",
+    );
+  });
+
+  it("formats without history", () => {
+    const result = formatKahfReminder({});
+    expect(result).toBe("Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.");
+  });
+});
+
+// --- formatHistoryLine with tags ---
+
+describe("formatHistoryLine with type tags", () => {
+  const baseSession = {
+    id: 42,
+    startedAt: "2026-03-10 13:30:00",
+    durationSeconds: 533,
+    surahStart: 2,
+    ayahStart: 77,
+    surahEnd: 2,
+    ayahEnd: 83,
+    ayahCount: 7,
+  };
+
+  it("formats with [N] tag for normal type", () => {
+    const result = formatHistoryLine({ ...baseSession, type: "normal" });
+    expect(result).toBe("[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+  });
+
+  it("formats with [E] tag for extra type", () => {
+    const result = formatHistoryLine({ ...baseSession, type: "extra" });
+    expect(result).toBe("[E] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+  });
+
+  it("formats with [K] tag for kahf type", () => {
+    const result = formatHistoryLine({ ...baseSession, type: "kahf" });
+    expect(result).toBe("[K] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+  });
+});
+
+// --- formatSessionConfirmation with type ---
+
+describe("formatSessionConfirmation with type", () => {
+  it("formats extra session", () => {
+    const result = formatSessionConfirmation({
+      surahStart: 2,
+      ayahStart: 77,
+      surahEnd: 2,
+      ayahEnd: 83,
+      ayahCount: 7,
+      durationSeconds: 533,
+      type: "extra",
+    });
+    expect(result).toBe(
+      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53",
+    );
   });
 });
 

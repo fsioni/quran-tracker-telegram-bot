@@ -11,10 +11,12 @@ import {
   calculateStreak,
   getTodayInTimezone,
   cleanOldCache,
+  getKahfStats,
+  setConfig,
 } from "./services/db";
 import type { PrayerCacheRow } from "./services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone } from "./services/prayer";
-import { formatReminder } from "./services/format";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderTime } from "./services/prayer";
+import { formatReminder, formatKahfReminder } from "./services/format";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
@@ -88,33 +90,56 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
   const nowHHMM = getNowInTimezone(tz);
   const duePrayers = getDueReminders(cache, nowHHMM);
-  if (duePrayers.length === 0) return;
 
-  const [lastSession, weekStats, streak] = await Promise.all([
-    getLastSession(db),
-    getPeriodStats(db, "week", tz),
-    calculateStreak(db, tz),
-  ]);
+  if (duePrayers.length > 0) {
+    const [lastSession, weekStats, streak] = await Promise.all([
+      getLastSession(db),
+      getPeriodStats(db, "week", tz),
+      calculateStreak(db, tz),
+    ]);
 
-  let message: string;
-  if (lastSession) {
-    message = formatReminder({
-      lastSessionDate: lastSession.startedAt,
-      lastSurahNum: lastSession.surahEnd,
-      lastAyah: lastSession.ayahEnd,
-      weekSessions: weekStats.sessions,
-      weekAyahs: weekStats.ayahs,
-      streak: streak.currentStreak,
-    });
-  } else {
-    message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
+    let message: string;
+    if (lastSession) {
+      message = formatReminder({
+        lastSessionDate: lastSession.startedAt,
+        lastSurahNum: lastSession.surahEnd,
+        lastAyah: lastSession.ayahEnd,
+        weekSessions: weekStats.sessions,
+        weekAyahs: weekStats.ayahs,
+        streak: streak.currentStreak,
+      });
+    } else {
+      message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
+    }
+
+    const sent = await sendTelegramMessage(botToken, chatId, message);
+    if (sent) {
+      for (const prayer of duePrayers) {
+        await markPrayerSent(db, today, prayer);
+      }
+    }
   }
 
-  const sent = await sendTelegramMessage(botToken, chatId, message);
-  if (!sent) return;
+  // Al-Kahf Friday reminder
+  const nowDate = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" });
+  const dayOfWeek = formatter.format(nowDate);
 
-  for (const prayer of duePrayers) {
-    await markPrayerSent(db, today, prayer);
+  if (dayOfWeek === "Friday") {
+    const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
+    if (kahfReminderLast !== today) {
+      if (isReminderTime(nowHHMM, cache.fajr)) {
+        const kahfStats = await getKahfStats(db);
+        const kahfMsg = formatKahfReminder({
+          lastDate: kahfStats.lastDate ?? undefined,
+          lastDuration: kahfStats.lastDuration ?? undefined,
+        });
+        const kahfSent = await sendTelegramMessage(botToken, chatId, kahfMsg);
+        if (kahfSent) {
+          await setConfig(db, "kahf_reminder_last", today);
+        }
+      }
+    }
   }
 }
 

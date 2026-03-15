@@ -2,15 +2,19 @@ CREATE TABLE sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   started_at TEXT NOT NULL,
   duration_seconds INTEGER NOT NULL,
+  page_start INTEGER,
+  page_end INTEGER,
   surah_start INTEGER NOT NULL,
   ayah_start INTEGER NOT NULL,
   surah_end INTEGER NOT NULL,
   ayah_end INTEGER NOT NULL,
   ayah_count INTEGER NOT NULL,
+  type TEXT NOT NULL DEFAULT 'normal',
   created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX idx_sessions_started_at ON sessions(started_at);
+CREATE INDEX idx_sessions_type ON sessions(type);
 
 CREATE TABLE config (
   key TEXT PRIMARY KEY,

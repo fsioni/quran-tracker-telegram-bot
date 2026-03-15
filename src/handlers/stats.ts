@@ -6,15 +6,16 @@ import {
   getLastSession,
   getPeriodStats,
   calculateStreak,
-  getConfig,
+  getTimezone,
+  type SessionType,
 } from "../services/db";
 import { formatHistoryLine, formatStats, formatProgress } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
-import { DEFAULT_TZ } from "../config";
+import { TOTAL_PAGES } from "../data/pages";
 const MSG_NO_SESSION = "Aucune session enregistree.";
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
-  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
+  const tz = await getTimezone(ctx.db);
 
   const [global, week, month, streak] = await Promise.all([
     getGlobalStats(ctx.db),
@@ -40,7 +41,7 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 export async function progressHandler(ctx: CustomContext): Promise<void> {
   const [global, lastSession] = await Promise.all([
     getGlobalStats(ctx.db),
-    getLastSession(ctx.db),
+    getLastSession(ctx.db, 'normal'),
   ]);
 
   if (!lastSession) {
@@ -48,24 +49,32 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const msg = formatProgress({
+  let msg = formatProgress({
     totalAyahsRead: global.totalAyahs,
     totalAyahs: TOTAL_AYAH_COUNT,
     lastSurah: lastSession.surahEnd,
     lastAyah: lastSession.ayahEnd,
   });
 
+  if (lastSession.pageEnd != null) {
+    msg += `\nPage : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
+  }
+
   await ctx.reply(msg);
 }
 
 export async function historyHandler(ctx: CustomContext): Promise<void> {
-  const sessions = await getHistory(ctx.db);
+  const input = ((ctx.match as string) || "").trim().toLowerCase();
+  const validTypes: Record<string, SessionType> = { normal: 'normal', extra: 'extra', kahf: 'kahf' };
+  const typeFilter = validTypes[input];
+
+  const sessions = await getHistory(ctx.db, 10, typeFilter);
 
   if (sessions.length === 0) {
     await ctx.reply(MSG_NO_SESSION);
     return;
   }
 
-  const lines = sessions.map(formatHistoryLine);
+  const lines = sessions.map((s) => formatHistoryLine(s));
   await ctx.reply(lines.join("\n"));
 }
