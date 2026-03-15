@@ -83,8 +83,10 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
 
   if (isComplete) {
-    // Non-critical: fallback to 0 if last week data unavailable
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
+    if (!lastWeekResult.ok) {
+      console.error("getLastWeekKahfTotal failed:", lastWeekResult.error);
+    }
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
 
     await ctx.reply(

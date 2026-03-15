@@ -98,11 +98,12 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
       calculateStreak(db, tz),
     ]);
 
-    if (!weekStatsResult.ok) {
-      console.error("getPeriodStats failed:", weekStatsResult.error);
-      return;
-    }
-    const weekStats = weekStatsResult.value;
+    const weekStats = weekStatsResult.ok
+      ? weekStatsResult.value
+      : (() => {
+          console.error("getPeriodStats failed:", weekStatsResult.error);
+          return { sessions: 0, ayahs: 0, seconds: 0 };
+        })();
 
     let message: string;
     if (lastSession) {
