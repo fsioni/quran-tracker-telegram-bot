@@ -16,6 +16,19 @@ export interface CustomContext extends Context {
   db: D1Database;
 }
 
+export const BOT_COMMANDS = [
+  { command: "start", description: "Demarrer le bot" },
+  { command: "help", description: "Afficher l'aide" },
+  { command: "session", description: "Enregistrer une session de lecture" },
+  { command: "import", description: "Importer des sessions" },
+  { command: "history", description: "Historique des sessions" },
+  { command: "stats", description: "Statistiques de lecture" },
+  { command: "progress", description: "Progression dans le Coran" },
+  { command: "undo", description: "Annuler la derniere session" },
+  { command: "delete", description: "Supprimer une session" },
+  { command: "config", description: "Configurer ville, pays, fuseau horaire" },
+];
+
 export function createBot(token: string, db: D1Database): Bot<CustomContext> {
   const bot = new Bot<CustomContext>(token);
 
