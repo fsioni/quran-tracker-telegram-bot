@@ -1,5 +1,6 @@
 import { Result, ok, err } from "../types";
 import { getSurah } from "../data/surahs";
+import { TOTAL_PAGES } from "../data/pages";
 
 export type ParsedRange = {
   surahStart: number;
@@ -117,6 +118,35 @@ export function parseImportLine(
   });
 }
 
+export function parsePage(input: string): Result<{ pageStart: number; pageEnd: number }> {
+  const rangeMatch = input.match(/^(\d+)-(\d+)$/);
+  if (rangeMatch) {
+    const pageStart = parseInt(rangeMatch[1], 10);
+    const pageEnd = parseInt(rangeMatch[2], 10);
+    if (pageStart < 1 || pageStart > TOTAL_PAGES) {
+      return err(`page invalide '${pageStart}'. Les pages vont de 1 a ${TOTAL_PAGES}`);
+    }
+    if (pageEnd < 1 || pageEnd > TOTAL_PAGES) {
+      return err(`page invalide '${pageEnd}'. Les pages vont de 1 a ${TOTAL_PAGES}`);
+    }
+    if (pageStart > pageEnd) {
+      return err(`page de debut (${pageStart}) doit etre inferieure ou egale a la page de fin (${pageEnd})`);
+    }
+    return ok({ pageStart, pageEnd });
+  }
+
+  const singleMatch = input.match(/^(\d+)$/);
+  if (singleMatch) {
+    const page = parseInt(singleMatch[1], 10);
+    if (page < 1 || page > TOTAL_PAGES) {
+      return err(`page invalide '${page}'. Les pages vont de 1 a ${TOTAL_PAGES}`);
+    }
+    return ok({ pageStart: page, pageEnd: page });
+  }
+
+  return err(`format de page invalide '${input}'. Utilise 300 ou 300-304`);
+}
+
 // --- Formatting functions ---
 
 export function formatRange(
@@ -151,16 +181,18 @@ export function formatSessionConfirmation(session: {
   ayahEnd: number;
   ayahCount: number;
   durationSeconds: number;
+  type?: "normal" | "extra";
 }): string {
   const startName = getSurah(session.surahStart)?.nameFr ?? `Sourate ${session.surahStart}`;
   const endName = getSurah(session.surahEnd)?.nameFr ?? `Sourate ${session.surahEnd}`;
   const duration = formatDuration(session.durationSeconds);
+  const prefix = session.type === "extra" ? "Session extra enregistree :" : "Session enregistree :";
 
   if (session.surahStart === session.surahEnd) {
-    return `Session enregistree : sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+    return `${prefix} sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
   }
 
-  return `Session enregistree : sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+  return `${prefix} sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
 }
 
 export function formatHistoryLine(session: {
@@ -172,6 +204,7 @@ export function formatHistoryLine(session: {
   surahEnd: number;
   ayahEnd: number;
   ayahCount: number;
+  type?: "normal" | "extra" | "kahf";
 }): string {
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
   const s = session.startedAt;
@@ -182,7 +215,12 @@ export function formatHistoryLine(session: {
   const duration = formatDuration(session.durationSeconds);
 
   const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
-  return `#${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
+
+  const t = session.type ?? "normal";
+  const tagMap = { normal: "[N]", extra: "[E]", kahf: "[K]" } as const;
+  const tag = tagMap[t];
+
+  return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
 }
 
 export function formatStats(data: {
@@ -260,6 +298,89 @@ export function formatReminder(data: {
     "",
     closing,
   ].join("\n");
+}
+
+export function formatReadConfirmation(data: {
+  pageStart: number;
+  pageEnd: number;
+  durationSeconds: number;
+  totalPagesRead: number;
+  totalPages: number;
+}): string {
+  const duration = formatDuration(data.durationSeconds);
+  const isLastPage = data.pageEnd === TOTAL_PAGES;
+
+  if (data.pageStart === data.pageEnd) {
+    const line1 = `Page ${data.pageStart} lue en ${duration} (${data.totalPagesRead}/${data.totalPages})`;
+    if (isLastPage) {
+      return `${line1}\nCoran termine ! Alhamdulillah !`;
+    }
+    return `${line1}\nProchaine page : ${data.pageEnd + 1}`;
+  }
+
+  const line1 = `Pages ${data.pageStart}-${data.pageEnd} lues en ${duration} (${data.totalPagesRead}/${data.totalPages})`;
+  if (isLastPage) {
+    return `${line1}\nCoran termine ! Alhamdulillah !`;
+  }
+  return `${line1}\nProchaine page : ${data.pageEnd + 1}`;
+}
+
+export function formatKahfPageConfirmation(data: {
+  kahfPage: number;
+  kahfTotal: number;
+  durationSeconds: number;
+  weekPagesRead: number;
+  weekTotalSeconds: number;
+  isComplete: boolean;
+  lastWeekTotalSeconds?: number;
+  bestTotalDuration?: number;
+}): string {
+  const duration = formatDuration(data.durationSeconds);
+
+  if (!data.isComplete) {
+    const weekDuration = formatDuration(data.weekTotalSeconds);
+    return `Al-Kahf page ${data.kahfPage}/${data.kahfTotal} lue en ${duration}\nCette semaine : ${data.weekPagesRead}/${data.kahfTotal} pages, ${weekDuration} au total`;
+  }
+
+  const weekDuration = formatDuration(data.weekTotalSeconds);
+  const lines: string[] = [
+    `Al-Kahf terminee ! ${data.kahfPage}/${data.kahfTotal} pages en ${weekDuration}`,
+  ];
+
+  if (data.lastWeekTotalSeconds !== undefined) {
+    const lastWeekDuration = formatDuration(data.lastWeekTotalSeconds);
+    const diff = data.weekTotalSeconds - data.lastWeekTotalSeconds;
+    if (diff < 0) {
+      const absDiff = formatDuration(Math.abs(diff));
+      lines.push(`Semaine derniere : ${lastWeekDuration} (-${absDiff}, bravo !)`);
+    } else if (diff > 0) {
+      const absDiff = formatDuration(diff);
+      lines.push(`Semaine derniere : ${lastWeekDuration} (+${absDiff})`);
+    } else {
+      lines.push(`Semaine derniere : ${lastWeekDuration}`);
+    }
+  }
+
+  if (data.bestTotalDuration !== undefined) {
+    const bestDuration = formatDuration(data.bestTotalDuration);
+    lines.push(`Meilleur temps : ${bestDuration}`);
+  }
+
+  return lines.join("\n");
+}
+
+export function formatKahfReminder(data: {
+  lastDate?: string;
+  lastDuration?: number;
+}): string {
+  const base = "Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.";
+  if (data.lastDate !== undefined && data.lastDuration !== undefined) {
+    const day = data.lastDate.substring(8, 10);
+    const month = data.lastDate.substring(5, 7);
+    const duration = formatDuration(data.lastDuration);
+    return `${base}\n\nDerniere lecture : ${day}/${month} en ${duration}`;
+  }
+  return base;
 }
 
 export function formatError(description: string, example?: string): string {
