@@ -57,6 +57,27 @@ export function validateRange(
   return ok(true);
 }
 
+export function getCompletedSurahs(
+  surahStart: number,
+  ayahStart: number,
+  surahEnd: number,
+  ayahEnd: number,
+): Surah[] {
+  const completed: Surah[] = [];
+
+  for (let s = surahStart; s <= surahEnd; s++) {
+    const surah = SURAHS[s - 1];
+    const startsAtBeginning = s === surahStart ? ayahStart === 1 : true;
+    const endsAtEnd = s === surahEnd ? ayahEnd === surah.ayahCount : true;
+
+    if (startsAtBeginning && endsAtEnd) {
+      completed.push(surah);
+    }
+  }
+
+  return completed;
+}
+
 export function calculateAyahCount(
   surahStart: number,
   ayahStart: number,

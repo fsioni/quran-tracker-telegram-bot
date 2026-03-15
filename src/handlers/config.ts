@@ -6,6 +6,8 @@ import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 export const WELCOME_MESSAGE = `Bienvenue sur le Quran Reading Tracker !
 
 Commandes disponibles :
+/go - Demarrer un timer de lecture
+/stop - Arreter le timer
 /read - Lire la prochaine page
 /session - Enregistrer une session de lecture
 /extra - Enregistrer une lecture extra

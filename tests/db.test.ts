@@ -27,6 +27,8 @@ import {
   getLastWeekKahfTotal,
   getKahfStats,
   getRecentPace,
+  insertKhatma,
+  getKhatmaCount,
 } from "../src/services/db";
 import type { PrayerTimes, SessionType } from "../src/services/db";
 import type { Result } from "../src/types";
@@ -757,5 +759,29 @@ describe("cleanOldCache", () => {
     expect(await getPrayerCache(db, "2026-03-01")).toBeNull();
     expect(await getPrayerCache(db, "2026-03-10")).not.toBeNull();
     expect(await getPrayerCache(db, "2026-03-14")).not.toBeNull();
+  });
+});
+
+// --- insertKhatma / getKhatmaCount ---
+
+describe("insertKhatma / getKhatmaCount", () => {
+  it("inserts a khatma and returns id and completedAt", async () => {
+    const khatma = await insertKhatma(db, "2026-03-15 14:00:00");
+    expect(khatma.id).toBe(1);
+    expect(khatma.completedAt).toBe("2026-03-15 14:00:00");
+  });
+
+  it("returns 0 when no khatmas exist", async () => {
+    const count = await getKhatmaCount(db);
+    expect(count).toBe(0);
+  });
+
+  it("returns correct count after multiple inserts", async () => {
+    await insertKhatma(db, "2026-03-10 14:00:00");
+    await insertKhatma(db, "2026-03-15 14:00:00");
+    await insertKhatma(db, "2026-03-20 14:00:00");
+
+    const count = await getKhatmaCount(db);
+    expect(count).toBe(3);
   });
 });

@@ -18,6 +18,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getLastSession: vi.fn(),
     getRecentPace: vi.fn(),
     getTodayInTimezone: vi.fn(),
+    getKhatmaCount: vi.fn(),
   };
 });
 
@@ -31,6 +32,7 @@ import {
   getLastSession,
   getRecentPace,
   getTodayInTimezone,
+  getKhatmaCount,
 } from "../../src/services/db";
 
 function makeCtx(match = ""): CustomContext {
@@ -191,6 +193,7 @@ describe("progressHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
     vi.mocked(getRecentPace).mockResolvedValue(0);
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
   it("affiche la progression avec barre et dernier point", async () => {
@@ -351,7 +354,6 @@ describe("progressHandler", () => {
       avgAyahsPerSession: 7, avgSecondsPerSession: 533,
     }});
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
-    vi.mocked(getRecentPace).mockResolvedValue(2.0);
 
     const ctx = makeCtx();
     await progressHandler(ctx);
@@ -359,5 +361,35 @@ describe("progressHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).not.toContain("rythme");
     expect(msg).not.toContain("finiras");
+  });
+
+  it("affiche le nombre de khatmas quand > 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+    vi.mocked(getKhatmaCount).mockResolvedValue(2);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Khatmas : 2");
+  });
+
+  it("n'affiche pas les khatmas quand 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
+      avgAyahsPerSession: 7, avgSecondsPerSession: 533,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("Khatmas");
   });
 });

@@ -3,6 +3,7 @@ import {
   validateAyah,
   validateRange,
   calculateAyahCount,
+  getCompletedSurahs,
 } from "../src/services/quran";
 
 describe("validateSurah", () => {
@@ -178,5 +179,40 @@ describe("calculateAyahCount", () => {
 
   it("returns full surah count for complete surah 2 (2:1-2:286)", () => {
     expect(calculateAyahCount(2, 1, 2, 286)).toBe(286);
+  });
+});
+
+// --- getCompletedSurahs ---
+
+describe("getCompletedSurahs", () => {
+  it("returns [Al-Fatiha] for 1:1-1:7", () => {
+    const result = getCompletedSurahs(1, 1, 1, 7);
+    expect(result).toHaveLength(1);
+    expect(result[0].number).toBe(1);
+  });
+
+  it("returns [] for 2:100-2:150 (incomplete surah)", () => {
+    const result = getCompletedSurahs(2, 100, 2, 150);
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns [Al-Ikhlas, Al-Falaq, An-Nas] for 112:1-114:6", () => {
+    const result = getCompletedSurahs(112, 1, 114, 6);
+    expect(result).toHaveLength(3);
+    expect(result[0].number).toBe(112);
+    expect(result[1].number).toBe(113);
+    expect(result[2].number).toBe(114);
+  });
+
+  it("returns [] for 2:280-3:10 (neither surah complete)", () => {
+    const result = getCompletedSurahs(2, 280, 3, 10);
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns [Al-Fatiha, Al-Baqara] for 1:1-2:286", () => {
+    const result = getCompletedSurahs(1, 1, 2, 286);
+    expect(result).toHaveLength(2);
+    expect(result[0].number).toBe(1);
+    expect(result[1].number).toBe(2);
   });
 });

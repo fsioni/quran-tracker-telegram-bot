@@ -13,6 +13,8 @@ import {
   formatKahfPageConfirmation,
   formatKahfReminder,
   formatEstimation,
+  formatKhatmaMessage,
+  formatSurahsComplete,
   formatError,
 } from "../src/services/format";
 
@@ -662,5 +664,77 @@ describe("formatError", () => {
 
   it("formats error without example", () => {
     expect(formatError("description ici")).toBe("Erreur : description ici");
+  });
+});
+
+// --- formatKhatmaMessage ---
+
+describe("formatKhatmaMessage", () => {
+  it("formats first khatma", () => {
+    expect(formatKhatmaMessage(1)).toBe(
+      "Khatma ! Tu as termine ta premiere lecture complete du Coran. Alhamdulillah !",
+    );
+  });
+
+  it("formats second khatma", () => {
+    expect(formatKhatmaMessage(2)).toBe(
+      "Khatma ! Tu as termine ta 2e lecture complete du Coran. Alhamdulillah !",
+    );
+  });
+});
+
+// --- formatSurahsComplete ---
+
+describe("formatSurahsComplete", () => {
+  it("formats single surah", () => {
+    expect(formatSurahsComplete([{ number: 2, nameFr: "Al-Baqara" }])).toBe(
+      "Sourate Al-Baqara (2) terminee !",
+    );
+  });
+
+  it("formats multiple surahs", () => {
+    expect(
+      formatSurahsComplete([
+        { number: 112, nameFr: "Al-Ikhlas" },
+        { number: 113, nameFr: "Al-Falaq" },
+        { number: 114, nameFr: "An-Nas" },
+      ]),
+    ).toBe("Sourates terminees : Al-Ikhlas (112), Al-Falaq (113), An-Nas (114)");
+  });
+});
+
+// --- formatProgress with khatmaCount ---
+
+describe("formatProgress with khatmaCount", () => {
+  it("affiche le nombre de khatmas quand > 0", () => {
+    const result = formatProgress({
+      totalAyahsRead: 342,
+      totalAyahs: 6236,
+      lastSurah: 3,
+      lastAyah: 10,
+      khatmaCount: 2,
+    });
+    expect(result).toContain("Khatmas : 2");
+  });
+
+  it("n'affiche pas la ligne khatmas quand 0", () => {
+    const result = formatProgress({
+      totalAyahsRead: 342,
+      totalAyahs: 6236,
+      lastSurah: 3,
+      lastAyah: 10,
+      khatmaCount: 0,
+    });
+    expect(result).not.toContain("Khatmas");
+  });
+
+  it("n'affiche pas la ligne khatmas quand non fourni", () => {
+    const result = formatProgress({
+      totalAyahsRead: 342,
+      totalAyahs: 6236,
+      lastSurah: 3,
+      lastAyah: 10,
+    });
+    expect(result).not.toContain("Khatmas");
   });
 });

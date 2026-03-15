@@ -9,6 +9,7 @@ import {
   getTimezone,
   getRecentPace,
   getTodayInTimezone,
+  getKhatmaCount,
   type SessionType,
 } from "../services/db";
 import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError } from "../services/format";
@@ -45,10 +46,11 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 }
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
-  const [globalResult, lastSession, tz] = await Promise.all([
+  const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
     getGlobalStats(ctx.db),
     getLastSession(ctx.db, 'normal'),
     getTimezone(ctx.db),
+    getKhatmaCount(ctx.db),
   ]);
 
   if (!lastSession) {
@@ -66,6 +68,7 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     totalAyahs: TOTAL_AYAH_COUNT,
     lastSurah: lastSession.surahEnd,
     lastAyah: lastSession.ayahEnd,
+    khatmaCount,
   });
 
   if (lastSession.pageEnd != null) {
