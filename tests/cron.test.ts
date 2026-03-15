@@ -13,6 +13,8 @@ vi.mock("../src/services/db", async (importOriginal) => {
     calculateStreak: vi.fn(),
     getTodayInTimezone: vi.fn(),
     cleanOldCache: vi.fn(),
+    getKahfStats: vi.fn(),
+    setConfig: vi.fn(),
   };
 });
 
@@ -23,12 +25,13 @@ vi.mock("../src/services/prayer", async (importOriginal) => {
     fetchPrayerTimes: vi.fn(),
     getDueReminders: vi.fn(),
     getNowInTimezone: vi.fn(),
+    isReminderTime: vi.fn(),
   };
 });
 
 vi.mock("../src/services/format", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/services/format")>();
-  return { ...actual, formatReminder: vi.fn() };
+  return { ...actual, formatReminder: vi.fn(), formatKahfReminder: vi.fn() };
 });
 
 import { handleScheduled } from "../src/index";
@@ -42,9 +45,11 @@ import {
   calculateStreak,
   getTodayInTimezone,
   cleanOldCache,
+  getKahfStats,
+  setConfig,
 } from "../src/services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone } from "../src/services/prayer";
-import { formatReminder } from "../src/services/format";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderTime } from "../src/services/prayer";
+import { formatReminder, formatKahfReminder } from "../src/services/format";
 
 describe("handleScheduled", () => {
   const db = {} as D1Database;
@@ -247,5 +252,174 @@ describe("handleScheduled", () => {
         body: expect.stringContaining("Aucune session"),
       }),
     );
+  });
+
+  describe("Al-Kahf Friday reminder", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("envoie le rappel Al-Kahf le vendredi apres Fajr", async () => {
+      // 2026-03-13 is a Friday
+      vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "America/Cancun";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        if (key === "kahf_reminder_last") return null;
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-13",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        fetched_at: "2026-03-13",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("05:42");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+      vi.mocked(isReminderTime).mockReturnValue(true);
+      vi.mocked(getKahfStats).mockResolvedValue({ lastDuration: null, lastDate: null });
+      vi.mocked(formatKahfReminder).mockReturnValue("Rappel Al-Kahf");
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatKahfReminder).toHaveBeenCalledWith({
+        lastDate: undefined,
+        lastDuration: undefined,
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.telegram.org/botTOKEN/sendMessage",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ chat_id: "123", text: "Rappel Al-Kahf" }),
+        }),
+      );
+      expect(setConfig).toHaveBeenCalledWith(db, "kahf_reminder_last", "2026-03-13");
+    });
+
+    it("pas de rappel Al-Kahf en dehors du vendredi", async () => {
+      // 2026-03-11 is a Wednesday
+      vi.setSystemTime(new Date("2026-03-11T12:00:00Z"));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "America/Cancun";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-11",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        fetched_at: "2026-03-11",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("05:42");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatKahfReminder).not.toHaveBeenCalled();
+    });
+
+    it("pas de double rappel Al-Kahf le meme vendredi", async () => {
+      // 2026-03-13 is a Friday
+      vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "America/Cancun";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        if (key === "kahf_reminder_last") return "2026-03-13";
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-13",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        fetched_at: "2026-03-13",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("05:42");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatKahfReminder).not.toHaveBeenCalled();
+    });
+
+    it("rappel Al-Kahf inclut infos derniere lecture si disponibles", async () => {
+      // 2026-03-13 is a Friday
+      vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "America/Cancun";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        if (key === "kahf_reminder_last") return null;
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-13",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        fetched_at: "2026-03-13",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("05:42");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+      vi.mocked(isReminderTime).mockReturnValue(true);
+      vi.mocked(getKahfStats).mockResolvedValue({ lastDuration: 1500, lastDate: "2026-03-07" });
+      vi.mocked(formatKahfReminder).mockReturnValue("Rappel Al-Kahf avec stats");
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatKahfReminder).toHaveBeenCalledWith({
+        lastDate: "2026-03-07",
+        lastDuration: 1500,
+      });
+    });
   });
 });

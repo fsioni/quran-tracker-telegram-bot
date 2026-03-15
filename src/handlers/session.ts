@@ -7,8 +7,7 @@ import {
   formatError,
 } from "../services/format";
 import { validateRange, calculateAyahCount } from "../services/quran";
-import { insertSession, getConfig } from "../services/db";
-import { DEFAULT_TZ } from "../config";
+import { insertSession, getTimezone, getNowTimestamp } from "../services/db";
 
 export async function sessionHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
@@ -42,11 +41,8 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
   }
 
   const ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
-  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
-  const now = new Date()
-    .toLocaleString("sv-SE", { timeZone: tz })
-    .replace("T", " ")
-    .substring(0, 19);
+  const tz = await getTimezone(ctx.db);
+  const now = getNowTimestamp(tz);
 
   const session = await insertSession(ctx.db, {
     startedAt: now,
@@ -56,6 +52,7 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     surahEnd,
     ayahEnd,
     ayahCount,
+    type: 'normal',
   });
 
   await ctx.reply(formatSessionConfirmation(session));

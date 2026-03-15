@@ -6,7 +6,10 @@ import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 export const WELCOME_MESSAGE = `Bienvenue sur le Quran Reading Tracker !
 
 Commandes disponibles :
+/read - Lire la prochaine page
 /session - Enregistrer une session de lecture
+/extra - Enregistrer une lecture extra
+/kahf - Lire sourate Al-Kahf (vendredi)
 /import - Importer des sessions
 /history - Historique des sessions
 /stats - Statistiques de lecture

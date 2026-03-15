@@ -88,4 +88,36 @@ describe("importHandler", () => {
     expect(msg).toContain("Ligne 1");
     expect(msg).toContain("n'existe pas");
   });
+
+  it("importe avec type 'extra' quand la premiere ligne est 'extra'", async () => {
+    const ctx = createMockContext("extra\n10/03, 13h30 - 8m53 - 2:77-83");
+    await importHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("1 session importee");
+    expect(ctx.db.batch).toHaveBeenCalled();
+  });
+
+  it("importe avec type 'normal' par defaut (pas de prefixe extra)", async () => {
+    const ctx = createMockContext("10/03, 13h30 - 8m53 - 2:77-83");
+    await importHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("1 session importee");
+  });
+
+  it("rapporte les numeros de ligne originaux avec prefixe extra", async () => {
+    const ctx = createMockContext("extra\ninvalid line\n10/03, 13h30 - 8m53 - 2:77-83");
+    await importHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Ligne 2");
+    expect(msg).not.toContain("Ligne 1");
+  });
+
+  it("importe plusieurs lignes avec type 'extra'", async () => {
+    const ctx = createMockContext(
+      "extra\n10/03, 13h30 - 8m53 - 2:77-83\n09/03, 20h15 - 12m10 - 2:60-76",
+    );
+    await importHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("2 sessions importees");
+  });
 });

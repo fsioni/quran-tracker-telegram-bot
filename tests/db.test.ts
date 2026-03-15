@@ -7,6 +7,7 @@ import {
   insertBatch,
   getHistory,
   getGlobalStats,
+  getStatsByType,
   getPeriodStats,
   calculateStreak,
   getConfig,
@@ -19,12 +20,16 @@ import {
   addDays,
   getWeekBounds,
   getMonthBounds,
+  getKahfSessionsThisWeek,
+  getLastWeekKahfTotal,
+  getKahfStats,
 } from "../src/services/db";
-import type { PrayerTimes } from "../src/services/db";
+import type { PrayerTimes, SessionType } from "../src/services/db";
 
 const SCHEMA_STATEMENTS = [
-  "CREATE TABLE sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, duration_seconds INTEGER NOT NULL, surah_start INTEGER NOT NULL, ayah_start INTEGER NOT NULL, surah_end INTEGER NOT NULL, ayah_end INTEGER NOT NULL, ayah_count INTEGER NOT NULL, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, duration_seconds INTEGER NOT NULL, page_start INTEGER, page_end INTEGER, surah_start INTEGER NOT NULL, ayah_start INTEGER NOT NULL, surah_end INTEGER NOT NULL, ayah_end INTEGER NOT NULL, ayah_count INTEGER NOT NULL, type TEXT NOT NULL DEFAULT 'normal', created_at TEXT DEFAULT (datetime('now')))",
   "CREATE INDEX idx_sessions_started_at ON sessions(started_at)",
+  "CREATE INDEX idx_sessions_type ON sessions(type)",
   "CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
   "INSERT INTO config (key, value) VALUES ('city', 'Playa del Carmen')",
   "INSERT INTO config (key, value) VALUES ('country', 'MX')",
@@ -69,6 +74,9 @@ function makeSession(overrides: Partial<{
   surahEnd: number;
   ayahEnd: number;
   ayahCount: number;
+  type: SessionType;
+  pageStart: number;
+  pageEnd: number;
 }> = {}) {
   return {
     startedAt: "2026-03-10 13:30:00",
@@ -95,6 +103,9 @@ describe("insertSession", () => {
     expect(session.surahEnd).toBe(2);
     expect(session.ayahEnd).toBe(83);
     expect(session.ayahCount).toBe(7);
+    expect(session.type).toBe("normal");
+    expect(session.pageStart).toBeNull();
+    expect(session.pageEnd).toBeNull();
     expect(session.createdAt).toBeDefined();
   });
 
@@ -103,6 +114,32 @@ describe("insertSession", () => {
     const s2 = await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" }));
     expect(s1.id).toBe(1);
     expect(s2.id).toBe(2);
+  });
+
+  it("stores type normal/extra/kahf correctly", async () => {
+    const s1 = await insertSession(db, makeSession({ type: "normal" }));
+    const s2 = await insertSession(db, makeSession({ type: "extra", startedAt: "2026-03-11 10:00:00" }));
+    const s3 = await insertSession(db, makeSession({ type: "kahf", startedAt: "2026-03-12 10:00:00" }));
+    expect(s1.type).toBe("normal");
+    expect(s2.type).toBe("extra");
+    expect(s3.type).toBe("kahf");
+  });
+
+  it("defaults type to normal when not provided", async () => {
+    const session = await insertSession(db, makeSession());
+    expect(session.type).toBe("normal");
+  });
+
+  it("stores pageStart and pageEnd correctly", async () => {
+    const session = await insertSession(db, makeSession({ pageStart: 5, pageEnd: 7 }));
+    expect(session.pageStart).toBe(5);
+    expect(session.pageEnd).toBe(7);
+  });
+
+  it("sets pageStart and pageEnd to null when not provided", async () => {
+    const session = await insertSession(db, makeSession());
+    expect(session.pageStart).toBeNull();
+    expect(session.pageEnd).toBeNull();
   });
 });
 
@@ -139,6 +176,32 @@ describe("getLastSession", () => {
   it("returns null when no sessions exist", async () => {
     const last = await getLastSession(db);
     expect(last).toBeNull();
+  });
+
+  it("filters by type when provided", async () => {
+    await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-10 10:00:00", type: "kahf" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "extra" }));
+
+    const lastKahf = await getLastSession(db, "kahf");
+    expect(lastKahf).not.toBeNull();
+    expect(lastKahf!.startedAt).toBe("2026-03-10 10:00:00");
+    expect(lastKahf!.type).toBe("kahf");
+
+    const lastExtra = await getLastSession(db, "extra");
+    expect(lastExtra).not.toBeNull();
+    expect(lastExtra!.startedAt).toBe("2026-03-09 10:00:00");
+    expect(lastExtra!.type).toBe("extra");
+  });
+
+  it("returns all types when type is not provided", async () => {
+    await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "kahf" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" }));
+
+    const last = await getLastSession(db);
+    expect(last).not.toBeNull();
+    expect(last!.startedAt).toBe("2026-03-11 10:00:00");
+    expect(last!.type).toBe("normal");
   });
 });
 
@@ -215,6 +278,135 @@ describe("getHistory", () => {
   it("returns empty array when no sessions exist", async () => {
     const history = await getHistory(db);
     expect(history).toEqual([]);
+  });
+
+  it("filters by type when provided", async () => {
+    await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-12 08:00:00", type: "kahf" }));
+
+    const kahfHistory = await getHistory(db, 10, "kahf");
+    expect(kahfHistory).toHaveLength(2);
+    expect(kahfHistory.every((s) => s.type === "kahf")).toBe(true);
+  });
+
+  it("returns all types when type is not provided", async () => {
+    await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" }));
+
+    const allHistory = await getHistory(db);
+    expect(allHistory).toHaveLength(3);
+  });
+});
+
+// --- getKahfSessionsThisWeek ---
+
+describe("getKahfSessionsThisWeek", () => {
+  it("returns only kahf sessions from the current week", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    const { start } = getWeekBounds(today);
+
+    await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" }));
+    await insertSession(db, makeSession({ startedAt: `${start} 14:00:00`, type: "normal" }));
+    await insertSession(db, makeSession({ startedAt: `${start} 18:00:00`, type: "kahf" }));
+
+    const kahfSessions = await getKahfSessionsThisWeek(db, "America/Cancun");
+    expect(kahfSessions).toHaveLength(2);
+    expect(kahfSessions.every((s) => s.type === "kahf")).toBe(true);
+  });
+
+  it("excludes sessions from other weeks", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    const { start } = getWeekBounds(today);
+
+    // This week
+    await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" }));
+    // Far in the past
+    await insertSession(db, makeSession({ startedAt: "2020-01-06 10:00:00", type: "kahf" }));
+
+    const kahfSessions = await getKahfSessionsThisWeek(db, "America/Cancun");
+    expect(kahfSessions).toHaveLength(1);
+    expect(kahfSessions[0].startedAt).toBe(`${start} 10:00:00`);
+  });
+});
+
+// --- getLastWeekKahfTotal ---
+
+describe("getLastWeekKahfTotal", () => {
+  it("returns sum of durations from last week kahf sessions", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    const lastWeekDay = addDays(today, -7);
+    const { start } = getWeekBounds(lastWeekDay);
+
+    await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf", durationSeconds: 300 }));
+    await insertSession(db, makeSession({ startedAt: `${start} 14:00:00`, type: "kahf", durationSeconds: 200 }));
+    // Normal session last week (should not count)
+    await insertSession(db, makeSession({ startedAt: `${start} 18:00:00`, type: "normal", durationSeconds: 1000 }));
+
+    const total = await getLastWeekKahfTotal(db, "America/Cancun");
+    expect(total).toBe(500);
+  });
+
+  it("returns 0 when no kahf sessions last week", async () => {
+    const total = await getLastWeekKahfTotal(db, "America/Cancun");
+    expect(total).toBe(0);
+  });
+});
+
+// --- getKahfStats ---
+
+describe("getKahfStats", () => {
+  it("returns last kahf session duration and date", async () => {
+    await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "kahf", durationSeconds: 300 }));
+    await insertSession(db, makeSession({ startedAt: "2026-03-11 14:00:00", type: "kahf", durationSeconds: 450 }));
+
+    const stats = await getKahfStats(db);
+    expect(stats.lastDuration).toBe(450);
+    expect(stats.lastDate).toBe("2026-03-11");
+  });
+
+  it("returns nulls when no kahf sessions exist", async () => {
+    // Insert a normal session to make sure it's ignored
+    await insertSession(db, makeSession({ type: "normal" }));
+
+    const stats = await getKahfStats(db);
+    expect(stats.lastDuration).toBeNull();
+    expect(stats.lastDate).toBeNull();
+  });
+});
+
+// --- getStatsByType ---
+
+describe("getStatsByType", () => {
+  it("returns stats filtered by type", async () => {
+    await insertSession(db, makeSession({ type: "kahf", ayahCount: 10, durationSeconds: 300 }));
+    await insertSession(db, makeSession({ type: "kahf", ayahCount: 20, durationSeconds: 600, startedAt: "2026-03-11 10:00:00" }));
+    await insertSession(db, makeSession({ type: "normal", ayahCount: 50, durationSeconds: 1000, startedAt: "2026-03-12 10:00:00" }));
+
+    const kahfStats = await getStatsByType(db, "kahf");
+    expect(kahfStats.totalSessions).toBe(2);
+    expect(kahfStats.totalAyahs).toBe(30);
+    expect(kahfStats.totalSeconds).toBe(900);
+    expect(kahfStats.avgAyahsPerSession).toBe(15);
+    expect(kahfStats.avgSecondsPerSession).toBe(450);
+
+    const normalStats = await getStatsByType(db, "normal");
+    expect(normalStats.totalSessions).toBe(1);
+    expect(normalStats.totalAyahs).toBe(50);
+    expect(normalStats.totalSeconds).toBe(1000);
+  });
+
+  it("returns zeros when no sessions of that type exist", async () => {
+    await insertSession(db, makeSession({ type: "normal" }));
+
+    const extraStats = await getStatsByType(db, "extra");
+    expect(extraStats.totalSessions).toBe(0);
+    expect(extraStats.totalAyahs).toBe(0);
+    expect(extraStats.totalSeconds).toBe(0);
+    expect(extraStats.avgAyahsPerSession).toBe(0);
+    expect(extraStats.avgSecondsPerSession).toBe(0);
   });
 });
 

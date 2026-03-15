@@ -1,14 +1,21 @@
+import { DEFAULT_TZ } from "../config";
+
 // --- Row types (D1 snake_case) ---
+
+export type SessionType = 'normal' | 'extra' | 'kahf';
 
 type SessionRow = {
   id: number;
   started_at: string;
   duration_seconds: number;
+  page_start: number | null;
+  page_end: number | null;
   surah_start: number;
   ayah_start: number;
   surah_end: number;
   ayah_end: number;
   ayah_count: number;
+  type: string;
   created_at: string;
 };
 
@@ -18,11 +25,14 @@ export type Session = {
   id: number;
   startedAt: string;
   durationSeconds: number;
+  pageStart: number | null;
+  pageEnd: number | null;
   surahStart: number;
   ayahStart: number;
   surahEnd: number;
   ayahEnd: number;
   ayahCount: number;
+  type: SessionType;
   createdAt: string;
 };
 
@@ -72,11 +82,14 @@ function mapRow(row: SessionRow): Session {
     id: row.id,
     startedAt: row.started_at,
     durationSeconds: row.duration_seconds,
+    pageStart: row.page_start,
+    pageEnd: row.page_end,
     surahStart: row.surah_start,
     ayahStart: row.ayah_start,
     surahEnd: row.surah_end,
     ayahEnd: row.ayah_end,
     ayahCount: row.ayah_count,
+    type: row.type as SessionType,
     createdAt: row.created_at,
   };
 }
@@ -90,6 +103,17 @@ export function getTodayInTimezone(tz: string): string {
     day: "2-digit",
   });
   return formatter.format(now);
+}
+
+export function getNowTimestamp(tz: string): string {
+  return new Date()
+    .toLocaleString("sv-SE", { timeZone: tz })
+    .replace("T", " ")
+    .substring(0, 19);
+}
+
+export async function getTimezone(db: D1Database): Promise<string> {
+  return (await getConfig(db, "timezone")) ?? DEFAULT_TZ;
 }
 
 export function addDays(dateStr: string, n: number): string {
@@ -130,6 +154,9 @@ export type InsertSessionData = {
   surahEnd: number;
   ayahEnd: number;
   ayahCount: number;
+  type?: SessionType;
+  pageStart?: number;
+  pageEnd?: number;
 };
 
 // --- Session functions ---
@@ -140,8 +167,8 @@ export async function insertSession(
 ): Promise<Session> {
   const result = await db
     .prepare(
-      `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
     )
     .bind(
@@ -152,6 +179,9 @@ export async function insertSession(
       data.surahEnd,
       data.ayahEnd,
       data.ayahCount,
+      data.type ?? 'normal',
+      data.pageStart ?? null,
+      data.pageEnd ?? null,
     )
     .first<SessionRow>();
   return mapRow(result!);
@@ -170,10 +200,13 @@ export async function getSessionById(
 
 export async function getLastSession(
   db: D1Database,
+  type?: SessionType,
 ): Promise<Session | null> {
-  const row = await db
-    .prepare("SELECT * FROM sessions ORDER BY started_at DESC LIMIT 1")
-    .first<SessionRow>();
+  const query = type
+    ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT 1"
+    : "SELECT * FROM sessions ORDER BY started_at DESC LIMIT 1";
+  const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
+  const row = await stmt.first<SessionRow>();
   return row ? mapRow(row) : null;
 }
 
@@ -197,8 +230,8 @@ export async function insertBatch(
   const statements = sessions.map((s) =>
     db
       .prepare(
-        `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         s.startedAt,
@@ -208,6 +241,9 @@ export async function insertBatch(
         s.surahEnd,
         s.ayahEnd,
         s.ayahCount,
+        s.type ?? 'normal',
+        s.pageStart ?? null,
+        s.pageEnd ?? null,
       ),
   );
 
@@ -218,34 +254,99 @@ export async function insertBatch(
 export async function getHistory(
   db: D1Database,
   limit: number = 10,
+  type?: SessionType,
 ): Promise<Session[]> {
+  const query = type
+    ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT ?"
+    : "SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?";
+  const stmt = type
+    ? db.prepare(query).bind(type, limit)
+    : db.prepare(query).bind(limit);
+  const { results } = await stmt.all<SessionRow>();
+  return results.map(mapRow);
+}
+
+// --- Kahf functions ---
+
+export async function getKahfSessionsThisWeek(
+  db: D1Database,
+  tz: string,
+): Promise<Session[]> {
+  const today = getTodayInTimezone(tz);
+  const { start, end } = getWeekBounds(today);
   const { results } = await db
-    .prepare("SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?")
-    .bind(limit)
+    .prepare(
+      `SELECT * FROM sessions
+       WHERE type = 'kahf' AND substr(started_at, 1, 10) BETWEEN ? AND ?
+       ORDER BY started_at DESC`,
+    )
+    .bind(start, end)
     .all<SessionRow>();
   return results.map(mapRow);
 }
 
-// --- Stats functions ---
-
-export async function getGlobalStats(db: D1Database): Promise<GlobalStats> {
+export async function getLastWeekKahfTotal(
+  db: D1Database,
+  tz: string,
+): Promise<number> {
+  const today = getTodayInTimezone(tz);
+  const lastWeekDay = addDays(today, -7);
+  const { start, end } = getWeekBounds(lastWeekDay);
   const row = await db
     .prepare(
-      `SELECT
+      `SELECT COALESCE(SUM(duration_seconds), 0) AS total
+       FROM sessions
+       WHERE type = 'kahf' AND substr(started_at, 1, 10) BETWEEN ? AND ?`,
+    )
+    .bind(start, end)
+    .first<{ total: number }>();
+  return row!.total;
+}
+
+export async function getKahfStats(db: D1Database): Promise<{
+  lastDuration: number | null;
+  lastDate: string | null;
+}> {
+  const row = await db
+    .prepare(
+      "SELECT duration_seconds, substr(started_at, 1, 10) as day FROM sessions WHERE type = 'kahf' ORDER BY started_at DESC LIMIT 1",
+    )
+    .first<{ duration_seconds: number; day: string }>();
+  return {
+    lastDuration: row?.duration_seconds ?? null,
+    lastDate: row?.day ?? null,
+  };
+}
+
+// --- Stats functions ---
+
+export async function getGlobalStats(
+  db: D1Database,
+  type?: SessionType,
+): Promise<GlobalStats> {
+  const query = type
+    ? `SELECT
         COALESCE(COUNT(*), 0) AS total_sessions,
         COALESCE(SUM(ayah_count), 0) AS total_ayahs,
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
         COALESCE(AVG(duration_seconds), 0) AS avg_seconds
-      FROM sessions`,
-    )
-    .first<{
-      total_sessions: number;
-      total_ayahs: number;
-      total_seconds: number;
-      avg_ayahs: number;
-      avg_seconds: number;
-    }>();
+      FROM sessions WHERE type = ?`
+    : `SELECT
+        COALESCE(COUNT(*), 0) AS total_sessions,
+        COALESCE(SUM(ayah_count), 0) AS total_ayahs,
+        COALESCE(SUM(duration_seconds), 0) AS total_seconds,
+        COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
+        COALESCE(AVG(duration_seconds), 0) AS avg_seconds
+      FROM sessions`;
+  const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
+  const row = await stmt.first<{
+    total_sessions: number;
+    total_ayahs: number;
+    total_seconds: number;
+    avg_ayahs: number;
+    avg_seconds: number;
+  }>();
 
   return {
     totalSessions: row!.total_sessions,
@@ -255,6 +356,8 @@ export async function getGlobalStats(db: D1Database): Promise<GlobalStats> {
     avgSecondsPerSession: Math.round(row!.avg_seconds),
   };
 }
+
+export const getStatsByType = getGlobalStats;
 
 export async function getPeriodStats(
   db: D1Database,

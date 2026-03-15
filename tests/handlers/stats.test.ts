@@ -14,6 +14,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
     getConfig: vi.fn(),
+    getTimezone: vi.fn(),
     getLastSession: vi.fn(),
   };
 });
@@ -24,11 +25,13 @@ import {
   getPeriodStats,
   calculateStreak,
   getConfig,
+  getTimezone,
   getLastSession,
 } from "../../src/services/db";
 
-function makeCtx(): CustomContext {
+function makeCtx(match = ""): CustomContext {
   return {
+    match,
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
   } as unknown as CustomContext;
@@ -43,6 +46,9 @@ const MOCK_SESSION: Session = {
   surahEnd: 2,
   ayahEnd: 83,
   ayahCount: 7,
+  type: 'normal',
+  pageStart: null,
+  pageEnd: null,
   createdAt: "2026-03-10 13:30:00",
 };
 
@@ -60,11 +66,12 @@ describe("historyHandler", () => {
     expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
   });
 
-  it("affiche une session formatee", async () => {
+  it("affiche une session formatee avec tag type", async () => {
     vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
     const ctx = makeCtx();
     await historyHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("[N]");
     expect(msg).toContain("#42");
     expect(msg).toContain("10/03");
     expect(msg).toContain("Al-Baqara");
@@ -87,6 +94,33 @@ describe("historyHandler", () => {
     const ctx = makeCtx();
     await historyHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
+  });
+
+  it("appelle getHistory sans filtre par defaut", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    const ctx = makeCtx();
+    await historyHandler(ctx);
+    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, undefined);
+  });
+
+  it("filtre par type 'extra' quand ctx.match = 'extra'", async () => {
+    const extraSession = { ...MOCK_SESSION, type: 'extra' as const };
+    vi.mocked(getHistory).mockResolvedValue([extraSession]);
+    const ctx = makeCtx("extra");
+    await historyHandler(ctx);
+    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, "extra");
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("[E]");
+  });
+
+  it("filtre par type 'kahf' quand ctx.match = 'kahf'", async () => {
+    const kahfSession = { ...MOCK_SESSION, type: 'kahf' as const };
+    vi.mocked(getHistory).mockResolvedValue([kahfSession]);
+    const ctx = makeCtx("kahf");
+    await historyHandler(ctx);
+    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, "kahf");
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("[K]");
   });
 });
 
@@ -112,7 +146,7 @@ describe("statsHandler", () => {
       currentStreak: 5,
       bestStreak: 12,
     });
-    vi.mocked(getConfig).mockResolvedValue(null); // default tz
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
 
     const ctx = makeCtx();
     await statsHandler(ctx);
@@ -135,12 +169,12 @@ describe("statsHandler", () => {
     });
     vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
-    vi.mocked(getConfig).mockResolvedValue(null);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
 
     const ctx = makeCtx();
     await statsHandler(ctx);
 
-    expect(getConfig).toHaveBeenCalledWith(ctx.db, "timezone");
+    expect(getTimezone).toHaveBeenCalledWith(ctx.db);
     expect(getPeriodStats).toHaveBeenCalledWith(ctx.db, "week", "America/Cancun");
   });
 });
@@ -169,6 +203,9 @@ describe("progressHandler", () => {
       surahEnd: 3,
       ayahEnd: 10,
       ayahCount: 17,
+      type: 'normal',
+      pageStart: null,
+      pageEnd: null,
       createdAt: "2026-03-10 13:30:00",
     });
 
@@ -178,6 +215,54 @@ describe("progressHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("342 / 6236 versets");
     expect(msg).toContain("Dernier point : sourate Al-Imran (3), verset 10");
+  });
+
+  it("appelle getLastSession avec type 'normal'", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({
+      totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
+      avgAyahsPerSession: 7, avgSecondsPerSession: 533,
+    });
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    expect(getLastSession).toHaveBeenCalledWith(ctx.db, 'normal');
+  });
+
+  it("affiche la progression par page quand pageEnd est present", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({
+      totalSessions: 10,
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      avgAyahsPerSession: 34,
+      avgSecondsPerSession: 1578,
+    });
+    vi.mocked(getLastSession).mockResolvedValue({
+      ...MOCK_SESSION,
+      pageStart: 41,
+      pageEnd: 42,
+    });
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Page : 42 / 604");
+  });
+
+  it("n'affiche pas la ligne page quand pageEnd est null", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({
+      totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
+      avgAyahsPerSession: 7, avgSecondsPerSession: 533,
+    });
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("Page :");
   });
 
   it("affiche un message si aucune session", async () => {

@@ -3,6 +3,9 @@ import { startHandler, helpHandler, configHandler } from "./handlers/config";
 import { sessionHandler } from "./handlers/session";
 import { importHandler } from "./handlers/import";
 import { historyHandler, statsHandler, progressHandler } from "./handlers/stats";
+import { readHandler } from "./handlers/read";
+import { extraHandler } from "./handlers/extra";
+import { kahfHandler } from "./handlers/kahf";
 import {
   undoHandler,
   deleteHandler,
@@ -20,6 +23,9 @@ export const BOT_COMMANDS = [
   { command: "start", description: "Demarrer le bot" },
   { command: "help", description: "Afficher l'aide" },
   { command: "session", description: "Enregistrer une session de lecture" },
+  { command: "read", description: "Lire la prochaine page" },
+  { command: "extra", description: "Enregistrer une lecture extra" },
+  { command: "kahf", description: "Lire sourate Al-Kahf (vendredi)" },
   { command: "import", description: "Importer des sessions" },
   { command: "history", description: "Historique des sessions" },
   { command: "stats", description: "Statistiques de lecture" },
@@ -42,6 +48,9 @@ export function createBot(token: string, db: D1Database): Bot<CustomContext> {
   bot.command("start", startHandler);
   bot.command("help", helpHandler);
   bot.command("session", sessionHandler);
+  bot.command("read", readHandler);
+  bot.command("extra", extraHandler);
+  bot.command("kahf", kahfHandler);
   bot.command("import", importHandler);
   bot.command("history", historyHandler);
   bot.command("stats", statsHandler);
