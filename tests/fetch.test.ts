@@ -26,12 +26,34 @@ describe("fetch handler", () => {
   });
 
   it("POST /setup enregistre les commandes", async () => {
-    const req = new Request("https://bot.example.com/setup", { method: "POST" });
+    const req = new Request("https://bot.example.com/setup", {
+      method: "POST",
+      headers: { Authorization: "Bearer TOKEN" },
+    });
     const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
 
     expect(mockSetMyCommands).toHaveBeenCalledOnce();
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("Commands registered");
+  });
+
+  it("POST /setup sans token retourne 401", async () => {
+    const req = new Request("https://bot.example.com/setup", { method: "POST" });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+
+    expect(mockSetMyCommands).not.toHaveBeenCalled();
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /setup avec mauvais token retourne 401", async () => {
+    const req = new Request("https://bot.example.com/setup", {
+      method: "POST",
+      headers: { Authorization: "Bearer WRONG" },
+    });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+
+    expect(mockSetMyCommands).not.toHaveBeenCalled();
+    expect(res.status).toBe(401);
   });
 
   it("GET /setup retourne 405", async () => {
@@ -44,7 +66,10 @@ describe("fetch handler", () => {
 
   it("POST /setup retourne 502 si setMyCommands echoue", async () => {
     mockSetMyCommands.mockRejectedValueOnce(new Error("API error"));
-    const req = new Request("https://bot.example.com/setup", { method: "POST" });
+    const req = new Request("https://bot.example.com/setup", {
+      method: "POST",
+      headers: { Authorization: "Bearer TOKEN" },
+    });
     const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
 
     expect(res.status).toBe(502);
