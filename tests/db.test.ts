@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
 import {
   insertSession,
@@ -26,23 +29,12 @@ import {
 } from "../src/services/db";
 import type { PrayerTimes, SessionType } from "../src/services/db";
 
-const SCHEMA_STATEMENTS = [
-  "CREATE TABLE sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, duration_seconds INTEGER NOT NULL, page_start INTEGER, page_end INTEGER, surah_start INTEGER NOT NULL, ayah_start INTEGER NOT NULL, surah_end INTEGER NOT NULL, ayah_end INTEGER NOT NULL, ayah_count INTEGER NOT NULL, type TEXT NOT NULL DEFAULT 'normal', created_at TEXT DEFAULT (datetime('now')))",
-  "CREATE INDEX idx_sessions_started_at ON sessions(started_at)",
-  "CREATE INDEX idx_sessions_type ON sessions(type)",
-  "CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
-  "INSERT INTO config (key, value) VALUES ('city', 'Playa del Carmen')",
-  "INSERT INTO config (key, value) VALUES ('country', 'MX')",
-  "INSERT INTO config (key, value) VALUES ('timezone', 'America/Cancun')",
-  "CREATE TABLE prayer_cache (date TEXT PRIMARY KEY, fajr TEXT NOT NULL, dhuhr TEXT NOT NULL, asr TEXT NOT NULL, maghrib TEXT NOT NULL, isha TEXT NOT NULL, fajr_sent INTEGER DEFAULT 0, dhuhr_sent INTEGER DEFAULT 0, asr_sent INTEGER DEFAULT 0, maghrib_sent INTEGER DEFAULT 0, isha_sent INTEGER DEFAULT 0, fetched_at TEXT DEFAULT (datetime('now')))",
-];
-
-const DROP_STATEMENTS = [
-  "DROP TABLE IF EXISTS sessions",
-  "DROP INDEX IF EXISTS idx_sessions_started_at",
-  "DROP TABLE IF EXISTS config",
-  "DROP TABLE IF EXISTS prayer_cache",
-];
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const schemaSQL = readFileSync(resolve(__dirname, "../schema.sql"), "utf-8");
+const schemaStatements = schemaSQL
+  .split(";")
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
 
 let mf: Miniflare;
 let db: D1Database;
@@ -55,9 +47,7 @@ beforeEach(async () => {
   });
   db = await mf.getD1Database("DB");
 
-  // Drop everything for a clean slate, then apply full schema
-  await db.batch(DROP_STATEMENTS.map((s) => db.prepare(s)));
-  await db.batch(SCHEMA_STATEMENTS.map((s) => db.prepare(s)));
+  await db.batch(schemaStatements.map((s) => db.prepare(s)));
 });
 
 afterEach(async () => {
