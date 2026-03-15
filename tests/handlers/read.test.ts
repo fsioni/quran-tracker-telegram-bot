@@ -12,10 +12,12 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getLastSession: vi.fn(),
     insertSession: vi.fn(),
     getConfig: vi.fn(),
+    getTimezone: vi.fn(),
+    getNowTimestamp: vi.fn(),
   };
 });
 
-import { getLastSession, insertSession, getConfig } from "../../src/services/db";
+import { getLastSession, insertSession, getConfig, getTimezone, getNowTimestamp } from "../../src/services/db";
 
 const mockGetLastSession = getLastSession as ReturnType<typeof vi.fn>;
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
@@ -52,6 +54,8 @@ describe("readHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetConfig.mockResolvedValue(null); // default timezone
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetLastSession.mockResolvedValue(null); // no previous session
   });
 

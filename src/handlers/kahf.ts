@@ -1,45 +1,19 @@
 // src/handlers/kahf.ts
 import type { CustomContext } from "../bot";
-import { parseDuration, formatKahfPageConfirmation, formatError } from "../services/format";
+import { parsePageCountAndDuration, formatKahfPageConfirmation, formatError } from "../services/format";
 import { getPageRange, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_PAGES } from "../data/pages";
-import { insertSession, getConfig, getKahfSessionsThisWeek, getLastWeekKahfTotal } from "../services/db";
-import { DEFAULT_TZ } from "../config";
+import { insertSession, getTimezone, getNowTimestamp, getKahfSessionsThisWeek, getLastWeekKahfTotal } from "../services/db";
 
 export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
-  if (!input) {
-    await ctx.reply(formatError("format invalide", "/kahf 5m ou /kahf 3 15m"));
+  const parsed = parsePageCountAndDuration(input, "/kahf 5m ou /kahf 3 15m");
+  if (!parsed.ok) {
+    await ctx.reply(formatError(parsed.error));
     return;
   }
+  const { count, durationSeconds } = parsed.value;
 
-  const parts = input.split(/\s+/);
-
-  let count: number;
-  let durationStr: string;
-
-  if (parts.length === 1) {
-    // /kahf 5m -> 1 page
-    count = 1;
-    durationStr = parts[0];
-  } else {
-    // /kahf 3 15m -> 3 pages
-    const parsed = parseInt(parts[0], 10);
-    if (isNaN(parsed) || parsed < 1) {
-      await ctx.reply(formatError("nombre de pages invalide", "/kahf 3 15m"));
-      return;
-    }
-    count = parsed;
-    durationStr = parts[1];
-  }
-
-  const durationResult = parseDuration(durationStr);
-  if (!durationResult.ok) {
-    await ctx.reply(formatError(durationResult.error));
-    return;
-  }
-
-  // Get timezone
-  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
+  const tz = await getTimezone(ctx.db);
 
   // Get kahf sessions this week
   const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
@@ -80,16 +54,12 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  // Get current time in timezone
-  const now = new Date()
-    .toLocaleString("sv-SE", { timeZone: tz })
-    .replace("T", " ")
-    .substring(0, 19);
+  const now = getNowTimestamp(tz);
 
   // Insert session with type 'kahf'
   await insertSession(ctx.db, {
     startedAt: now,
-    durationSeconds: durationResult.value,
+    durationSeconds: durationSeconds,
     surahStart: rangeData.surahStart,
     ayahStart: rangeData.ayahStart,
     surahEnd: rangeData.surahEnd,
@@ -104,12 +74,8 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const weekPagesRead = pagesAlreadyRead + count;
   const weekTotalSeconds =
     weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
-    durationResult.value;
+    durationSeconds;
 
-  // kahfPage: the last page read (1-based within Kahf's 12 pages)
-  const kahfPage = pagesAlreadyRead + count;
-
-  // Check if Al-Kahf is now complete
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
 
   if (isComplete) {
@@ -117,9 +83,9 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
 
     await ctx.reply(
       formatKahfPageConfirmation({
-        kahfPage,
+        kahfPage: weekPagesRead,
         kahfTotal: KAHF_TOTAL_PAGES,
-        durationSeconds: durationResult.value,
+        durationSeconds: durationSeconds,
         weekPagesRead,
         weekTotalSeconds,
         isComplete: true,
@@ -129,9 +95,9 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   } else {
     await ctx.reply(
       formatKahfPageConfirmation({
-        kahfPage,
+        kahfPage: weekPagesRead,
         kahfTotal: KAHF_TOTAL_PAGES,
-        durationSeconds: durationResult.value,
+        durationSeconds: durationSeconds,
         weekPagesRead,
         weekTotalSeconds,
         isComplete: false,

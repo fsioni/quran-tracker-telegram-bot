@@ -6,17 +6,16 @@ import {
   getLastSession,
   getPeriodStats,
   calculateStreak,
-  getConfig,
+  getTimezone,
   type SessionType,
 } from "../services/db";
 import { formatHistoryLine, formatStats, formatProgress } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
-import { DEFAULT_TZ } from "../config";
 const MSG_NO_SESSION = "Aucune session enregistree.";
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
-  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
+  const tz = await getTimezone(ctx.db);
 
   const [global, week, month, streak] = await Promise.all([
     getGlobalStats(ctx.db),

@@ -1,3 +1,5 @@
+import { DEFAULT_TZ } from "../config";
+
 // --- Row types (D1 snake_case) ---
 
 export type SessionType = 'normal' | 'extra' | 'kahf';
@@ -101,6 +103,17 @@ export function getTodayInTimezone(tz: string): string {
     day: "2-digit",
   });
   return formatter.format(now);
+}
+
+export function getNowTimestamp(tz: string): string {
+  return new Date()
+    .toLocaleString("sv-SE", { timeZone: tz })
+    .replace("T", " ")
+    .substring(0, 19);
+}
+
+export async function getTimezone(db: D1Database): Promise<string> {
+  return (await getConfig(db, "timezone")) ?? DEFAULT_TZ;
 }
 
 export function addDays(dateStr: string, n: number): string {
@@ -307,57 +320,33 @@ export async function getKahfStats(db: D1Database): Promise<{
 
 // --- Stats functions ---
 
-export async function getGlobalStats(db: D1Database): Promise<GlobalStats> {
-  const row = await db
-    .prepare(
-      `SELECT
-        COALESCE(COUNT(*), 0) AS total_sessions,
-        COALESCE(SUM(ayah_count), 0) AS total_ayahs,
-        COALESCE(SUM(duration_seconds), 0) AS total_seconds,
-        COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
-        COALESCE(AVG(duration_seconds), 0) AS avg_seconds
-      FROM sessions`,
-    )
-    .first<{
-      total_sessions: number;
-      total_ayahs: number;
-      total_seconds: number;
-      avg_ayahs: number;
-      avg_seconds: number;
-    }>();
-
-  return {
-    totalSessions: row!.total_sessions,
-    totalAyahs: row!.total_ayahs,
-    totalSeconds: row!.total_seconds,
-    avgAyahsPerSession: Math.round(row!.avg_ayahs),
-    avgSecondsPerSession: Math.round(row!.avg_seconds),
-  };
-}
-
-export async function getStatsByType(
+export async function getGlobalStats(
   db: D1Database,
-  type: SessionType,
+  type?: SessionType,
 ): Promise<GlobalStats> {
-  const row = await db
-    .prepare(
-      `SELECT
+  const query = type
+    ? `SELECT
         COALESCE(COUNT(*), 0) AS total_sessions,
         COALESCE(SUM(ayah_count), 0) AS total_ayahs,
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
         COALESCE(AVG(duration_seconds), 0) AS avg_seconds
-      FROM sessions
-      WHERE type = ?`,
-    )
-    .bind(type)
-    .first<{
-      total_sessions: number;
-      total_ayahs: number;
-      total_seconds: number;
-      avg_ayahs: number;
-      avg_seconds: number;
-    }>();
+      FROM sessions WHERE type = ?`
+    : `SELECT
+        COALESCE(COUNT(*), 0) AS total_sessions,
+        COALESCE(SUM(ayah_count), 0) AS total_ayahs,
+        COALESCE(SUM(duration_seconds), 0) AS total_seconds,
+        COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
+        COALESCE(AVG(duration_seconds), 0) AS avg_seconds
+      FROM sessions`;
+  const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
+  const row = await stmt.first<{
+    total_sessions: number;
+    total_ayahs: number;
+    total_seconds: number;
+    avg_ayahs: number;
+    avg_seconds: number;
+  }>();
 
   return {
     totalSessions: row!.total_sessions,
@@ -367,6 +356,8 @@ export async function getStatsByType(
     avgSecondsPerSession: Math.round(row!.avg_seconds),
   };
 }
+
+export const getStatsByType = getGlobalStats;
 
 export async function getPeriodStats(
   db: D1Database,

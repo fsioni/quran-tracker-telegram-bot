@@ -14,6 +14,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
     getConfig: vi.fn(),
+    getTimezone: vi.fn(),
     getLastSession: vi.fn(),
   };
 });
@@ -24,6 +25,7 @@ import {
   getPeriodStats,
   calculateStreak,
   getConfig,
+  getTimezone,
   getLastSession,
 } from "../../src/services/db";
 
@@ -144,7 +146,7 @@ describe("statsHandler", () => {
       currentStreak: 5,
       bestStreak: 12,
     });
-    vi.mocked(getConfig).mockResolvedValue(null); // default tz
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
 
     const ctx = makeCtx();
     await statsHandler(ctx);
@@ -167,12 +169,12 @@ describe("statsHandler", () => {
     });
     vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
-    vi.mocked(getConfig).mockResolvedValue(null);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
 
     const ctx = makeCtx();
     await statsHandler(ctx);
 
-    expect(getConfig).toHaveBeenCalledWith(ctx.db, "timezone");
+    expect(getTimezone).toHaveBeenCalledWith(ctx.db);
     expect(getPeriodStats).toHaveBeenCalledWith(ctx.db, "week", "America/Cancun");
   });
 });

@@ -10,6 +10,8 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     ...actual,
     insertSession: vi.fn(),
     getConfig: vi.fn(),
+    getTimezone: vi.fn(),
+    getNowTimestamp: vi.fn(),
     getKahfSessionsThisWeek: vi.fn(),
     getLastWeekKahfTotal: vi.fn(),
   };
@@ -18,12 +20,13 @@ vi.mock("../../src/services/db", async (importOriginal) => {
 import {
   insertSession,
   getConfig,
+  getTimezone,
+  getNowTimestamp,
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
 } from "../../src/services/db";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
-const mockGetConfig = getConfig as ReturnType<typeof vi.fn>;
 const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<typeof vi.fn>;
 const mockGetLastWeekKahfTotal = getLastWeekKahfTotal as ReturnType<typeof vi.fn>;
 
@@ -57,7 +60,8 @@ function createMockContext(match = ""): CustomContext {
 describe("kahfHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetConfig.mockResolvedValue(null); // default timezone
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetKahfSessionsThisWeek.mockResolvedValue([]); // no sessions this week
     mockGetLastWeekKahfTotal.mockResolvedValue(0);
   });

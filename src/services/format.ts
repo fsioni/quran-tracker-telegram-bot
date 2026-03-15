@@ -147,6 +147,37 @@ export function parsePage(input: string): Result<{ pageStart: number; pageEnd: n
   return err(`format de page invalide '${input}'. Utilise 300 ou 300-304`);
 }
 
+export function parsePageCountAndDuration(
+  input: string,
+  cmdExample: string,
+): Result<{ count: number; durationSeconds: number }> {
+  if (!input) {
+    return err(`format invalide. Utilise ${cmdExample}`);
+  }
+  const parts = input.split(/\s+/);
+  let count: number;
+  let durationStr: string;
+
+  if (parts.length === 1) {
+    count = 1;
+    durationStr = parts[0];
+  } else {
+    const parsed = parseInt(parts[0], 10);
+    if (isNaN(parsed) || parsed < 1) {
+      return err(`nombre de pages invalide. Utilise ${cmdExample}`);
+    }
+    count = parsed;
+    durationStr = parts[1];
+  }
+
+  const durationResult = parseDuration(durationStr);
+  if (!durationResult.ok) {
+    return durationResult as Result<{ count: number; durationSeconds: number }>;
+  }
+
+  return ok({ count, durationSeconds: durationResult.value });
+}
+
 // --- Formatting functions ---
 
 export function formatRange(
@@ -181,7 +212,7 @@ export function formatSessionConfirmation(session: {
   ayahEnd: number;
   ayahCount: number;
   durationSeconds: number;
-  type?: "normal" | "extra";
+  type?: string;
 }): string {
   const startName = getSurah(session.surahStart)?.nameFr ?? `Sourate ${session.surahStart}`;
   const endName = getSurah(session.surahEnd)?.nameFr ?? `Sourate ${session.surahEnd}`;
@@ -333,7 +364,6 @@ export function formatKahfPageConfirmation(data: {
   weekTotalSeconds: number;
   isComplete: boolean;
   lastWeekTotalSeconds?: number;
-  bestTotalDuration?: number;
 }): string {
   const duration = formatDuration(data.durationSeconds);
 
@@ -359,11 +389,6 @@ export function formatKahfPageConfirmation(data: {
     } else {
       lines.push(`Semaine derniere : ${lastWeekDuration}`);
     }
-  }
-
-  if (data.bestTotalDuration !== undefined) {
-    const bestDuration = formatDuration(data.bestTotalDuration);
-    lines.push(`Meilleur temps : ${bestDuration}`);
   }
 
   return lines.join("\n");

@@ -538,7 +538,7 @@ describe("formatKahfPageConfirmation", () => {
     );
   });
 
-  it("formats completion with best time", () => {
+  it("formats completion with same time as last week", () => {
     const result = formatKahfPageConfirmation({
       kahfPage: 12,
       kahfTotal: 12,
@@ -546,10 +546,10 @@ describe("formatKahfPageConfirmation", () => {
       weekPagesRead: 12,
       weekTotalSeconds: 3120,
       isComplete: true,
-      bestTotalDuration: 2700,
+      lastWeekTotalSeconds: 3120,
     });
     expect(result).toBe(
-      "Al-Kahf terminee ! 12/12 pages en 52m\nMeilleur temps : 45m",
+      "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 52m",
     );
   });
 });

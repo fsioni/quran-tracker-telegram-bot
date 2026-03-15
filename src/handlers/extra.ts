@@ -9,8 +9,7 @@ import {
 } from "../services/format";
 import { getPageRange } from "../data/pages";
 import { validateRange, calculateAyahCount } from "../services/quran";
-import { insertSession, getConfig } from "../services/db";
-import { DEFAULT_TZ } from "../config";
+import { insertSession, getTimezone, getNowTimestamp } from "../services/db";
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
@@ -40,9 +39,6 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   let pageStart: number | undefined;
   let pageEnd: number | undefined;
 
-  // Detect if input looks like a page number or page range
-  const looksLikePage = /^\d+(-\d+)?$/.test(targetStr);
-
   // Try page-based first, then verse-based
   const pageResult = parsePage(targetStr);
   if (pageResult.ok) {
@@ -60,8 +56,8 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     surahEnd = rangeData.surahEnd;
     ayahEnd = rangeData.ayahEnd;
     ayahCount = rangeData.ayahCount;
-  } else if (looksLikePage) {
-    // Input looks like a page number but parsePage rejected it (e.g. 0, 605)
+  } else if (/^\d+(-\d+)?$/.test(targetStr)) {
+    // Looks like a page number/range but parsePage rejected it (e.g. 0, 605)
     await ctx.reply(formatError(pageResult.error));
     return;
   } else {
@@ -90,12 +86,8 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
   }
 
-  // Get timezone and current time
-  const tz = (await getConfig(ctx.db, "timezone")) ?? DEFAULT_TZ;
-  const now = new Date()
-    .toLocaleString("sv-SE", { timeZone: tz })
-    .replace("T", " ")
-    .substring(0, 19);
+  const tz = await getTimezone(ctx.db);
+  const now = getNowTimestamp(tz);
 
   // Insert session with type 'extra'
   const session = await insertSession(ctx.db, {

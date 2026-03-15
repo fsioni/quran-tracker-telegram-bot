@@ -636,8 +636,7 @@ export function getPageRange(
 } | undefined {
   const start = getPageBoundary(pageStart);
   if (!start) return undefined;
-  const endBoundary = getPageBoundary(pageEnd);
-  if (!endBoundary) return undefined;
+  if (pageEnd < 1 || pageEnd > TOTAL_PAGES) return undefined;
 
   let surahEnd: number;
   let ayahEnd: number;
