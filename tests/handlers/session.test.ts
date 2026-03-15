@@ -134,4 +134,34 @@ describe("sessionHandler", () => {
     await sessionHandler(ctx);
     expect(ctx.db.prepare).toHaveBeenCalled();
   });
+
+  it("session completant une sourate -> message de fin", async () => {
+    const ctx = createMockContext("1:1-7 5m");
+    const firstFn = vi.fn().mockResolvedValue({
+      id: 10,
+      started_at: "2026-03-15 14:00:00",
+      duration_seconds: 300,
+      surah_start: 1,
+      ayah_start: 1,
+      surah_end: 1,
+      ayah_end: 7,
+      ayah_count: 7,
+      created_at: "2026-03-15 14:00:00",
+    });
+    const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+
+    await sessionHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Session enregistree");
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+  });
+
+  it("session en milieu de sourate -> pas de message de fin", async () => {
+    const ctx = createMockContext("2:100-150 8m");
+    await sessionHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Session enregistree");
+    expect(msg).not.toContain("terminee");
+  });
 });

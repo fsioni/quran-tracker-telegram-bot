@@ -5,6 +5,7 @@ import {
   parsePage,
   parseRange,
   formatSessionConfirmation,
+  appendCompletedSurahs,
   formatError,
 } from "../services/format";
 import { getPageRange } from "../data/pages";
@@ -107,5 +108,10 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  await ctx.reply(formatSessionConfirmation(result.value));
+  const msgParts: string[] = [formatSessionConfirmation(result.value)];
+
+  // Check for completed surahs
+  appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd);
+
+  await ctx.reply(msgParts.join("\n"));
 }

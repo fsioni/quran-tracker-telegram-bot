@@ -1,8 +1,8 @@
 // src/handlers/read.ts
 import type { CustomContext } from "../bot";
-import { parsePageCountAndDuration, formatReadConfirmation, formatError } from "../services/format";
+import { parsePageCountAndDuration, formatReadConfirmation, formatError, formatKhatmaMessage, appendCompletedSurahs } from "../services/format";
 import { getPageRange, TOTAL_PAGES } from "../data/pages";
-import { insertSession, getLastSession, getTimezone, getNowTimestamp } from "../services/db";
+import { insertSession, getLastSession, getTimezone, getNowTimestamp, insertKhatma, getKhatmaCount } from "../services/db";
 
 export async function readHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
@@ -22,10 +22,9 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     currentPage = 1;
   }
 
-  // Check if already finished the Quran
+  // If finished the Quran, reset to page 1
   if (currentPage > TOTAL_PAGES) {
-    await ctx.reply("Tu as termine le Coran ! Alhamdulillah !");
-    return;
+    currentPage = 1;
   }
 
   const pageStart = currentPage;
@@ -70,13 +69,27 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   }
   const session = result.value;
 
-  await ctx.reply(
-    formatReadConfirmation({
-      pageStart: session.pageStart!,
-      pageEnd: session.pageEnd!,
-      durationSeconds: session.durationSeconds,
-      totalPagesRead: session.pageEnd!,
-      totalPages: TOTAL_PAGES,
-    }),
-  );
+  const parts: string[] = [];
+
+  // Check for khatma (reached last page)
+  if (pageEnd === TOTAL_PAGES) {
+    await insertKhatma(ctx.db, now);
+    const khatmaCount = await getKhatmaCount(ctx.db);
+    parts.push(formatKhatmaMessage(khatmaCount));
+  } else {
+    parts.push(
+      formatReadConfirmation({
+        pageStart: session.pageStart!,
+        pageEnd: session.pageEnd!,
+        durationSeconds: session.durationSeconds,
+        totalPagesRead: session.pageEnd!,
+        totalPages: TOTAL_PAGES,
+      }),
+    );
+  }
+
+  // Check for completed surahs
+  appendCompletedSurahs(parts, rangeData.surahStart, rangeData.ayahStart, rangeData.surahEnd, rangeData.ayahEnd);
+
+  await ctx.reply(parts.join("\n"));
 }

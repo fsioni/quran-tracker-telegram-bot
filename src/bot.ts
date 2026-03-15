@@ -14,6 +14,15 @@ import {
   CALLBACK_CONFIRM_RE,
   CALLBACK_CANCEL_RE,
 } from "./handlers/manage";
+import {
+  goHandler,
+  stopHandler,
+  timerResponseHandler,
+  confirmTimerStopCallback,
+  cancelTimerStopCallback,
+  CALLBACK_TIMER_CONFIRM_RE,
+  CALLBACK_TIMER_CANCEL_RE,
+} from "./handlers/timer";
 import { debugHandler } from "./handlers/debug";
 
 export interface CustomContext extends Context {
@@ -24,6 +33,8 @@ export const BOT_COMMANDS = [
   { command: "start", description: "Demarrer le bot" },
   { command: "help", description: "Afficher l'aide" },
   { command: "session", description: "Enregistrer une session de lecture" },
+  { command: "go", description: "Demarrer un timer de lecture" },
+  { command: "stop", description: "Arreter le timer" },
   { command: "read", description: "Lire la prochaine page" },
   { command: "extra", description: "Enregistrer une lecture extra" },
   { command: "kahf", description: "Lire sourate Al-Kahf (vendredi)" },
@@ -55,7 +66,12 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
     return next();
   });
 
+  // Timer middleware (must be before commands)
+  bot.use(timerResponseHandler);
+
   // Register command handlers
+  bot.command("go", goHandler);
+  bot.command("stop", stopHandler);
   bot.command("start", startHandler);
   bot.command("help", helpHandler);
   bot.command("session", sessionHandler);
@@ -72,6 +88,8 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.command("debug", debugHandler);
 
   // Callbacks inline keyboard
+  bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
+  bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
 

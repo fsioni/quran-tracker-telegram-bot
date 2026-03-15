@@ -2,7 +2,7 @@
 import type { CustomContext } from "../bot";
 import { parsePageCountAndDuration, formatKahfPageConfirmation, formatError } from "../services/format";
 import { getPageRange, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_PAGES } from "../data/pages";
-import { insertSession, getTimezone, getNowTimestamp, getKahfSessionsThisWeek, getLastWeekKahfTotal } from "../services/db";
+import { insertSession, getTimezone, getNowTimestamp, getKahfSessionsThisWeek, getLastWeekKahfTotal, calculateKahfPagesRead } from "../services/db";
 
 export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
@@ -19,12 +19,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
 
   // Calculate pages already read this week
-  const pagesAlreadyRead = weekSessions.reduce((sum, s) => {
-    if (s.pageStart !== null && s.pageEnd !== null) {
-      return sum + (s.pageEnd - s.pageStart + 1);
-    }
-    return sum;
-  }, 0);
+  const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
 
   // Check if already finished Al-Kahf this week
   if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {

@@ -1,6 +1,7 @@
 import { Result, ok, err } from "../types";
 import { getSurah } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
+import { getCompletedSurahs } from "./quran";
 
 export type ParsedRange = {
   surahStart: number;
@@ -17,6 +18,15 @@ export type ParsedImportLine = {
 };
 
 // --- Parsing functions ---
+
+/** Parses "2:77" format only. Callers must validate surah/ayah via validateAyah or validateRange. */
+export function parseVerseStart(input: string): Result<{ surah: number; ayah: number }> {
+  const match = input.match(/^(\d+):(\d+)$/);
+  if (!match) {
+    return err(`format de verset invalide '${input}'. Utilise 2:77`);
+  }
+  return ok({ surah: parseInt(match[1], 10), ayah: parseInt(match[2], 10) });
+}
 
 export function parseDuration(input: string): Result<number> {
   const match = input.match(/^(?:(\d+)h)?(\d+)m(\d+)?$/);
@@ -292,17 +302,24 @@ export function formatProgress(data: {
   totalAyahs: number;
   lastSurah: number;
   lastAyah: number;
+  khatmaCount?: number;
 }): string {
   const pct = data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
   const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
   const surah = getSurah(data.lastSurah)!;
 
-  return [
+  const lines = [
     `Progression : ${data.totalAyahsRead} / ${data.totalAyahs} versets (${pct.toFixed(1)}%)`,
     `[${bar}] ${pct.toFixed(1)}%`,
     `Dernier point : sourate ${surah.nameFr} (${data.lastSurah}), verset ${data.lastAyah}`,
-  ].join("\n");
+  ];
+
+  if (data.khatmaCount) {
+    lines.push(`Khatmas : ${data.khatmaCount}`);
+  }
+
+  return lines.join("\n");
 }
 
 export function formatReminder(data: {
@@ -406,6 +423,34 @@ export function formatKahfReminder(data: {
     return `${base}\n\nDerniere lecture : ${day}/${month} en ${duration}`;
   }
   return base;
+}
+
+export function formatKhatmaMessage(khatmaNumber: number): string {
+  if (khatmaNumber === 1) {
+    return "Khatma ! Tu as termine ta premiere lecture complete du Coran. Alhamdulillah !";
+  }
+  return `Khatma ! Tu as termine ta ${khatmaNumber}e lecture complete du Coran. Alhamdulillah !`;
+}
+
+export function formatSurahsComplete(surahs: { number: number; nameFr: string }[]): string {
+  if (surahs.length === 1) {
+    return `Sourate ${surahs[0].nameFr} (${surahs[0].number}) terminee !`;
+  }
+  const list = surahs.map((s) => `${s.nameFr} (${s.number})`).join(", ");
+  return `Sourates terminees : ${list}`;
+}
+
+export function appendCompletedSurahs(
+  parts: string[],
+  surahStart: number,
+  ayahStart: number,
+  surahEnd: number,
+  ayahEnd: number,
+): void {
+  const completed = getCompletedSurahs(surahStart, ayahStart, surahEnd, ayahEnd);
+  if (completed.length > 0) {
+    parts.push(formatSurahsComplete(completed));
+  }
 }
 
 export function formatError(description: string, example?: string): string {
