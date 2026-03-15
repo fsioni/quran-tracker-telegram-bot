@@ -68,7 +68,7 @@ describe("extraHandler", () => {
       ayahCount: 8,
       type: "extra",
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("300 5m");
     await extraHandler(ctx);
@@ -101,7 +101,7 @@ describe("extraHandler", () => {
       ayahCount: 30,
       type: "extra",
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("300-304 15m");
     await extraHandler(ctx);
@@ -132,7 +132,7 @@ describe("extraHandler", () => {
       ayahCount: 7,
       type: "extra",
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("2:77-83 15m");
     await extraHandler(ctx);
@@ -201,7 +201,7 @@ describe("extraHandler", () => {
 
   it("passe type='extra' a insertSession", async () => {
     const session = makeSession();
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("1 5m");
     await extraHandler(ctx);

@@ -132,16 +132,16 @@ describe("statsHandler", () => {
   });
 
   it("affiche les stats formatees selon la spec", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 10,
       totalAyahs: 342,
       totalSeconds: 15780,
       avgAyahsPerSession: 34,
       avgSecondsPerSession: 1578,
-    });
+    }});
     vi.mocked(getPeriodStats)
-      .mockResolvedValueOnce({ sessions: 3, ayahs: 45, seconds: 2280 })   // week
-      .mockResolvedValueOnce({ sessions: 7, ayahs: 187, seconds: 8100 }); // month
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 3, ayahs: 45, seconds: 2280 } })   // week
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 7, ayahs: 187, seconds: 8100 } }); // month
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 5,
       bestStreak: 12,
@@ -163,11 +163,11 @@ describe("statsHandler", () => {
   });
 
   it("utilise le timezone par defaut si config absente", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 0, totalAyahs: 0, totalSeconds: 0,
       avgAyahsPerSession: 0, avgSecondsPerSession: 0,
-    });
-    vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
+    }});
+    vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 0, ayahs: 0, seconds: 0 } });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
 
@@ -187,13 +187,13 @@ describe("progressHandler", () => {
   });
 
   it("affiche la progression avec barre et dernier point", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 10,
       totalAyahs: 342,
       totalSeconds: 15780,
       avgAyahsPerSession: 34,
       avgSecondsPerSession: 1578,
-    });
+    }});
     vi.mocked(getLastSession).mockResolvedValue({
       id: 42,
       startedAt: "2026-03-10 13:30:00",
@@ -218,10 +218,10 @@ describe("progressHandler", () => {
   });
 
   it("appelle getLastSession avec type 'normal'", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
       avgAyahsPerSession: 7, avgSecondsPerSession: 533,
-    });
+    }});
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
 
     const ctx = makeCtx();
@@ -231,13 +231,13 @@ describe("progressHandler", () => {
   });
 
   it("affiche la progression par page quand pageEnd est present", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 10,
       totalAyahs: 342,
       totalSeconds: 15780,
       avgAyahsPerSession: 34,
       avgSecondsPerSession: 1578,
-    });
+    }});
     vi.mocked(getLastSession).mockResolvedValue({
       ...MOCK_SESSION,
       pageStart: 41,
@@ -252,10 +252,10 @@ describe("progressHandler", () => {
   });
 
   it("n'affiche pas la ligne page quand pageEnd est null", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
       avgAyahsPerSession: 7, avgSecondsPerSession: 533,
-    });
+    }});
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
 
     const ctx = makeCtx();
@@ -266,10 +266,10 @@ describe("progressHandler", () => {
   });
 
   it("affiche un message si aucune session", async () => {
-    vi.mocked(getGlobalStats).mockResolvedValue({
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
       totalSessions: 0, totalAyahs: 0, totalSeconds: 0,
       avgAyahsPerSession: 0, avgSecondsPerSession: 0,
-    });
+    }});
     vi.mocked(getLastSession).mockResolvedValue(null);
 
     const ctx = makeCtx();

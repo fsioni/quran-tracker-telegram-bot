@@ -63,7 +63,7 @@ describe("kahfHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetKahfSessionsThisWeek.mockResolvedValue([]); // no sessions this week
-    mockGetLastWeekKahfTotal.mockResolvedValue(0);
+    mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
   });
 
   it("/kahf 5m -> premiere page de la semaine (page 293), kahf page 1/12", async () => {
@@ -73,7 +73,7 @@ describe("kahfHandler", () => {
       pageStart: 293,
       pageEnd: 293,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await kahfHandler(ctx);
@@ -103,7 +103,7 @@ describe("kahfHandler", () => {
       pageEnd: 295,
       durationSeconds: 300,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await kahfHandler(ctx);
@@ -128,7 +128,7 @@ describe("kahfHandler", () => {
       pageEnd: 295,
       durationSeconds: 900,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("3 15m");
     await kahfHandler(ctx);
@@ -185,7 +185,7 @@ describe("kahfHandler", () => {
     mockGetKahfSessionsThisWeek.mockResolvedValue([
       makeSession({ pageStart: 293, pageEnd: 303, durationSeconds: 3300 }),
     ]);
-    mockGetLastWeekKahfTotal.mockResolvedValue(3600);
+    mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 3600 });
 
     const session = makeSession({
       id: 12,
@@ -193,7 +193,7 @@ describe("kahfHandler", () => {
       pageEnd: 304,
       durationSeconds: 300,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await kahfHandler(ctx);
@@ -217,7 +217,7 @@ describe("kahfHandler", () => {
 
   it("passe type='kahf' a insertSession", async () => {
     const session = makeSession();
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await kahfHandler(ctx);
