@@ -23,6 +23,7 @@ import {
   CALLBACK_TIMER_CONFIRM_RE,
   CALLBACK_TIMER_CANCEL_RE,
 } from "./handlers/timer";
+import { debugHandler } from "./handlers/debug";
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -84,6 +85,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
   bot.command("config", configHandler);
+  bot.command("debug", debugHandler);
 
   // Callbacks inline keyboard
   bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
