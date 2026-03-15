@@ -4,7 +4,7 @@ import {
   parsePrayerResponse,
   buildAladhanUrl,
   fetchPrayerTimes,
-  isReminderTime,
+  isReminderDue,
   getDueReminders,
   getNowInTimezone,
 } from "../src/services/prayer";
@@ -125,24 +125,21 @@ describe("fetchPrayerTimes", () => {
   });
 });
 
-describe("isReminderTime", () => {
-  it("true a prayer+10min (borne inf)", () => {
-    expect(isReminderTime("12:10", "12:00")).toBe(true);
+describe("isReminderDue", () => {
+  it("true a l'heure exacte de la priere", () => {
+    expect(isReminderDue("12:00", "12:00")).toBe(true);
   });
-  it("true a prayer+14min (borne sup)", () => {
-    expect(isReminderTime("12:14", "12:00")).toBe(true);
+  it("true 1min apres la priere", () => {
+    expect(isReminderDue("12:01", "12:00")).toBe(true);
   });
-  it("false a prayer+9min (trop tot)", () => {
-    expect(isReminderTime("12:09", "12:00")).toBe(false);
+  it("true 30min apres la priere (tick retarde)", () => {
+    expect(isReminderDue("12:30", "12:00")).toBe(true);
   });
-  it("false a prayer+15min (trop tard)", () => {
-    expect(isReminderTime("12:15", "12:00")).toBe(false);
+  it("false 1min avant la priere", () => {
+    expect(isReminderDue("11:59", "12:00")).toBe(false);
   });
-  it("true a prayer+12min (milieu)", () => {
-    expect(isReminderTime("12:12", "12:00")).toBe(true);
-  });
-  it("false sur passage minuit (cas impossible en pratique)", () => {
-    expect(isReminderTime("00:05", "23:55")).toBe(false);
+  it("false sur passage minuit (diff negatif)", () => {
+    expect(isReminderDue("00:05", "23:55")).toBe(false);
   });
 });
 
@@ -155,16 +152,28 @@ const makeCache = (overrides: Partial<PrayerCacheRow> = {}): PrayerCacheRow => (
 });
 
 describe("getDueReminders", () => {
-  it("retourne la priere dans la fenetre", () => {
-    expect(getDueReminders(makeCache(), "12:12")).toEqual(["dhuhr"]);
+  it("retourne toutes les prieres passees non envoyees", () => {
+    expect(getDueReminders(makeCache(), "12:00")).toEqual(["fajr", "dhuhr"]);
+  });
+
+  it("retourne la priere meme avec un tick tres retarde", () => {
+    expect(getDueReminders(makeCache({ fajr_sent: 1 }), "12:30")).toEqual(["dhuhr"]);
   });
 
   it("retourne [] si deja envoyee", () => {
-    expect(getDueReminders(makeCache({ dhuhr_sent: 1 }), "12:12")).toEqual([]);
+    expect(getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "12:30")).toEqual([]);
   });
 
-  it("retourne [] si aucune priere dans la fenetre", () => {
-    expect(getDueReminders(makeCache(), "14:00")).toEqual([]);
+  it("retourne [] si aucune priere n'est encore passee", () => {
+    expect(getDueReminders(makeCache(), "05:29")).toEqual([]);
+  });
+
+  it("retourne plusieurs prieres si tick retarde couvre plusieurs", () => {
+    expect(getDueReminders(makeCache(), "20:00")).toEqual(["fajr", "dhuhr", "asr", "maghrib", "isha"]);
+  });
+
+  it("exclut les prieres deja envoyees parmi plusieurs dues", () => {
+    expect(getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "20:00")).toEqual(["asr", "maghrib", "isha"]);
   });
 });
 

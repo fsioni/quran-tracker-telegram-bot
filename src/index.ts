@@ -15,13 +15,14 @@ import {
   setConfig,
 } from "./services/db";
 import type { PrayerCacheRow } from "./services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderTime } from "./services/prayer";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "./services/prayer";
 import { formatReminder, formatKahfReminder } from "./services/format";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
   DB: D1Database;
   BOT_TOKEN: string;
+  ALLOWED_USER_ID: string;
 }
 
 async function sendTelegramMessage(
@@ -92,11 +93,18 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   const duePrayers = getDueReminders(cache, nowHHMM);
 
   if (duePrayers.length > 0) {
-    const [lastSession, weekStats, streak] = await Promise.all([
+    const [lastSession, weekStatsResult, streak] = await Promise.all([
       getLastSession(db),
       getPeriodStats(db, "week", tz),
       calculateStreak(db, tz),
     ]);
+
+    const weekStats = weekStatsResult.ok
+      ? weekStatsResult.value
+      : (() => {
+          console.error("getPeriodStats failed:", weekStatsResult.error);
+          return { sessions: 0, ayahs: 0, seconds: 0 };
+        })();
 
     let message: string;
     if (lastSession) {
@@ -128,7 +136,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   if (dayOfWeek === "Friday") {
     const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
     if (kahfReminderLast !== today) {
-      if (isReminderTime(nowHHMM, cache.fajr)) {
+      if (isReminderDue(nowHHMM, cache.fajr)) {
         const kahfStats = await getKahfStats(db);
         const kahfMsg = formatKahfReminder({
           lastDate: kahfStats.lastDate ?? undefined,
@@ -150,6 +158,9 @@ export default {
       if (request.method !== "POST") {
         return new Response("Method not allowed", { status: 405 });
       }
+      if (request.headers.get("Authorization") !== `Bearer ${env.BOT_TOKEN}`) {
+        return new Response("Unauthorized", { status: 401 });
+      }
       try {
         const bot = new Bot(env.BOT_TOKEN);
         await bot.api.setMyCommands(BOT_COMMANDS);
@@ -159,7 +170,7 @@ export default {
         return new Response("Failed to register commands", { status: 502 });
       }
     }
-    const bot = createBot(env.BOT_TOKEN, env.DB);
+    const bot = createBot(env.BOT_TOKEN, env.DB, env.ALLOWED_USER_ID);
     return webhookCallback(bot, "cloudflare-mod")(request);
   },
 

@@ -45,7 +45,7 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
   const tz = await getTimezone(ctx.db);
   const now = getNowTimestamp(tz);
 
-  const session = await insertSession(ctx.db, {
+  const result = await insertSession(ctx.db, {
     startedAt: now,
     durationSeconds: durationResult.value,
     surahStart,
@@ -55,8 +55,12 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     ayahCount,
     type: 'normal',
   });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error));
+    return;
+  }
 
-  const msgParts: string[] = [formatSessionConfirmation(session)];
+  const msgParts: string[] = [formatSessionConfirmation(result.value)];
 
   // Check for completed surahs
   appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd);

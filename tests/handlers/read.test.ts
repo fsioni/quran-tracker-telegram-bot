@@ -75,7 +75,7 @@ describe("readHandler", () => {
       ayahEnd: 7,
       ayahCount: 7,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -113,7 +113,7 @@ describe("readHandler", () => {
       ayahCount: 4,
       durationSeconds: 300,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -144,7 +144,7 @@ describe("readHandler", () => {
       ayahCount: 12,
       durationSeconds: 900,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("3 15m");
     await readHandler(ctx);
@@ -177,7 +177,7 @@ describe("readHandler", () => {
       pageEnd: 604,
       durationSeconds: 300,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
     vi.mocked(getKhatmaCount).mockResolvedValue(1);
 
     const ctx = createMockContext("5m");
@@ -205,7 +205,7 @@ describe("readHandler", () => {
       ayahEnd: 7,
       ayahCount: 7,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -260,7 +260,7 @@ describe("readHandler", () => {
 
   it("passe type='normal' a insertSession", async () => {
     const session = makeSession();
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -279,7 +279,7 @@ describe("readHandler", () => {
       pageStart: 1,
       pageEnd: 1,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -304,7 +304,7 @@ describe("readHandler", () => {
       ayahEnd: 7,
       ayahCount: 7,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
@@ -324,7 +324,7 @@ describe("readHandler", () => {
       ayahEnd: 256,
       ayahCount: 4,
     });
-    mockInsertSession.mockResolvedValue(session);
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);

@@ -71,9 +71,9 @@ function timeToMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
-export function isReminderTime(nowHHMM: string, prayerHHMM: string): boolean {
+export function isReminderDue(nowHHMM: string, prayerHHMM: string): boolean {
   const diff = timeToMinutes(nowHHMM) - timeToMinutes(prayerHHMM);
-  return diff >= 10 && diff <= 14;
+  return diff >= 0;
 }
 
 const PRAYER_NAMES: readonly PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
@@ -82,7 +82,7 @@ export function getDueReminders(cache: PrayerCacheRow, nowHHMM: string): PrayerN
   return PRAYER_NAMES.filter((name) => {
     const prayerTime = cache[name];
     const sentFlag = cache[`${name}_sent` as keyof PrayerCacheRow] as number;
-    return sentFlag === 0 && isReminderTime(nowHHMM, prayerTime);
+    return sentFlag === 0 && isReminderDue(nowHHMM, prayerTime);
   });
 }
 
