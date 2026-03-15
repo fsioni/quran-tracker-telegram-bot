@@ -12,6 +12,7 @@ import {
   formatReadConfirmation,
   formatKahfPageConfirmation,
   formatKahfReminder,
+  formatEstimation,
   formatKhatmaMessage,
   formatSurahsComplete,
   formatError,
@@ -621,6 +622,34 @@ describe("formatSessionConfirmation with type", () => {
     expect(result).toBe(
       "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53",
     );
+  });
+});
+
+// --- formatEstimation ---
+
+describe("formatEstimation", () => {
+  const today = "2026-03-15";
+
+  it("formate une date de fin avec un rythme normal", () => {
+    // 1.2 pages/jour, 400 pages restantes -> ceil(333.3) = 334 jours -> 2027-02-12
+    const result = formatEstimation(1.2, 400, today);
+    expect(result).toBe("A ce rythme (~1.2 pages/jour), tu finiras vers le 12 fevrier 2027");
+  });
+
+  it("retourne message 'pas assez de donnees' quand pace est 0", () => {
+    const result = formatEstimation(0, 400, today);
+    expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
+  });
+
+  it("retourne format en mois quand estimation > 5 ans", () => {
+    // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
+    const result = formatEstimation(0.1, 500, today);
+    expect(result).toMatch(/^A ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/);
+  });
+
+  it("retourne message pour pace negatif", () => {
+    const result = formatEstimation(-1, 400, today);
+    expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
   });
 });
 

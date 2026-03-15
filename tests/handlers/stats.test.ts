@@ -16,6 +16,8 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getConfig: vi.fn(),
     getTimezone: vi.fn(),
     getLastSession: vi.fn(),
+    getRecentPace: vi.fn(),
+    getTodayInTimezone: vi.fn(),
     getKhatmaCount: vi.fn(),
   };
 });
@@ -28,6 +30,8 @@ import {
   getConfig,
   getTimezone,
   getLastSession,
+  getRecentPace,
+  getTodayInTimezone,
   getKhatmaCount,
 } from "../../src/services/db";
 
@@ -186,6 +190,9 @@ describe("statsHandler", () => {
 describe("progressHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
+    vi.mocked(getRecentPace).mockResolvedValue(0);
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
@@ -279,6 +286,81 @@ describe("progressHandler", () => {
     await progressHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+  });
+
+  it("affiche l'estimation quand pageEnd est present et pace > 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({
+      ...MOCK_SESSION,
+      pageStart: 41,
+      pageEnd: 200,
+    });
+    vi.mocked(getRecentPace).mockResolvedValue(2.5);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("A ce rythme (~2.5 pages/jour)");
+    expect(msg).toContain("tu finiras vers le");
+  });
+
+  it("affiche 'pas assez de donnees' quand pace est 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({
+      ...MOCK_SESSION,
+      pageStart: 41,
+      pageEnd: 200,
+    });
+    vi.mocked(getRecentPace).mockResolvedValue(0);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Pas assez de donnees recentes pour estimer");
+  });
+
+  it("n'affiche pas d'estimation quand pageEnd == 604 (termine)", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 100, totalAyahs: 6236, totalSeconds: 50000,
+      avgAyahsPerSession: 62, avgSecondsPerSession: 500,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({
+      ...MOCK_SESSION,
+      pageStart: 603,
+      pageEnd: 604,
+    });
+    vi.mocked(getRecentPace).mockResolvedValue(2.0);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Page : 604 / 604");
+    expect(msg).not.toContain("rythme");
+    expect(msg).not.toContain("finiras");
+  });
+
+  it("n'affiche pas d'estimation quand pageEnd est null", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
+      avgAyahsPerSession: 7, avgSecondsPerSession: 533,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("rythme");
+    expect(msg).not.toContain("finiras");
   });
 
   it("affiche le nombre de khatmas quand > 0", async () => {

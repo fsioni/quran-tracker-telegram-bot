@@ -1,6 +1,7 @@
 import { Result, ok, err } from "../types";
 import { getSurah } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
+import { addDays } from "./db";
 import { getCompletedSurahs } from "./quran";
 
 export type ParsedRange = {
@@ -423,6 +424,32 @@ export function formatKahfReminder(data: {
     return `${base}\n\nDerniere lecture : ${day}/${month} en ${duration}`;
   }
   return base;
+}
+
+const MONTHS_FR = [
+  "janvier", "fevrier", "mars", "avril", "mai", "juin",
+  "juillet", "aout", "septembre", "octobre", "novembre", "decembre",
+];
+
+export function formatEstimation(
+  pagesPerDay: number,
+  pagesRemaining: number,
+  today: string,
+): string {
+  if (pagesPerDay <= 0) {
+    return "Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)";
+  }
+  const daysRemaining = Math.ceil(pagesRemaining / pagesPerDay);
+  if (daysRemaining > 5 * 365) {
+    const months = Math.round(daysRemaining / 30);
+    return `A ton rythme actuel (~${pagesPerDay.toFixed(1)} pages/jour), il te reste environ ${months} mois`;
+  }
+  const target = addDays(today, daysRemaining);
+  const d = new Date(target + "T00:00:00Z");
+  const day = d.getUTCDate();
+  const month = MONTHS_FR[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  return `A ce rythme (~${pagesPerDay.toFixed(1)} pages/jour), tu finiras vers le ${day} ${month} ${year}`;
 }
 
 export function formatKhatmaMessage(khatmaNumber: number): string {

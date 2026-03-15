@@ -26,6 +26,7 @@ import {
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
   getKahfStats,
+  getRecentPace,
   insertKhatma,
   getKhatmaCount,
 } from "../src/services/db";
@@ -693,6 +694,50 @@ describe("helper functions", () => {
     const bounds = getMonthBounds("2026-02-10");
     expect(bounds.start).toBe("2026-02-01");
     expect(bounds.end).toBe("2026-02-28");
+  });
+});
+
+// --- getRecentPace ---
+
+describe("getRecentPace", () => {
+  it("calculates pace from normal sessions with pages in last 14 days", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    const d1 = addDays(today, -1);
+    const d2 = addDays(today, -3);
+
+    // 3 pages on d1, 5 pages on d2 = 8 pages total / 14 days
+    unwrap(await insertSession(db, makeSession({ startedAt: `${d1} 10:00:00`, type: "normal", pageStart: 10, pageEnd: 12 })));
+    unwrap(await insertSession(db, makeSession({ startedAt: `${d2} 10:00:00`, type: "normal", pageStart: 13, pageEnd: 17 })));
+
+    const pace = await getRecentPace(db, "America/Cancun");
+    expect(pace).toBeCloseTo(8 / 14);
+  });
+
+  it("returns 0 when no recent sessions", async () => {
+    // Session far in the past
+    unwrap(await insertSession(db, makeSession({ startedAt: "2020-01-01 10:00:00", type: "normal", pageStart: 1, pageEnd: 5 })));
+
+    const pace = await getRecentPace(db, "America/Cancun");
+    expect(pace).toBe(0);
+  });
+
+  it("ignores extra and kahf sessions", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+
+    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00`, type: "extra", pageStart: 1, pageEnd: 5 })));
+    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 12:00:00`, type: "kahf", pageStart: 293, pageEnd: 295 })));
+
+    const pace = await getRecentPace(db, "America/Cancun");
+    expect(pace).toBe(0);
+  });
+
+  it("ignores sessions without page_start/page_end", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+
+    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00`, type: "normal" })));
+
+    const pace = await getRecentPace(db, "America/Cancun");
+    expect(pace).toBe(0);
   });
 });
 

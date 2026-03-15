@@ -7,10 +7,12 @@ import {
   getPeriodStats,
   calculateStreak,
   getTimezone,
+  getRecentPace,
+  getTodayInTimezone,
   getKhatmaCount,
   type SessionType,
 } from "../services/db";
-import { formatHistoryLine, formatStats, formatProgress, formatError } from "../services/format";
+import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
 const MSG_NO_SESSION = "Aucune session enregistree.";
@@ -44,9 +46,10 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 }
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
-  const [globalResult, lastSession, khatmaCount] = await Promise.all([
+  const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
     getGlobalStats(ctx.db),
     getLastSession(ctx.db, 'normal'),
+    getTimezone(ctx.db),
     getKhatmaCount(ctx.db),
   ]);
 
@@ -70,6 +73,13 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
 
   if (lastSession.pageEnd != null) {
     msg += `\nPage : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
+
+    if (lastSession.pageEnd < TOTAL_PAGES) {
+      const today = getTodayInTimezone(tz);
+      const pace = await getRecentPace(ctx.db, tz);
+      const pagesRemaining = TOTAL_PAGES - lastSession.pageEnd;
+      msg += `\n${formatEstimation(pace, pagesRemaining, today)}`;
+    }
   }
 
   await ctx.reply(msg);
