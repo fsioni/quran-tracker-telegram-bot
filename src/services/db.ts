@@ -443,6 +443,29 @@ export async function calculateStreak(
   return { currentStreak, bestStreak };
 }
 
+// --- Pace ---
+
+export async function getRecentPace(
+  db: D1Database,
+  tz: string,
+  days: number = 14,
+): Promise<number> {
+  const startDate = addDays(getTodayInTimezone(tz), -(days - 1));
+  const row = await db
+    .prepare(
+      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages
+       FROM sessions
+       WHERE type = 'normal'
+         AND page_start IS NOT NULL
+         AND page_end IS NOT NULL
+         AND substr(started_at, 1, 10) >= ?`,
+    )
+    .bind(startDate)
+    .first<{ total_pages: number }>();
+  if (!row) return 0;
+  return row.total_pages / days;
+}
+
 // --- Config ---
 
 export async function getConfig(
