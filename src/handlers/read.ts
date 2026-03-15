@@ -69,8 +69,8 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   // Check for khatma (reached last page)
   if (pageEnd === TOTAL_PAGES) {
     await insertKhatma(ctx.db, now);
-    const count = await getKhatmaCount(ctx.db);
-    parts.push(formatKhatmaMessage(count));
+    const khatmaCount = await getKhatmaCount(ctx.db);
+    parts.push(formatKhatmaMessage(khatmaCount));
   } else {
     parts.push(
       formatReadConfirmation({
