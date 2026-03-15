@@ -4,6 +4,7 @@ import {
   parseRange,
   parseDuration,
   formatSessionConfirmation,
+  appendCompletedSurahs,
   formatError,
 } from "../services/format";
 import { validateRange, calculateAyahCount } from "../services/quran";
@@ -55,5 +56,10 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     type: 'normal',
   });
 
-  await ctx.reply(formatSessionConfirmation(session));
+  const msgParts: string[] = [formatSessionConfirmation(session)];
+
+  // Check for completed surahs
+  appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd);
+
+  await ctx.reply(msgParts.join("\n"));
 }

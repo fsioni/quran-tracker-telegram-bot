@@ -23,6 +23,8 @@ import {
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
   getKahfStats,
+  insertKhatma,
+  getKhatmaCount,
 } from "../src/services/db";
 import type { PrayerTimes, SessionType } from "../src/services/db";
 
@@ -35,6 +37,7 @@ const SCHEMA_STATEMENTS = [
   "INSERT INTO config (key, value) VALUES ('country', 'MX')",
   "INSERT INTO config (key, value) VALUES ('timezone', 'America/Cancun')",
   "CREATE TABLE prayer_cache (date TEXT PRIMARY KEY, fajr TEXT NOT NULL, dhuhr TEXT NOT NULL, asr TEXT NOT NULL, maghrib TEXT NOT NULL, isha TEXT NOT NULL, fajr_sent INTEGER DEFAULT 0, dhuhr_sent INTEGER DEFAULT 0, asr_sent INTEGER DEFAULT 0, maghrib_sent INTEGER DEFAULT 0, isha_sent INTEGER DEFAULT 0, fetched_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE khatmas (id INTEGER PRIMARY KEY AUTOINCREMENT, completed_at TEXT NOT NULL)",
 ];
 
 const DROP_STATEMENTS = [
@@ -42,6 +45,7 @@ const DROP_STATEMENTS = [
   "DROP INDEX IF EXISTS idx_sessions_started_at",
   "DROP TABLE IF EXISTS config",
   "DROP TABLE IF EXISTS prayer_cache",
+  "DROP TABLE IF EXISTS khatmas",
 ];
 
 let mf: Miniflare;
@@ -714,5 +718,29 @@ describe("cleanOldCache", () => {
     expect(await getPrayerCache(db, "2026-03-01")).toBeNull();
     expect(await getPrayerCache(db, "2026-03-10")).not.toBeNull();
     expect(await getPrayerCache(db, "2026-03-14")).not.toBeNull();
+  });
+});
+
+// --- insertKhatma / getKhatmaCount ---
+
+describe("insertKhatma / getKhatmaCount", () => {
+  it("inserts a khatma and returns id and completedAt", async () => {
+    const khatma = await insertKhatma(db, "2026-03-15 14:00:00");
+    expect(khatma.id).toBe(1);
+    expect(khatma.completedAt).toBe("2026-03-15 14:00:00");
+  });
+
+  it("returns 0 when no khatmas exist", async () => {
+    const count = await getKhatmaCount(db);
+    expect(count).toBe(0);
+  });
+
+  it("returns correct count after multiple inserts", async () => {
+    await insertKhatma(db, "2026-03-10 14:00:00");
+    await insertKhatma(db, "2026-03-15 14:00:00");
+    await insertKhatma(db, "2026-03-20 14:00:00");
+
+    const count = await getKhatmaCount(db);
+    expect(count).toBe(3);
   });
 });

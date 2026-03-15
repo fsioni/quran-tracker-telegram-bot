@@ -211,4 +211,41 @@ describe("extraHandler", () => {
       expect.objectContaining({ type: "extra" }),
     );
   });
+
+  it("/extra 1:1-7 5m completant une sourate -> message de fin", async () => {
+    const session = makeSession({
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+      type: "extra",
+    });
+    mockInsertSession.mockResolvedValue(session);
+
+    const ctx = createMockContext("1:1-7 5m");
+    await extraHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Session extra enregistree");
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+  });
+
+  it("/extra 2:100-150 8m en milieu de sourate -> pas de message de fin", async () => {
+    const session = makeSession({
+      surahStart: 2,
+      ayahStart: 100,
+      surahEnd: 2,
+      ayahEnd: 150,
+      ayahCount: 51,
+      type: "extra",
+    });
+    mockInsertSession.mockResolvedValue(session);
+
+    const ctx = createMockContext("2:100-150 8m");
+    await extraHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("terminee");
+  });
 });

@@ -25,6 +25,11 @@ INSERT INTO config (key, value) VALUES ('city', 'Playa del Carmen');
 INSERT INTO config (key, value) VALUES ('country', 'MX');
 INSERT INTO config (key, value) VALUES ('timezone', 'America/Cancun');
 
+CREATE TABLE khatmas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  completed_at TEXT NOT NULL
+);
+
 CREATE TABLE prayer_cache (
   date TEXT PRIMARY KEY,
   fajr TEXT NOT NULL,
