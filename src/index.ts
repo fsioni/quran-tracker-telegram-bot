@@ -22,6 +22,7 @@ import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 export interface Env {
   DB: D1Database;
   BOT_TOKEN: string;
+  ALLOWED_USER_ID: string;
 }
 
 async function sendTelegramMessage(
@@ -169,7 +170,7 @@ export default {
         return new Response("Failed to register commands", { status: 502 });
       }
     }
-    const bot = createBot(env.BOT_TOKEN, env.DB);
+    const bot = createBot(env.BOT_TOKEN, env.DB, env.ALLOWED_USER_ID);
     return webhookCallback(bot, "cloudflare-mod")(request);
   },
 

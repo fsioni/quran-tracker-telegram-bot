@@ -30,7 +30,7 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer TOKEN" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(mockSetMyCommands).toHaveBeenCalledOnce();
     expect(res.status).toBe(200);
@@ -39,7 +39,7 @@ describe("fetch handler", () => {
 
   it("POST /setup sans token retourne 401", async () => {
     const req = new Request("https://bot.example.com/setup", { method: "POST" });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(401);
@@ -50,7 +50,7 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer WRONG" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(401);
@@ -58,7 +58,7 @@ describe("fetch handler", () => {
 
   it("GET /setup retourne 405", async () => {
     const req = new Request("https://bot.example.com/setup", { method: "GET" });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(405);
@@ -70,7 +70,7 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer TOKEN" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(res.status).toBe(502);
   });
@@ -78,7 +78,7 @@ describe("fetch handler", () => {
   it("requete normale delegue a webhookCallback", async () => {
     const { webhookCallback } = await import("grammy");
     const req = new Request("https://bot.example.com/webhook", { method: "POST" });
-    await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database });
+    await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(webhookCallback).toHaveBeenCalled();
