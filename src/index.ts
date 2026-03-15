@@ -150,7 +150,7 @@ export default {
       if (request.method !== "POST") {
         return new Response("Method not allowed", { status: 405 });
       }
-      if (url.searchParams.get("token") !== env.BOT_TOKEN) {
+      if (request.headers.get("Authorization") !== `Bearer ${env.BOT_TOKEN}`) {
         return new Response("Unauthorized", { status: 401 });
       }
       try {
