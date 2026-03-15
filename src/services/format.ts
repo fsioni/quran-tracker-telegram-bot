@@ -19,6 +19,15 @@ export type ParsedImportLine = {
 
 // --- Parsing functions ---
 
+/** Parses "2:77" format only. Callers must validate surah/ayah via validateAyah or validateRange. */
+export function parseVerseStart(input: string): Result<{ surah: number; ayah: number }> {
+  const match = input.match(/^(\d+):(\d+)$/);
+  if (!match) {
+    return err(`format de verset invalide '${input}'. Utilise 2:77`);
+  }
+  return ok({ surah: parseInt(match[1], 10), ayah: parseInt(match[2], 10) });
+}
+
 export function parseDuration(input: string): Result<number> {
   const match = input.match(/^(?:(\d+)h)?(\d+)m(\d+)?$/);
   if (!match) {
