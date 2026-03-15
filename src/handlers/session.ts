@@ -56,6 +56,7 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     surahEnd,
     ayahEnd,
     ayahCount,
+    type: 'normal',
   });
 
   await ctx.reply(formatSessionConfirmation(session));
