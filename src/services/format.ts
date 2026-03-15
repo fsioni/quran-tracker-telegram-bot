@@ -248,8 +248,8 @@ export function formatHistoryLine(session: {
   const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
 
   const t = session.type ?? "normal";
-  const tagMap = { normal: "[N]", extra: "[E]", kahf: "[K]" } as const;
-  const tag = tagMap[t];
+  const tagMap: Record<string, string> = { normal: "[N]", extra: "[E]", kahf: "[K]" };
+  const tag = tagMap[t] ?? "[N]";
 
   return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
 }
@@ -339,7 +339,7 @@ export function formatReadConfirmation(data: {
   totalPages: number;
 }): string {
   const duration = formatDuration(data.durationSeconds);
-  const isLastPage = data.pageEnd === TOTAL_PAGES;
+  const isLastPage = data.pageEnd === data.totalPages;
 
   if (data.pageStart === data.pageEnd) {
     const line1 = `Page ${data.pageStart} lue en ${duration} (${data.totalPagesRead}/${data.totalPages})`;

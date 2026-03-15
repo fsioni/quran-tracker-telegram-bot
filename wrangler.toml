@@ -5,7 +5,15 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "quran-tracker"
+database_id = "local"
+migrations_dir = "migrations"
+
+[env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "quran-tracker"
 database_id = "279b1778-92d6-4971-9654-2709f0a2fa1d"
+migrations_dir = "migrations"
 
 [triggers]
 crons = ["*/5 * * * *"]

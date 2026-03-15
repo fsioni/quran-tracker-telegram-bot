@@ -31,7 +31,7 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
     const line = lines[i].trim();
     const parsed = parseImportLine(line);
     if (!parsed.ok) {
-      errors.push(`Ligne ${i + 1 - startIndex} : ${parsed.error}`);
+      errors.push(`Ligne ${i + 1} : ${parsed.error}`);
       continue;
     }
 
@@ -40,7 +40,7 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
 
     const rangeValid = validateRange(surahStart, ayahStart, surahEnd, ayahEnd);
     if (!rangeValid.ok) {
-      errors.push(`Ligne ${i + 1 - startIndex} : ${rangeValid.error}`);
+      errors.push(`Ligne ${i + 1} : ${rangeValid.error}`);
       continue;
     }
 

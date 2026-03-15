@@ -104,6 +104,14 @@ describe("importHandler", () => {
     expect(msg).toContain("1 session importee");
   });
 
+  it("rapporte les numeros de ligne originaux avec prefixe extra", async () => {
+    const ctx = createMockContext("extra\ninvalid line\n10/03, 13h30 - 8m53 - 2:77-83");
+    await importHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Ligne 2");
+    expect(msg).not.toContain("Ligne 1");
+  });
+
   it("importe plusieurs lignes avec type 'extra'", async () => {
     const ctx = createMockContext(
       "extra\n10/03, 13h30 - 8m53 - 2:77-83\n09/03, 20h15 - 12m10 - 2:60-76",
