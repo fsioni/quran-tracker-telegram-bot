@@ -135,7 +135,7 @@ describe("handleScheduled", () => {
       ayahCount: 7,
       createdAt: "2026-03-13",
     });
-    vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 3, ayahs: 45, seconds: 2000 });
+    vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 3, ayahs: 45, seconds: 2000 } });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 5, bestStreak: 10 });
     vi.mocked(formatReminder).mockReturnValue("Rappel test");
 
@@ -209,7 +209,7 @@ describe("handleScheduled", () => {
     vi.mocked(getNowInTimezone).mockReturnValue("12:12");
     vi.mocked(getDueReminders).mockReturnValue(["dhuhr"]);
     vi.mocked(getLastSession).mockResolvedValue(null);
-    vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
+    vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 0, ayahs: 0, seconds: 0 } });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
@@ -241,7 +241,7 @@ describe("handleScheduled", () => {
     vi.mocked(getNowInTimezone).mockReturnValue("12:12");
     vi.mocked(getDueReminders).mockReturnValue(["dhuhr"]);
     vi.mocked(getLastSession).mockResolvedValue(null);
-    vi.mocked(getPeriodStats).mockResolvedValue({ sessions: 0, ayahs: 0, seconds: 0 });
+    vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 0, ayahs: 0, seconds: 0 } });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
 
     await handleScheduled(db, "TOKEN");

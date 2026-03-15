@@ -90,7 +90,7 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   const now = getNowTimestamp(tz);
 
   // Insert session with type 'extra'
-  const session = await insertSession(ctx.db, {
+  const result = await insertSession(ctx.db, {
     startedAt: now,
     durationSeconds: durationResult.value,
     surahStart,
@@ -102,6 +102,10 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     pageStart,
     pageEnd,
   });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error));
+    return;
+  }
 
-  await ctx.reply(formatSessionConfirmation(session));
+  await ctx.reply(formatSessionConfirmation(result.value));
 }

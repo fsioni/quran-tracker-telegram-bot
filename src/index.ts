@@ -92,11 +92,18 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   const duePrayers = getDueReminders(cache, nowHHMM);
 
   if (duePrayers.length > 0) {
-    const [lastSession, weekStats, streak] = await Promise.all([
+    const [lastSession, weekStatsResult, streak] = await Promise.all([
       getLastSession(db),
       getPeriodStats(db, "week", tz),
       calculateStreak(db, tz),
     ]);
+
+    const weekStats = weekStatsResult.ok
+      ? weekStatsResult.value
+      : (() => {
+          console.error("getPeriodStats failed:", weekStatsResult.error);
+          return { sessions: 0, ayahs: 0, seconds: 0 };
+        })();
 
     let message: string;
     if (lastSession) {

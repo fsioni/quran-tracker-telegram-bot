@@ -57,7 +57,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const now = getNowTimestamp(tz);
 
   // Insert session with type 'kahf'
-  await insertSession(ctx.db, {
+  const result = await insertSession(ctx.db, {
     startedAt: now,
     durationSeconds: durationSeconds,
     surahStart: rangeData.surahStart,
@@ -69,6 +69,10 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     pageStart,
     pageEnd,
   });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error));
+    return;
+  }
 
   // Calculate week totals including this session
   const weekPagesRead = pagesAlreadyRead + count;
@@ -79,7 +83,11 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
 
   if (isComplete) {
-    const lastWeekTotalSeconds = await getLastWeekKahfTotal(ctx.db, tz);
+    const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
+    if (!lastWeekResult.ok) {
+      console.error("getLastWeekKahfTotal failed:", lastWeekResult.error);
+    }
+    const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
 
     await ctx.reply(
       formatKahfPageConfirmation({
