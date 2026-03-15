@@ -25,7 +25,7 @@ vi.mock("../src/services/prayer", async (importOriginal) => {
     fetchPrayerTimes: vi.fn(),
     getDueReminders: vi.fn(),
     getNowInTimezone: vi.fn(),
-    isReminderTime: vi.fn(),
+    isReminderDue: vi.fn(),
   };
 });
 
@@ -48,7 +48,7 @@ import {
   getKahfStats,
   setConfig,
 } from "../src/services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderTime } from "../src/services/prayer";
+import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "../src/services/prayer";
 import { formatReminder, formatKahfReminder } from "../src/services/format";
 
 describe("handleScheduled", () => {
@@ -292,7 +292,7 @@ describe("handleScheduled", () => {
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
       vi.mocked(getDueReminders).mockReturnValue([]);
-      vi.mocked(isReminderTime).mockReturnValue(true);
+      vi.mocked(isReminderDue).mockReturnValue(true);
       vi.mocked(getKahfStats).mockResolvedValue({ lastDuration: null, lastDate: null });
       vi.mocked(formatKahfReminder).mockReturnValue("Rappel Al-Kahf");
 
@@ -410,7 +410,7 @@ describe("handleScheduled", () => {
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
       vi.mocked(getDueReminders).mockReturnValue([]);
-      vi.mocked(isReminderTime).mockReturnValue(true);
+      vi.mocked(isReminderDue).mockReturnValue(true);
       vi.mocked(getKahfStats).mockResolvedValue({ lastDuration: 1500, lastDate: "2026-03-07" });
       vi.mocked(formatKahfReminder).mockReturnValue("Rappel Al-Kahf avec stats");
 
