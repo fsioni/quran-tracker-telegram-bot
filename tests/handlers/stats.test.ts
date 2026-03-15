@@ -16,6 +16,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getConfig: vi.fn(),
     getTimezone: vi.fn(),
     getLastSession: vi.fn(),
+    getKhatmaCount: vi.fn(),
   };
 });
 
@@ -27,6 +28,7 @@ import {
   getConfig,
   getTimezone,
   getLastSession,
+  getKhatmaCount,
 } from "../../src/services/db";
 
 function makeCtx(match = ""): CustomContext {
@@ -184,6 +186,7 @@ describe("statsHandler", () => {
 describe("progressHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
   it("affiche la progression avec barre et dernier point", async () => {
@@ -276,5 +279,35 @@ describe("progressHandler", () => {
     await progressHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+  });
+
+  it("affiche le nombre de khatmas quand > 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+    vi.mocked(getKhatmaCount).mockResolvedValue(2);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Khatmas : 2");
+  });
+
+  it("n'affiche pas les khatmas quand 0", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 1, totalAyahs: 7, totalSeconds: 533,
+      avgAyahsPerSession: 7, avgSecondsPerSession: 533,
+    }});
+    vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
+
+    const ctx = makeCtx();
+    await progressHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("Khatmas");
   });
 });

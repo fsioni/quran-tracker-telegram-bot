@@ -1,0 +1,4 @@
+CREATE TABLE khatmas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  completed_at TEXT NOT NULL
+);
