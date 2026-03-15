@@ -52,7 +52,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   const now = getNowTimestamp(tz);
 
   // Insert session
-  const session = await insertSession(ctx.db, {
+  const result = await insertSession(ctx.db, {
     startedAt: now,
     durationSeconds,
     surahStart: rangeData.surahStart,
@@ -64,6 +64,11 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     pageStart,
     pageEnd,
   });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error));
+    return;
+  }
+  const session = result.value;
 
   await ctx.reply(
     formatReadConfirmation({
