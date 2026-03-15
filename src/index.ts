@@ -1,4 +1,5 @@
-import { createBot } from "./bot";
+import { createBot, BOT_COMMANDS } from "./bot";
+import { Bot } from "grammy";
 import { webhookCallback } from "grammy";
 import {
   getConfig,
@@ -119,6 +120,12 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === "/setup") {
+      const bot = new Bot(env.BOT_TOKEN);
+      await bot.api.setMyCommands(BOT_COMMANDS);
+      return new Response("Commands registered");
+    }
     const bot = createBot(env.BOT_TOKEN, env.DB);
     return webhookCallback(bot, "cloudflare-mod")(request);
   },
