@@ -15,6 +15,7 @@ import {
   type TimerType,
   type TimerState,
   type SessionType,
+  type Session,
 } from "../services/db";
 import {
   parseVerseStart,
@@ -61,9 +62,6 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
 
   // Parse arguments -> determine type + args
   const parsed = parseGoArgs(input);
-  if (!parsed) {
-    return;
-  }
   if (typeof parsed === "string") {
     await ctx.reply(formatError(parsed));
     return;
@@ -123,7 +121,7 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
   await ctx.reply(messages[parsed.type]);
 }
 
-function parseGoArgs(input: string): ParsedGoArgs | string | null {
+function parseGoArgs(input: string): ParsedGoArgs | string {
   if (!input) return { type: "normal_page" };
 
   if (input === "kahf") return { type: "kahf" };
@@ -254,6 +252,53 @@ function parsePageCount(text: string): number | null {
   return isNaN(count) || count < 1 ? null : count;
 }
 
+async function handlePageResponse(
+  ctx: CustomContext,
+  state: TimerState,
+  trimmed: string,
+  sessionType: SessionType,
+  pageStart: number,
+  maxPage: number,
+  overflowMsg: (pageEnd: number) => string,
+  formatReply: (session: Session, pageStart: number, pageEnd: number, duration: number) => string,
+): Promise<void> {
+  const count = parsePageCount(trimmed);
+  if (!count) {
+    await ctx.reply(formatError("nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler"));
+    return;
+  }
+  const pageEnd = pageStart + count - 1;
+  if (pageEnd > maxPage) {
+    await ctx.reply(formatError(overflowMsg(pageEnd)));
+    return;
+  }
+  const rangeData = getPageRange(pageStart, pageEnd);
+  if (!rangeData) {
+    await ctx.reply(formatError("pages invalides"));
+    return;
+  }
+  const result = await insertSession(ctx.db, {
+    startedAt: state.startedAt,
+    durationSeconds: state.durationSeconds!,
+    surahStart: rangeData.surahStart,
+    ayahStart: rangeData.ayahStart,
+    surahEnd: rangeData.surahEnd,
+    ayahEnd: rangeData.ayahEnd,
+    ayahCount: rangeData.ayahCount,
+    type: sessionType,
+    pageStart,
+    pageEnd,
+  });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error));
+    return;
+  }
+  await Promise.all([
+    clearTimerState(ctx.db),
+    ctx.reply(formatReply(result.value, pageStart, pageEnd, state.durationSeconds!)),
+  ]);
+}
+
 async function handleVerseResponse(
   ctx: CustomContext,
   state: TimerState,
@@ -317,93 +362,20 @@ export async function timerResponseHandler(
   try {
     switch (state.type) {
       case "normal_page": {
-        const count = parsePageCount(trimmed);
-        if (!count) {
-          await ctx.reply(formatError("nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler"));
-          return;
-        }
         const lastSession = await getLastSession(ctx.db, "normal");
         const pageStart = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
-        const pageEnd = pageStart + count - 1;
-        if (pageEnd > TOTAL_PAGES) {
-          await ctx.reply(formatError(`il ne reste que ${TOTAL_PAGES - pageStart + 1} page(s) (page ${pageStart} a ${TOTAL_PAGES})`));
-          return;
-        }
-        const rangeData = getPageRange(pageStart, pageEnd);
-        if (!rangeData) {
-          await ctx.reply(formatError("pages invalides"));
-          return;
-        }
-        const result = await insertSession(ctx.db, {
-          startedAt: state.startedAt,
-          durationSeconds: state.durationSeconds!,
-          surahStart: rangeData.surahStart,
-          ayahStart: rangeData.ayahStart,
-          surahEnd: rangeData.surahEnd,
-          ayahEnd: rangeData.ayahEnd,
-          ayahCount: rangeData.ayahCount,
-          type: "normal",
-          pageStart,
-          pageEnd,
-        });
-        if (!result.ok) {
-          await ctx.reply(formatError(result.error));
-          return;
-        }
-        await Promise.all([
-          clearTimerState(ctx.db),
-          ctx.reply(
-            formatReadConfirmation({
-              pageStart,
-              pageEnd,
-              durationSeconds: state.durationSeconds!,
-              totalPagesRead: pageEnd,
-              totalPages: TOTAL_PAGES,
-            }),
-          ),
-        ]);
-        return;
+        return handlePageResponse(ctx, state, trimmed, "normal", pageStart, TOTAL_PAGES,
+          () => `il ne reste que ${TOTAL_PAGES - pageStart + 1} page(s) (page ${pageStart} a ${TOTAL_PAGES})`,
+          (_r, ps, pe, dur) => formatReadConfirmation({ pageStart: ps, pageEnd: pe, durationSeconds: dur, totalPagesRead: pe, totalPages: TOTAL_PAGES }),
+        );
       }
 
       case "extra_page": {
-        const count = parsePageCount(trimmed);
-        if (!count) {
-          await ctx.reply(formatError("nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler"));
-          return;
-        }
         const parsedArgs = JSON.parse(state.args);
-        const pageStart = parsedArgs.page;
-        const pageEnd = pageStart + count - 1;
-        if (pageEnd > TOTAL_PAGES) {
-          await ctx.reply(formatError(`depassement: pages ${pageStart}-${pageEnd} (max ${TOTAL_PAGES})`));
-          return;
-        }
-        const rangeData = getPageRange(pageStart, pageEnd);
-        if (!rangeData) {
-          await ctx.reply(formatError("pages invalides"));
-          return;
-        }
-        const result = await insertSession(ctx.db, {
-          startedAt: state.startedAt,
-          durationSeconds: state.durationSeconds!,
-          surahStart: rangeData.surahStart,
-          ayahStart: rangeData.ayahStart,
-          surahEnd: rangeData.surahEnd,
-          ayahEnd: rangeData.ayahEnd,
-          ayahCount: rangeData.ayahCount,
-          type: "extra",
-          pageStart,
-          pageEnd,
-        });
-        if (!result.ok) {
-          await ctx.reply(formatError(result.error));
-          return;
-        }
-        await Promise.all([
-          clearTimerState(ctx.db),
-          ctx.reply(formatSessionConfirmation({ ...result.value, type: "extra" })),
-        ]);
-        return;
+        return handlePageResponse(ctx, state, trimmed, "extra", parsedArgs.page, TOTAL_PAGES,
+          (pe) => `depassement: pages ${parsedArgs.page}-${pe} (max ${TOTAL_PAGES})`,
+          (s) => formatSessionConfirmation({ ...s, type: "extra" }),
+        );
       }
 
       case "normal_verse":
