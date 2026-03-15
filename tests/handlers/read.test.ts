@@ -11,13 +11,15 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     ...actual,
     getLastSession: vi.fn(),
     insertSession: vi.fn(),
+    insertKhatma: vi.fn(),
+    getKhatmaCount: vi.fn(),
     getConfig: vi.fn(),
     getTimezone: vi.fn(),
     getNowTimestamp: vi.fn(),
   };
 });
 
-import { getLastSession, insertSession, getConfig, getTimezone, getNowTimestamp } from "../../src/services/db";
+import { getLastSession, insertSession, insertKhatma, getKhatmaCount, getConfig, getTimezone, getNowTimestamp } from "../../src/services/db";
 
 const mockGetLastSession = getLastSession as ReturnType<typeof vi.fn>;
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
@@ -57,6 +59,8 @@ describe("readHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetLastSession.mockResolvedValue(null); // no previous session
+    vi.mocked(insertKhatma).mockResolvedValue({ id: 1, completedAt: "2026-03-15 14:00:00" });
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
   it("/read 5m sans session precedente -> enregistre page 1", async () => {
@@ -163,7 +167,7 @@ describe("readHandler", () => {
     );
   });
 
-  it("/read 5m a page 604 -> Coran termine", async () => {
+  it("/read 5m a page 604 -> khatma message", async () => {
     mockGetLastSession.mockResolvedValue(
       makeSession({ pageEnd: 603 }),
     );
@@ -174,30 +178,49 @@ describe("readHandler", () => {
       durationSeconds: 300,
     });
     mockInsertSession.mockResolvedValue({ ok: true, value: session });
+    vi.mocked(getKhatmaCount).mockResolvedValue(1);
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Page 604");
-    expect(msg).toContain("Coran termine");
+    expect(msg).toContain("Khatma");
+    expect(msg).toContain("premiere");
     expect(msg).toContain("Alhamdulillah");
+    expect(insertKhatma).toHaveBeenCalled();
+    expect(getKhatmaCount).toHaveBeenCalled();
   });
 
-  it("/read 5m quand currentPage > 604 -> message de fin", async () => {
+  it("/read 5m quand currentPage > 604 -> reprend a page 1", async () => {
     mockGetLastSession.mockResolvedValue(
       makeSession({ pageEnd: 604 }),
     );
+    const session = makeSession({
+      pageStart: 1,
+      pageEnd: 1,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
     const ctx = createMockContext("5m");
     await readHandler(ctx);
 
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        pageStart: 1,
+        pageEnd: 1,
+      }),
+    );
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Tu as termine le Coran");
-    expect(msg).toContain("Alhamdulillah");
-    expect(mockInsertSession).not.toHaveBeenCalled();
+    expect(msg).toContain("Page 1");
+    expect(msg).toContain("Prochaine page : 2");
   });
 
   it("erreur si pageEnd depasse 604", async () => {
@@ -268,5 +291,45 @@ describe("readHandler", () => {
         pageEnd: 1,
       }),
     );
+  });
+
+  it("/read terminant une sourate -> message de fin de sourate", async () => {
+    // Page 1 = Al-Fatiha 1:1 to 1:7 (complete surah)
+    const session = makeSession({
+      pageStart: 1,
+      pageEnd: 1,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockContext("5m");
+    await readHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+  });
+
+  it("pas de message fin de sourate en milieu de sourate", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 41 }));
+    const session = makeSession({
+      pageStart: 42,
+      pageEnd: 42,
+      surahStart: 2,
+      ayahStart: 253,
+      surahEnd: 2,
+      ayahEnd: 256,
+      ayahCount: 4,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockContext("5m");
+    await readHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).not.toContain("terminee");
   });
 });
