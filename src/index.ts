@@ -122,9 +122,17 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/setup") {
-      const bot = new Bot(env.BOT_TOKEN);
-      await bot.api.setMyCommands(BOT_COMMANDS);
-      return new Response("Commands registered");
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405 });
+      }
+      try {
+        const bot = new Bot(env.BOT_TOKEN);
+        await bot.api.setMyCommands(BOT_COMMANDS);
+        return new Response("Commands registered");
+      } catch (e) {
+        console.error("setMyCommands failed:", (e as Error).message);
+        return new Response("Failed to register commands", { status: 502 });
+      }
     }
     const bot = createBot(env.BOT_TOKEN, env.DB);
     return webhookCallback(bot, "cloudflare-mod")(request);

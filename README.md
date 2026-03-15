@@ -72,9 +72,17 @@ wrangler secret put BOT_TOKEN
 wrangler deploy
 ```
 
-## Configuration du webhook Telegram
+## Configuration post-deploiement
 
-Apres le deploiement, configurer le webhook pour que Telegram envoie les messages au Worker :
+Apres le deploiement, deux etapes manuelles :
+
+1. **Enregistrer le menu de commandes** (une seule fois, ou apres ajout de commandes) :
+
+```bash
+curl -X POST <WORKER_URL>/setup
+```
+
+2. **Configurer le webhook Telegram** pour que les messages arrivent au Worker :
 
 ```
 https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=<WORKER_URL>
