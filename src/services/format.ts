@@ -224,17 +224,30 @@ export function formatSessionConfirmation(session: {
   ayahCount: number;
   durationSeconds: number;
   type?: string;
+  pageStart?: number | null;
+  pageEnd?: number | null;
 }): string {
   const startName = getSurah(session.surahStart)?.nameFr ?? `Sourate ${session.surahStart}`;
   const endName = getSurah(session.surahEnd)?.nameFr ?? `Sourate ${session.surahEnd}`;
   const duration = formatDuration(session.durationSeconds);
   const prefix = session.type === "extra" ? "Session extra enregistree :" : "Session enregistree :";
 
-  if (session.surahStart === session.surahEnd) {
-    return `${prefix} sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+  let speedSuffix = "";
+  if (session.durationSeconds > 0) {
+    if (session.pageStart != null && session.pageEnd != null) {
+      const pagesPerHour = (session.pageEnd - session.pageStart + 1) / (session.durationSeconds / 3600);
+      speedSuffix = ` (${pagesPerHour.toFixed(1)} pages/h)`;
+    } else {
+      const versetsPerHour = Math.round(session.ayahCount / (session.durationSeconds / 3600));
+      speedSuffix = ` (${versetsPerHour} versets/h)`;
+    }
   }
 
-  return `${prefix} sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}`;
+  if (session.surahStart === session.surahEnd) {
+    return `${prefix} sourate ${startName} v.${session.ayahStart} a v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}${speedSuffix}`;
+  }
+
+  return `${prefix} sourate ${startName} v.${session.ayahStart} a sourate ${endName} v.${session.ayahEnd} -- ${session.ayahCount} versets en ${duration}${speedSuffix}`;
 }
 
 export function formatHistoryLine(session: {
@@ -359,15 +372,21 @@ export function formatReadConfirmation(data: {
   const duration = formatDuration(data.durationSeconds);
   const isLastPage = data.pageEnd === data.totalPages;
 
+  let speedPart = "";
+  if (data.durationSeconds > 0) {
+    const pagesPerHour = (data.pageEnd - data.pageStart + 1) / (data.durationSeconds / 3600);
+    speedPart = ` -- ${pagesPerHour.toFixed(1)} pages/h`;
+  }
+
   if (data.pageStart === data.pageEnd) {
-    const line1 = `Page ${data.pageStart} lue en ${duration} (${data.totalPagesRead}/${data.totalPages})`;
+    const line1 = `Page ${data.pageStart} lue en ${duration}${speedPart} (${data.totalPagesRead}/${data.totalPages})`;
     if (isLastPage) {
       return `${line1}\nCoran termine ! Alhamdulillah !`;
     }
     return `${line1}\nProchaine page : ${data.pageEnd + 1}`;
   }
 
-  const line1 = `Pages ${data.pageStart}-${data.pageEnd} lues en ${duration} (${data.totalPagesRead}/${data.totalPages})`;
+  const line1 = `Pages ${data.pageStart}-${data.pageEnd} lues en ${duration}${speedPart} (${data.totalPagesRead}/${data.totalPages})`;
   if (isLastPage) {
     return `${line1}\nCoran termine ! Alhamdulillah !`;
   }
@@ -385,9 +404,15 @@ export function formatKahfPageConfirmation(data: {
 }): string {
   const duration = formatDuration(data.durationSeconds);
 
+  let speedPart = "";
+  if (data.durationSeconds > 0) {
+    const pagesPerHour = 1 / (data.durationSeconds / 3600);
+    speedPart = ` -- ${pagesPerHour.toFixed(1)} pages/h`;
+  }
+
   if (!data.isComplete) {
     const weekDuration = formatDuration(data.weekTotalSeconds);
-    return `Al-Kahf page ${data.kahfPage}/${data.kahfTotal} lue en ${duration}\nCette semaine : ${data.weekPagesRead}/${data.kahfTotal} pages, ${weekDuration} au total`;
+    return `Al-Kahf page ${data.kahfPage}/${data.kahfTotal} lue en ${duration}${speedPart}\nCette semaine : ${data.weekPagesRead}/${data.kahfTotal} pages, ${weekDuration} au total`;
   }
 
   const weekDuration = formatDuration(data.weekTotalSeconds);
