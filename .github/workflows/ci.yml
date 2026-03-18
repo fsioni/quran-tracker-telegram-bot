@@ -30,15 +30,21 @@ jobs:
       - run: npm ci
       - name: Deploy
         id: deploy
+        # Requires BOT_TOKEN and ALLOWED_USER_ID to be set as Cloudflare secrets
+        # (via wrangler secret put) before first deploy
         run: |
           DEPLOY_OUTPUT=$(npx wrangler deploy 2>&1)
           echo "$DEPLOY_OUTPUT"
           WORKER_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+workers\.dev')
+          if [ -z "$WORKER_URL" ]; then
+            echo "::error::Could not detect Worker URL from wrangler output"
+            exit 1
+          fi
           echo "worker_url=$WORKER_URL" >> "$GITHUB_OUTPUT"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Register bot commands
         run: |
-          curl -sf -X POST "${{ steps.deploy.outputs.worker_url }}/setup" \
+          curl -sS --fail-with-body -X POST "${{ steps.deploy.outputs.worker_url }}/setup" \
             -H "Authorization: Bearer ${{ secrets.BOT_TOKEN }}"
