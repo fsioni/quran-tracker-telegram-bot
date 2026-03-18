@@ -380,10 +380,14 @@ export async function getPeriodStats(
   db: D1Database,
   period: "week" | "month",
   tz: string,
+  weekOffset: number = 0,
 ): Promise<Result<PeriodStats>> {
   const today = getTodayInTimezone(tz);
+  const baseDay = period === "week" && weekOffset > 0
+    ? addDays(today, -7 * weekOffset)
+    : today;
   const bounds =
-    period === "week" ? getWeekBounds(today) : getMonthBounds(today);
+    period === "week" ? getWeekBounds(baseDay) : getMonthBounds(today);
 
   const row = await db
     .prepare(
@@ -429,6 +433,44 @@ export async function getPreviousWeekStats(
   } catch (e) {
     return err(`getPreviousWeekStats: ${e instanceof Error ? e.message : String(e)}`);
   }
+}
+
+export async function getWeekPages(
+  db: D1Database,
+  tz: string,
+  weekOffset: number = 0,
+): Promise<Result<number>> {
+  const today = getTodayInTimezone(tz);
+  const baseDay = weekOffset > 0 ? addDays(today, -7 * weekOffset) : today;
+  const { start, end } = getWeekBounds(baseDay);
+  const row = await db
+    .prepare(
+      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages
+       FROM sessions
+       WHERE page_start IS NOT NULL AND page_end IS NOT NULL
+         AND substr(started_at, 1, 10) BETWEEN ? AND ?`,
+    )
+    .bind(start, end)
+    .first<{ total_pages: number }>();
+  if (!row) return err("getWeekPages: D1 returned no row for aggregate query");
+  return ok(row.total_pages);
+}
+
+export async function getWeekSessions(
+  db: D1Database,
+  tz: string,
+): Promise<Session[]> {
+  const today = getTodayInTimezone(tz);
+  const { start, end } = getWeekBounds(today);
+  const { results } = await db
+    .prepare(
+      `SELECT * FROM sessions
+       WHERE substr(started_at, 1, 10) BETWEEN ? AND ?
+       ORDER BY started_at`,
+    )
+    .bind(start, end)
+    .all<SessionRow>();
+  return results.map(mapRow);
 }
 
 // --- Streak ---
