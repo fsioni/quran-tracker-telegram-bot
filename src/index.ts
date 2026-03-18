@@ -16,7 +16,8 @@ import {
 } from "./services/db";
 import type { PrayerCacheRow } from "./services/db";
 import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "./services/prayer";
-import { formatReminder, formatKahfReminder } from "./services/format";
+import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "./services/format";
+import { buildWeeklyRecap } from "./services/weeklyRecap";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
@@ -146,6 +147,27 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
         if (kahfSent) {
           await setConfig(db, "kahf_reminder_last", today);
         }
+      }
+    }
+  }
+
+  // Weekly recap - Sunday evening
+  if (dayOfWeek === "Sunday") {
+    const recapLast = await getConfig(db, "weekly_recap_last");
+    if (recapLast !== today && nowHHMM >= "21:00") {
+      try {
+        const recapResult = await buildWeeklyRecap(db, tz);
+        if (!recapResult.ok) {
+          console.error("buildWeeklyRecap failed:", recapResult.error);
+        } else {
+          const recapMsg = formatWeeklyRecap(recapResult.value);
+          const recapSent = await sendTelegramMessage(botToken, chatId, recapMsg);
+          if (recapSent) {
+            await setConfig(db, "weekly_recap_last", today);
+          }
+        }
+      } catch (e) {
+        console.error("Weekly recap failed:", (e as Error).message);
       }
     }
   }
