@@ -10,6 +10,7 @@ import {
   getRecentPace,
   getTodayInTimezone,
   getKhatmaCount,
+  getPreviousWeekStats,
   type SessionType,
 } from "../services/db";
 import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError } from "../services/format";
@@ -20,11 +21,12 @@ const MSG_NO_SESSION = "Aucune session enregistree.";
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const tz = await getTimezone(ctx.db);
 
-  const [globalResult, weekResult, monthResult, streak] = await Promise.all([
+  const [globalResult, weekResult, monthResult, streak, prevWeekResult] = await Promise.all([
     getGlobalStats(ctx.db),
     getPeriodStats(ctx.db, "week", tz),
     getPeriodStats(ctx.db, "month", tz),
     calculateStreak(ctx.db, tz),
+    getPreviousWeekStats(ctx.db, tz),
   ]);
 
   if (!globalResult.ok) { await ctx.reply(formatError(globalResult.error)); return; }
@@ -40,6 +42,10 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
     weekSeconds: weekResult.value.seconds,
     monthAyahs: monthResult.value.ayahs,
     monthSeconds: monthResult.value.seconds,
+    ...(prevWeekResult.ok && {
+      prevWeekAyahs: prevWeekResult.value.ayahs,
+      prevWeekSeconds: prevWeekResult.value.seconds,
+    }),
   });
 
   await ctx.reply(msg);
