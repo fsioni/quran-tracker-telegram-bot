@@ -156,55 +156,63 @@ function argsToJson(parsed: ParsedGoArgs): string {
   return "{}";
 }
 
-// --- /stop handler ---
+// --- Shared stop logic ---
 
-export async function stopHandler(ctx: CustomContext): Promise<void> {
-  const input = ((ctx.match as string) || "").trim();
+type SendFn = (...args: [text: string, opts?: { reply_markup?: InlineKeyboard }]) => Promise<unknown>;
 
-  const state = await getTimerState(ctx.db);
+async function executeTimerStop(db: D1Database, send: SendFn): Promise<void> {
+  const state = await getTimerState(db);
   if (!state) {
-    await ctx.reply("Aucun timer actif.");
+    await send("Aucun timer actif.");
     return;
   }
 
-  // /stop cancel
-  if (input === "cancel") {
-    await clearTimerState(ctx.db);
-    await ctx.reply("Timer annule.");
-    return;
-  }
-
-  // If already awaiting response, remind the question
   if (state.awaitingResponse) {
-    await ctx.reply(getQuestionForType(state.type, state.durationSeconds!));
+    await send(getQuestionForType(state.type, state.durationSeconds!));
     return;
   }
 
-  // Calculate duration
   const durationSeconds = Math.floor((Date.now() - state.startedEpoch) / 1000);
 
-  // If > 4h, ask confirmation (capture duration for later use)
   if (durationSeconds > MAX_TIMER_SECONDS) {
     const keyboard = new InlineKeyboard()
       .text("Oui", CALLBACK_TIMER_CONFIRM)
       .text("Non", CALLBACK_TIMER_CANCEL);
-    // Store duration now so confirmation callback uses time-of-stop, not time-of-click
-    await setTimerState(ctx.db, { ...state, durationSeconds });
-    await ctx.reply(
+    await setTimerState(db, { ...state, durationSeconds });
+    await send(
       `Le timer tourne depuis ${formatDuration(durationSeconds)} (plus de 4h). Confirmer l'arret ?`,
       { reply_markup: keyboard },
     );
     return;
   }
 
-  // Proceed: store awaiting + duration, ask question
-  await setTimerState(ctx.db, {
+  await setTimerState(db, {
     ...state,
     awaitingResponse: true,
     durationSeconds,
   });
 
-  await ctx.reply(getQuestionForType(state.type, durationSeconds));
+  await send(getQuestionForType(state.type, durationSeconds));
+}
+
+// --- /stop handler ---
+
+export async function stopHandler(ctx: CustomContext): Promise<void> {
+  const input = ((ctx.match as string) || "").trim();
+
+  // /stop cancel
+  if (input === "cancel") {
+    const state = await getTimerState(ctx.db);
+    if (!state) {
+      await ctx.reply("Aucun timer actif.");
+      return;
+    }
+    await clearTimerState(ctx.db);
+    await ctx.reply("Timer annule.");
+    return;
+  }
+
+  await executeTimerStop(ctx.db, (...args) => ctx.reply(...args));
 }
 
 function getQuestionForType(type: TimerType, durationSeconds: number): string {
@@ -252,40 +260,7 @@ export async function cancelTimerStopCallback(ctx: CustomContext): Promise<void>
 // --- Callback for inline Stop button ---
 
 export async function stopTimerCallback(ctx: CustomContext): Promise<void> {
-  const state = await getTimerState(ctx.db);
-  if (!state) {
-    await ctx.editMessageText("Aucun timer actif.");
-    await ctx.answerCallbackQuery();
-    return;
-  }
-
-  if (state.awaitingResponse) {
-    await ctx.answerCallbackQuery({ text: "Timer deja arrete." });
-    return;
-  }
-
-  const durationSeconds = Math.floor((Date.now() - state.startedEpoch) / 1000);
-
-  if (durationSeconds > MAX_TIMER_SECONDS) {
-    const keyboard = new InlineKeyboard()
-      .text("Oui", CALLBACK_TIMER_CONFIRM)
-      .text("Non", CALLBACK_TIMER_CANCEL);
-    await setTimerState(ctx.db, { ...state, durationSeconds });
-    await ctx.editMessageText(
-      `Le timer tourne depuis ${formatDuration(durationSeconds)} (plus de 4h). Confirmer l'arret ?`,
-      { reply_markup: keyboard },
-    );
-    await ctx.answerCallbackQuery();
-    return;
-  }
-
-  await setTimerState(ctx.db, {
-    ...state,
-    awaitingResponse: true,
-    durationSeconds,
-  });
-
-  await ctx.editMessageText(getQuestionForType(state.type, durationSeconds));
+  await executeTimerStop(ctx.db, (...args) => ctx.editMessageText(...args));
   await ctx.answerCallbackQuery();
 }
 
