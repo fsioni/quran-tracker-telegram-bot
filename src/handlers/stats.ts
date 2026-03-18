@@ -99,7 +99,7 @@ export async function speedHandler(ctx: CustomContext): Promise<void> {
   ]);
 
   if (averages.global === null) {
-    await ctx.reply("Aucune session enregistree.");
+    await ctx.reply(MSG_NO_SESSION);
     return;
   }
 

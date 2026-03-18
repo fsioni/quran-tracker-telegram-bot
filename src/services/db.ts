@@ -497,8 +497,8 @@ export async function getSpeedAverages(
   tz: string,
 ): Promise<SpeedAverages> {
   const today = getTodayInTimezone(tz);
-  const date7d = addDays(today, -7);
-  const date30d = addDays(today, -30);
+  const date7d = addDays(today, -(7 - 1));
+  const date30d = addDays(today, -(30 - 1));
 
   const row = await db
     .prepare(
