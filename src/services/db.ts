@@ -396,7 +396,7 @@ export async function getWeekPages(
   db: D1Database,
   tz: string,
   weekOffset: number = 0,
-): Promise<number> {
+): Promise<Result<number>> {
   const today = getTodayInTimezone(tz);
   const baseDay = weekOffset > 0 ? addDays(today, -7 * weekOffset) : today;
   const { start, end } = getWeekBounds(baseDay);
@@ -409,7 +409,8 @@ export async function getWeekPages(
     )
     .bind(start, end)
     .first<{ total_pages: number }>();
-  return row?.total_pages ?? 0;
+  if (!row) return err("getWeekPages: D1 returned no row for aggregate query");
+  return ok(row.total_pages);
 }
 
 export async function getWeekSessions(

@@ -155,11 +155,19 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   if (dayOfWeek === "Sunday") {
     const recapLast = await getConfig(db, "weekly_recap_last");
     if (recapLast !== today && nowHHMM >= "21:00") {
-      const recapData = await buildWeeklyRecap(db, tz);
-      const recapMsg = formatWeeklyRecap(recapData);
-      const recapSent = await sendTelegramMessage(botToken, chatId, recapMsg);
-      if (recapSent) {
-        await setConfig(db, "weekly_recap_last", today);
+      try {
+        const recapResult = await buildWeeklyRecap(db, tz);
+        if (!recapResult.ok) {
+          console.error("buildWeeklyRecap failed:", recapResult.error);
+        } else {
+          const recapMsg = formatWeeklyRecap(recapResult.value);
+          const recapSent = await sendTelegramMessage(botToken, chatId, recapMsg);
+          if (recapSent) {
+            await setConfig(db, "weekly_recap_last", today);
+          }
+        }
+      } catch (e) {
+        console.error("Weekly recap failed:", (e as Error).message);
       }
     }
   }

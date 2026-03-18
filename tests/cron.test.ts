@@ -470,12 +470,15 @@ describe("handleScheduled", () => {
     it("envoie le recap le dimanche a 21h+", async () => {
       setupSundayMocks();
       vi.mocked(buildWeeklyRecap).mockResolvedValue({
-        thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-        lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
-        thisWeekPages: 12,
-        lastWeekPages: 10,
-        streak: { currentStreak: 8, bestStreak: 15 },
-        completedSurahs: [],
+        ok: true,
+        value: {
+          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeekPages: 12,
+          lastWeekPages: 10,
+          streak: { currentStreak: 8, bestStreak: 15 },
+          completedSurahs: [],
+        },
       });
       vi.mocked(formatWeeklyRecap).mockReturnValue("Recap test");
 

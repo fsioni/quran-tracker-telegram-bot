@@ -2,6 +2,8 @@ import { getPeriodStats, getWeekPages, getWeekSessions, calculateStreak } from "
 import { getCompletedSurahs } from "./quran";
 import type { PeriodStats, StreakResult } from "./db";
 import type { Surah } from "../data/surahs";
+import type { Result } from "../types";
+import { ok, err } from "../types";
 
 export type WeeklyRecapData = {
   thisWeek: PeriodStats;
@@ -15,12 +17,12 @@ export type WeeklyRecapData = {
 export async function buildWeeklyRecap(
   db: D1Database,
   tz: string,
-): Promise<WeeklyRecapData> {
+): Promise<Result<WeeklyRecapData>> {
   const [
     thisWeekResult,
     lastWeekResult,
-    thisWeekPages,
-    lastWeekPages,
+    thisWeekPagesResult,
+    lastWeekPagesResult,
     streak,
     weekSessions,
   ] = await Promise.all([
@@ -32,12 +34,10 @@ export async function buildWeeklyRecap(
     getWeekSessions(db, tz),
   ]);
 
-  const thisWeek = thisWeekResult.ok
-    ? thisWeekResult.value
-    : { sessions: 0, ayahs: 0, seconds: 0 };
-  const lastWeek = lastWeekResult.ok
-    ? lastWeekResult.value
-    : { sessions: 0, ayahs: 0, seconds: 0 };
+  if (!thisWeekResult.ok) return err(thisWeekResult.error);
+  if (!lastWeekResult.ok) return err(lastWeekResult.error);
+  if (!thisWeekPagesResult.ok) return err(thisWeekPagesResult.error);
+  if (!lastWeekPagesResult.ok) return err(lastWeekPagesResult.error);
 
   const surahSet = new Map<number, Surah>();
   for (const s of weekSessions) {
@@ -47,12 +47,12 @@ export async function buildWeeklyRecap(
     }
   }
 
-  return {
-    thisWeek,
-    lastWeek,
-    thisWeekPages,
-    lastWeekPages,
+  return ok({
+    thisWeek: thisWeekResult.value,
+    lastWeek: lastWeekResult.value,
+    thisWeekPages: thisWeekPagesResult.value,
+    lastWeekPages: lastWeekPagesResult.value,
     streak,
     completedSurahs: [...surahSet.values()],
-  };
+  });
 }

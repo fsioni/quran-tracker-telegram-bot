@@ -27,7 +27,9 @@ describe("buildWeeklyRecap", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({ ok: true, value: { sessions: 5, ayahs: 100, seconds: 3000 } })
       .mockResolvedValueOnce({ ok: true, value: { sessions: 4, ayahs: 80, seconds: 2500 } });
-    vi.mocked(getWeekPages).mockResolvedValueOnce(12).mockResolvedValueOnce(10);
+    vi.mocked(getWeekPages)
+      .mockResolvedValueOnce({ ok: true, value: 12 })
+      .mockResolvedValueOnce({ ok: true, value: 10 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 8, bestStreak: 15 });
     vi.mocked(getWeekSessions).mockResolvedValue([
       {
@@ -39,18 +41,20 @@ describe("buildWeeklyRecap", () => {
 
     const result = await buildWeeklyRecap(db, "America/Cancun");
 
-    expect(result.thisWeek).toEqual({ sessions: 5, ayahs: 100, seconds: 3000 });
-    expect(result.lastWeek).toEqual({ sessions: 4, ayahs: 80, seconds: 2500 });
-    expect(result.thisWeekPages).toBe(12);
-    expect(result.lastWeekPages).toBe(10);
-    expect(result.streak).toEqual({ currentStreak: 8, bestStreak: 15 });
-    expect(result.completedSurahs).toHaveLength(1);
-    expect(result.completedSurahs[0].number).toBe(1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.thisWeek).toEqual({ sessions: 5, ayahs: 100, seconds: 3000 });
+    expect(result.value.lastWeek).toEqual({ sessions: 4, ayahs: 80, seconds: 2500 });
+    expect(result.value.thisWeekPages).toBe(12);
+    expect(result.value.lastWeekPages).toBe(10);
+    expect(result.value.streak).toEqual({ currentStreak: 8, bestStreak: 15 });
+    expect(result.value.completedSurahs).toHaveLength(1);
+    expect(result.value.completedSurahs[0].number).toBe(1);
   });
 
   it("detecte les sourates completes et deduplique", async () => {
     vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 2, ayahs: 50, seconds: 1000 } });
-    vi.mocked(getWeekPages).mockResolvedValue(5);
+    vi.mocked(getWeekPages).mockResolvedValue({ ok: true, value: 5 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 3, bestStreak: 3 });
     vi.mocked(getWeekSessions).mockResolvedValue([
       {
@@ -67,24 +71,63 @@ describe("buildWeeklyRecap", () => {
 
     const result = await buildWeeklyRecap(db, "America/Cancun");
 
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
     // Al-Ikhlas (112) appears in both sessions but should be deduplicated
-    expect(result.completedSurahs).toHaveLength(2);
-    const numbers = result.completedSurahs.map(s => s.number);
+    expect(result.value.completedSurahs).toHaveLength(2);
+    const numbers = result.value.completedSurahs.map(s => s.number);
     expect(numbers).toContain(112);
     expect(numbers).toContain(113);
   });
 
-  it("gere le cas ou S-1 est vide (getPeriodStats error)", async () => {
+  it("retourne ok avec zeros quand S-1 est vide (pas d'activite)", async () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({ ok: true, value: { sessions: 3, ayahs: 50, seconds: 1500 } })
-      .mockResolvedValueOnce({ ok: false, error: "no data" });
-    vi.mocked(getWeekPages).mockResolvedValueOnce(5).mockResolvedValueOnce(0);
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 0, ayahs: 0, seconds: 0 } });
+    vi.mocked(getWeekPages)
+      .mockResolvedValueOnce({ ok: true, value: 5 })
+      .mockResolvedValueOnce({ ok: true, value: 0 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 1, bestStreak: 1 });
     vi.mocked(getWeekSessions).mockResolvedValue([]);
 
     const result = await buildWeeklyRecap(db, "America/Cancun");
 
-    expect(result.lastWeek).toEqual({ sessions: 0, ayahs: 0, seconds: 0 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.lastWeek).toEqual({ sessions: 0, ayahs: 0, seconds: 0 });
+    expect(result.value.lastWeekPages).toBe(0);
+  });
+
+  it("propage l'erreur quand getPeriodStats echoue", async () => {
+    vi.mocked(getPeriodStats)
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 3, ayahs: 50, seconds: 1500 } })
+      .mockResolvedValueOnce({ ok: false, error: "DB query failed" });
+    vi.mocked(getWeekPages)
+      .mockResolvedValueOnce({ ok: true, value: 5 })
+      .mockResolvedValueOnce({ ok: true, value: 0 });
+    vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 1, bestStreak: 1 });
+    vi.mocked(getWeekSessions).mockResolvedValue([]);
+
+    const result = await buildWeeklyRecap(db, "America/Cancun");
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBe("DB query failed");
+  });
+
+  it("propage l'erreur quand getWeekPages echoue", async () => {
+    vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 3, ayahs: 50, seconds: 1500 } });
+    vi.mocked(getWeekPages)
+      .mockResolvedValueOnce({ ok: false, error: "getWeekPages: D1 returned no row" })
+      .mockResolvedValueOnce({ ok: true, value: 0 });
+    vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 1, bestStreak: 1 });
+    vi.mocked(getWeekSessions).mockResolvedValue([]);
+
+    const result = await buildWeeklyRecap(db, "America/Cancun");
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("getWeekPages");
   });
 });
 
