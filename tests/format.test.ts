@@ -327,9 +327,10 @@ describe("formatStats", () => {
         "Meilleur streak : 12 jours",
         "",
         "-- Cette semaine --",
-        "Versets : 45 | Duree : 38m",
+        "Versets : 45 | Duree : 38m | Vitesse : 71 versets/h",
+        "",
         "-- Ce mois --",
-        "Versets : 187 | Duree : 2h15m",
+        "Versets : 187 | Duree : 2h15m | Vitesse : 83 versets/h",
       ].join("\n"),
     );
   });
@@ -347,6 +348,99 @@ describe("formatStats", () => {
     });
     expect(result).toContain("Versets lus : 0");
     expect(result).toContain("Vitesse moyenne : 0 versets/heure");
+    expect(result).not.toContain("Vitesse : 0 versets/h");
+  });
+
+  it("affiche la vitesse par periode", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 120,
+      weekSeconds: 2700, // 45m -> 120/2700*3600 = 160
+      monthAyahs: 340,
+      monthSeconds: 8100, // 2h15m -> 340/8100*3600 = 151
+    });
+    expect(result).toContain("Versets : 120 | Duree : 45m | Vitesse : 160 versets/h");
+    expect(result).toContain("Versets : 340 | Duree : 2h15m | Vitesse : 151 versets/h");
+  });
+
+  it("n'affiche pas la vitesse quand seconds est 0", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 0,
+      weekSeconds: 0,
+      monthAyahs: 0,
+      monthSeconds: 0,
+    });
+    expect(result).toContain("Versets : 0 | Duree : 0m");
+    expect(result).not.toContain("Vitesse : 0 versets/h");
+  });
+
+  it("affiche la tendance positive vs semaine derniere", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 120,
+      weekSeconds: 2700, // 160 v/h
+      monthAyahs: 340,
+      monthSeconds: 8100,
+      prevWeekAyahs: 100,
+      prevWeekSeconds: 2520, // ~143 v/h -> +12%
+    });
+    expect(result).toContain("+12% vs semaine derniere");
+  });
+
+  it("affiche la tendance negative vs semaine derniere", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 100,
+      weekSeconds: 2520, // ~143 v/h
+      monthAyahs: 340,
+      monthSeconds: 8100,
+      prevWeekAyahs: 120,
+      prevWeekSeconds: 2700, // 160 v/h -> -11%
+    });
+    expect(result).toContain("-11% vs semaine derniere");
+  });
+
+  it("n'affiche pas la tendance si pas de donnees semaine precedente", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 120,
+      weekSeconds: 2700,
+      monthAyahs: 340,
+      monthSeconds: 8100,
+    });
+    expect(result).not.toContain("vs semaine derniere");
+  });
+
+  it("n'affiche pas la tendance si prevWeekSeconds est 0", () => {
+    const result = formatStats({
+      totalAyahs: 342,
+      totalSeconds: 15780,
+      currentStreak: 5,
+      bestStreak: 12,
+      weekAyahs: 120,
+      weekSeconds: 2700,
+      monthAyahs: 340,
+      monthSeconds: 8100,
+      prevWeekAyahs: 0,
+      prevWeekSeconds: 0,
+    });
+    expect(result).not.toContain("vs semaine derniere");
   });
 });
 

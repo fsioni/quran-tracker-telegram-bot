@@ -287,14 +287,37 @@ export function formatStats(data: {
   weekSeconds: number;
   monthAyahs: number;
   monthSeconds: number;
+  prevWeekAyahs?: number;
+  prevWeekSeconds?: number;
 }): string {
+  const computeSpeed = (ayahs: number, seconds: number): number =>
+    seconds > 0 ? Math.round((ayahs / seconds) * 3600) : 0;
+
   const totalDuration = formatDuration(data.totalSeconds);
-  const speed =
-    data.totalSeconds > 0
-      ? Math.round((data.totalAyahs / data.totalSeconds) * 3600)
-      : 0;
+  const speed = computeSpeed(data.totalAyahs, data.totalSeconds);
   const weekDuration = formatDuration(data.weekSeconds);
   const monthDuration = formatDuration(data.monthSeconds);
+
+  // Week line with optional speed and trend
+  let weekLine = `Versets : ${data.weekAyahs} | Duree : ${weekDuration}`;
+  if (data.weekSeconds > 0) {
+    const weekSpeed = computeSpeed(data.weekAyahs, data.weekSeconds);
+    weekLine += ` | Vitesse : ${weekSpeed} versets/h`;
+
+    if (data.prevWeekSeconds != null && data.prevWeekSeconds > 0) {
+      const prevSpeed = computeSpeed(data.prevWeekAyahs!, data.prevWeekSeconds);
+      const pct = Math.round(((weekSpeed - prevSpeed) / prevSpeed) * 100);
+      const sign = pct >= 0 ? "+" : "";
+      weekLine += ` (${sign}${pct}% vs semaine derniere)`;
+    }
+  }
+
+  // Month line with optional speed
+  let monthLine = `Versets : ${data.monthAyahs} | Duree : ${monthDuration}`;
+  if (data.monthSeconds > 0) {
+    const monthSpeed = computeSpeed(data.monthAyahs, data.monthSeconds);
+    monthLine += ` | Vitesse : ${monthSpeed} versets/h`;
+  }
 
   return [
     "-- Stats globales --",
@@ -305,9 +328,10 @@ export function formatStats(data: {
     `Meilleur streak : ${data.bestStreak} jours`,
     "",
     "-- Cette semaine --",
-    `Versets : ${data.weekAyahs} | Duree : ${weekDuration}`,
+    weekLine,
+    "",
     "-- Ce mois --",
-    `Versets : ${data.monthAyahs} | Duree : ${monthDuration}`,
+    monthLine,
   ].join("\n");
 }
 
