@@ -324,11 +324,13 @@ export function formatStats(data: {
     const weekSpeed = computeSpeed(data.weekAyahs, data.weekSeconds);
     weekLine += ` | Vitesse : ${weekSpeed} versets/h`;
 
-    if (data.prevWeekSeconds != null && data.prevWeekSeconds > 0) {
-      const prevSpeed = computeSpeed(data.prevWeekAyahs!, data.prevWeekSeconds);
-      const pct = Math.round(((weekSpeed - prevSpeed) / prevSpeed) * 100);
-      const sign = pct >= 0 ? "+" : "";
-      weekLine += ` (${sign}${pct}% vs semaine derniere)`;
+    if (data.prevWeekAyahs != null && data.prevWeekSeconds != null && data.prevWeekSeconds > 0) {
+      const prevSpeed = computeSpeed(data.prevWeekAyahs, data.prevWeekSeconds);
+      if (prevSpeed > 0) {
+        const pct = Math.round(((weekSpeed - prevSpeed) / prevSpeed) * 100);
+        const sign = pct >= 0 ? "+" : "";
+        weekLine += ` (${sign}${pct}% vs semaine derniere)`;
+      }
     }
   }
 

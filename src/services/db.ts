@@ -411,20 +411,24 @@ export async function getPreviousWeekStats(
   const start = addDays(currentWeek.start, -7);
   const end = addDays(currentWeek.start, -1);
 
-  const row = await db
-    .prepare(
-      `SELECT
-        COALESCE(COUNT(*), 0) AS sessions,
-        COALESCE(SUM(ayah_count), 0) AS ayahs,
-        COALESCE(SUM(duration_seconds), 0) AS seconds
-      FROM sessions
-      WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`,
-    )
-    .bind(start, end)
-    .first<{ sessions: number; ayahs: number; seconds: number }>();
+  try {
+    const row = await db
+      .prepare(
+        `SELECT
+          COALESCE(COUNT(*), 0) AS sessions,
+          COALESCE(SUM(ayah_count), 0) AS ayahs,
+          COALESCE(SUM(duration_seconds), 0) AS seconds
+        FROM sessions
+        WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`,
+      )
+      .bind(start, end)
+      .first<{ sessions: number; ayahs: number; seconds: number }>();
 
-  if (!row) return err("getPreviousWeekStats: D1 returned no row");
-  return ok(row);
+    if (!row) return err("getPreviousWeekStats: D1 returned no row");
+    return ok(row);
+  } catch (e) {
+    return err(`getPreviousWeekStats: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 // --- Streak ---
