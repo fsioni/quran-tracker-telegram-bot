@@ -265,8 +265,9 @@ describe("formatHistoryLine", () => {
       ayahEnd: 83,
       ayahCount: 7,
     });
+    // 7 ayahs / (533/3600) h = 47 v/h
     expect(result).toBe(
-      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)",
+      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)",
     );
   });
 
@@ -282,7 +283,7 @@ describe("formatHistoryLine", () => {
       ayahCount: 17,
     });
     expect(result).toBe(
-      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v)",
+      "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v, 115v/h)",
     );
   });
 
@@ -298,7 +299,42 @@ describe("formatHistoryLine", () => {
       ayahCount: 7,
     });
     expect(result).toBe(
-      "[N] #1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v)",
+      "[N] #1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v, 53v/h)",
+    );
+  });
+
+  it("shows page-based speed when pageStart/pageEnd present", () => {
+    const result = formatHistoryLine({
+      id: 10,
+      startedAt: "2026-03-10 13:30:00",
+      durationSeconds: 300,
+      surahStart: 2,
+      ayahStart: 77,
+      surahEnd: 2,
+      ayahEnd: 83,
+      ayahCount: 7,
+      pageStart: 10,
+      pageEnd: 10,
+    });
+    // 1 page / (300/3600) h = 12.0 p/h
+    expect(result).toBe(
+      "[N] #10 | 10/03 13h30 | 5m | Al-Baqara 2:77-83 (7v, 12.0p/h)",
+    );
+  });
+
+  it("shows no speed when durationSeconds is 0", () => {
+    const result = formatHistoryLine({
+      id: 5,
+      startedAt: "2026-03-10 13:30:00",
+      durationSeconds: 0,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+    });
+    expect(result).toBe(
+      "[N] #5 | 10/03 13h30 | 0m | Al-Fatiha 1:1-7 (7v)",
     );
   });
 });
@@ -660,17 +696,17 @@ describe("formatHistoryLine with type tags", () => {
 
   it("formats with [N] tag for normal type", () => {
     const result = formatHistoryLine({ ...baseSession, type: "normal" });
-    expect(result).toBe("[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+    expect(result).toBe("[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 
   it("formats with [E] tag for extra type", () => {
     const result = formatHistoryLine({ ...baseSession, type: "extra" });
-    expect(result).toBe("[E] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+    expect(result).toBe("[E] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 
   it("formats with [K] tag for kahf type", () => {
     const result = formatHistoryLine({ ...baseSession, type: "kahf" });
-    expect(result).toBe("[K] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v)");
+    expect(result).toBe("[K] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 });
 
