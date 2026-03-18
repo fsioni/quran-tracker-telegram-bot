@@ -637,6 +637,10 @@ export async function cleanOldCache(db: D1Database, today: string): Promise<void
   await db.prepare("DELETE FROM prayer_cache WHERE date < ?").bind(cutoff).run();
 }
 
+export async function deletePrayerCacheForDate(db: D1Database, date: string): Promise<void> {
+  await db.prepare("DELETE FROM prayer_cache WHERE date = ?").bind(date).run();
+}
+
 export async function clearPrayerCache(db: D1Database): Promise<void> {
   await db.prepare("DELETE FROM prayer_cache").run();
 }

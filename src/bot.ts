@@ -24,6 +24,7 @@ import {
   CALLBACK_TIMER_CANCEL_RE,
 } from "./handlers/timer";
 import { debugHandler } from "./handlers/debug";
+import { prayerHandler } from "./handlers/prayer";
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -45,6 +46,7 @@ export const BOT_COMMANDS = [
   { command: "undo", description: "Annuler la derniere session" },
   { command: "delete", description: "Supprimer une session" },
   { command: "config", description: "Configurer ville, pays, fuseau horaire" },
+  { command: "prayer", description: "Rafraichir les horaires de priere" },
 ];
 
 export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
@@ -85,6 +87,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
   bot.command("config", configHandler);
+  bot.command("prayer", prayerHandler);
   bot.command("debug", debugHandler);
 
   // Callbacks inline keyboard
