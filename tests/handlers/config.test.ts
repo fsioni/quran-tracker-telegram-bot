@@ -92,8 +92,7 @@ describe("configHandler", () => {
     vi.mocked(getConfig)
       .mockResolvedValueOnce("Playa del Carmen")
       .mockResolvedValueOnce("MX")
-      .mockResolvedValueOnce("America/Cancun")
-      .mockResolvedValueOnce("3");
+      .mockResolvedValueOnce("America/Cancun");
 
     const ctx = makeConfigCtx("");
     await configHandler(ctx);
@@ -103,7 +102,6 @@ describe("configHandler", () => {
     expect(msg).toContain("Playa del Carmen");
     expect(msg).toContain("MX");
     expect(msg).toContain("America/Cancun");
-    expect(msg).toContain("3 - MWL");
   });
 
   it("affiche les valeurs par defaut si config absente", async () => {
@@ -113,7 +111,6 @@ describe("configHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Playa del Carmen");
     expect(msg).toContain("(defaut)");
-    expect(msg).toContain("Methode de calcul");
   });
 
   it("met a jour la ville et vide le cache", async () => {
@@ -190,34 +187,4 @@ describe("configHandler", () => {
     expect(msg).toContain("valeur manquante");
   });
 
-  it("affiche la liste des methodes avec /config method list", async () => {
-    vi.mocked(getConfig).mockResolvedValueOnce("2");
-    const ctx = makeConfigCtx("method list");
-    await configHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Methodes de calcul");
-    expect(msg).toContain("ISNA");
-    expect(msg).toContain("MWL");
-    expect(msg).toContain("Actuelle : 2");
-  });
-
-  it("met a jour la methode et vide le cache", async () => {
-    const ctx = makeConfigCtx("method 5");
-    await configHandler(ctx);
-    expect(setConfig).toHaveBeenCalledWith(ctx.db, "method", "5");
-    expect(clearPrayerCache).toHaveBeenCalledWith(ctx.db);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("5");
-    expect(msg).toContain("egyptienne");
-    expect(msg).toContain("reinitialise");
-  });
-
-  it("rejette une methode inconnue", async () => {
-    const ctx = makeConfigCtx("method 99");
-    await configHandler(ctx);
-    expect(setConfig).not.toHaveBeenCalled();
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Erreur");
-    expect(msg).toContain("inconnue");
-  });
 });

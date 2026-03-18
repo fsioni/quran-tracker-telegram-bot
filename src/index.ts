@@ -17,7 +17,7 @@ import {
 import type { PrayerCacheRow } from "./services/db";
 import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "./services/prayer";
 import { formatReminder, formatKahfReminder } from "./services/format";
-import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_METHOD } from "./config";
+import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 
 export interface Env {
   DB: D1Database;
@@ -51,16 +51,14 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   const chatId = await getConfig(db, "chat_id");
   if (!chatId) return;
 
-  const [tzRaw, cityRaw, countryRaw, methodRaw] = await Promise.all([
+  const [tzRaw, cityRaw, countryRaw] = await Promise.all([
     getConfig(db, "timezone"),
     getConfig(db, "city"),
     getConfig(db, "country"),
-    getConfig(db, "method"),
   ]);
   let tz = tzRaw ?? DEFAULT_TZ;
   const city = cityRaw ?? DEFAULT_CITY;
   const country = countryRaw ?? DEFAULT_COUNTRY;
-  const method = methodRaw ?? DEFAULT_METHOD;
   let today: string;
   try {
     today = getTodayInTimezone(tz);
@@ -72,7 +70,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
   let cache = await getPrayerCache(db, today);
   if (!cache) {
-    const result = await fetchPrayerTimes(today, city, country, method);
+    const result = await fetchPrayerTimes(today, city, country);
     if (!result.ok) {
       console.error("Prayer fetch failed:", result.error);
       return;

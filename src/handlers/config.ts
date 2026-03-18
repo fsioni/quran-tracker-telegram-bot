@@ -1,7 +1,7 @@
 import type { CustomContext } from "../bot";
 import { getConfig, setConfig, clearPrayerCache } from "../services/db";
 import { formatError } from "../services/format";
-import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ, DEFAULT_METHOD, CALCULATION_METHODS } from "../config";
+import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 
 export const WELCOME_MESSAGE = `Bienvenue sur le Quran Reading Tracker !
 
@@ -34,17 +34,14 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
 
   if (!input) {
-    const [cityRaw, countryRaw, timezoneRaw, methodRaw] = await Promise.all([
+    const [cityRaw, countryRaw, timezoneRaw] = await Promise.all([
       getConfig(ctx.db, "city"),
       getConfig(ctx.db, "country"),
       getConfig(ctx.db, "timezone"),
-      getConfig(ctx.db, "method"),
     ]);
     const city = cityRaw ?? DEFAULT_CITY;
     const country = countryRaw ?? DEFAULT_COUNTRY;
     const timezone = timezoneRaw ?? DEFAULT_TZ;
-    const method = methodRaw ?? DEFAULT_METHOD;
-    const methodName = CALCULATION_METHODS[method] ?? `Methode ${method}`;
     const suffix = (raw: string | null) => (raw ? "" : " (defaut)");
 
     await ctx.reply(
@@ -53,7 +50,6 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
         `Ville : ${city}${suffix(cityRaw)}`,
         `Pays : ${country}${suffix(countryRaw)}`,
         `Fuseau horaire : ${timezone}${suffix(timezoneRaw)}`,
-        `Methode de calcul : ${method} - ${methodName}${suffix(methodRaw)}`,
       ].join("\n"),
     );
     return;
@@ -97,26 +93,6 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       await setConfig(ctx.db, "timezone", value);
       await ctx.reply(`Fuseau horaire mis a jour : ${value}`);
       break;
-    case "method": {
-      if (value === "list") {
-        const currentRaw = await getConfig(ctx.db, "method");
-        const current = currentRaw ?? DEFAULT_METHOD;
-        const lines = Object.entries(CALCULATION_METHODS).map(
-          ([id, name]) => `${id === current ? ">" : " "} ${id} - ${name}`,
-        );
-        await ctx.reply(
-          ["-- Methodes de calcul --", ...lines, "", `Actuelle : ${current}`, "Usage : /config method <numero>"].join("\n"),
-        );
-        return;
-      }
-      if (!CALCULATION_METHODS[value]) {
-        await ctx.reply(formatError(`methode '${value}' inconnue`, "/config method list"));
-        return;
-      }
-      await Promise.all([setConfig(ctx.db, "method", value), clearPrayerCache(ctx.db)]);
-      await ctx.reply(`Methode mise a jour : ${value} - ${CALCULATION_METHODS[value]}\nCache des prieres reinitialise.`);
-      break;
-    }
     default:
       await ctx.reply(formatError(`parametre inconnu '${subCommand}'`, "/config city Playa del Carmen"));
   }

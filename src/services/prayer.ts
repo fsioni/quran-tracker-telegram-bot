@@ -43,19 +43,18 @@ export function parsePrayerResponse(body: AladhanResponse, date: string): Result
   });
 }
 
-export function buildAladhanUrl(date: string, city: string, country: string, method: string): string {
+export function buildAladhanUrl(date: string, city: string, country: string): string {
   const [y, m, d] = date.split("-");
-  return `https://api.aladhan.com/v1/timingsByCity/${d}-${m}-${y}?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=${method}`;
+  return `https://api.aladhan.com/v1/timingsByCity/${d}-${m}-${y}?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=99&methodSettings=18,0,17`;
 }
 
 export async function fetchPrayerTimes(
   date: string,
   city: string,
   country: string,
-  method: string,
 ): Promise<Result<PrayerTimes>> {
   try {
-    const url = buildAladhanUrl(date, city, country, method);
+    const url = buildAladhanUrl(date, city, country);
     const response = await fetch(url);
     if (!response.ok) {
       return err(`Aladhan API HTTP ${response.status}`);
