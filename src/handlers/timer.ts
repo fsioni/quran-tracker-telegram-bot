@@ -33,10 +33,12 @@ import { getPageRange, TOTAL_PAGES, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_P
 
 const CALLBACK_TIMER_CONFIRM = "timer_confirm_stop";
 const CALLBACK_TIMER_CANCEL = "timer_cancel_stop";
+const CALLBACK_TIMER_STOP = "timer_stop";
 const MAX_TIMER_SECONDS = 4 * 3600;
 
 export const CALLBACK_TIMER_CONFIRM_RE = /^timer_confirm_stop$/;
 export const CALLBACK_TIMER_CANCEL_RE = /^timer_cancel_stop$/;
+export const CALLBACK_TIMER_STOP_RE = /^timer_stop$/;
 
 // --- Parsed argument types ---
 
@@ -118,7 +120,9 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
     kahf: "Timer demarre ! Lecture d'Al-Kahf.",
   };
 
-  await ctx.reply(messages[parsed.type]);
+  await ctx.reply(messages[parsed.type], {
+    reply_markup: new InlineKeyboard().text("Stop", CALLBACK_TIMER_STOP),
+  });
 }
 
 function parseGoArgs(input: string): ParsedGoArgs | string {
@@ -242,6 +246,46 @@ export async function confirmTimerStopCallback(ctx: CustomContext): Promise<void
 export async function cancelTimerStopCallback(ctx: CustomContext): Promise<void> {
   await clearTimerState(ctx.db);
   await ctx.editMessageText("Timer annule.");
+  await ctx.answerCallbackQuery();
+}
+
+// --- Callback for inline Stop button ---
+
+export async function stopTimerCallback(ctx: CustomContext): Promise<void> {
+  const state = await getTimerState(ctx.db);
+  if (!state) {
+    await ctx.editMessageText("Aucun timer actif.");
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  if (state.awaitingResponse) {
+    await ctx.answerCallbackQuery({ text: "Timer deja arrete." });
+    return;
+  }
+
+  const durationSeconds = Math.floor((Date.now() - state.startedEpoch) / 1000);
+
+  if (durationSeconds > MAX_TIMER_SECONDS) {
+    const keyboard = new InlineKeyboard()
+      .text("Oui", CALLBACK_TIMER_CONFIRM)
+      .text("Non", CALLBACK_TIMER_CANCEL);
+    await setTimerState(ctx.db, { ...state, durationSeconds });
+    await ctx.editMessageText(
+      `Le timer tourne depuis ${formatDuration(durationSeconds)} (plus de 4h). Confirmer l'arret ?`,
+      { reply_markup: keyboard },
+    );
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  await setTimerState(ctx.db, {
+    ...state,
+    awaitingResponse: true,
+    durationSeconds,
+  });
+
+  await ctx.editMessageText(getQuestionForType(state.type, durationSeconds));
   await ctx.answerCallbackQuery();
 }
 
