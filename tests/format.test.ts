@@ -191,7 +191,7 @@ describe("formatDuration", () => {
 // --- formatSessionConfirmation ---
 
 describe("formatSessionConfirmation", () => {
-  it("formats same-surah session", () => {
+  it("formats same-surah session with versets/h", () => {
     const result = formatSessionConfirmation({
       surahStart: 2,
       ayahStart: 77,
@@ -201,11 +201,11 @@ describe("formatSessionConfirmation", () => {
       durationSeconds: 533,
     });
     expect(result).toBe(
-      "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53",
+      "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
   });
 
-  it("formats cross-surah session", () => {
+  it("formats cross-surah session with versets/h", () => {
     const result = formatSessionConfirmation({
       surahStart: 2,
       ayahStart: 280,
@@ -215,7 +215,38 @@ describe("formatSessionConfirmation", () => {
       durationSeconds: 533,
     });
     expect(result).toBe(
-      "Session enregistree : sourate Al-Baqara v.280 a sourate Al-Imran v.10 -- 17 versets en 8m53",
+      "Session enregistree : sourate Al-Baqara v.280 a sourate Al-Imran v.10 -- 17 versets en 8m53 (115 versets/h)",
+    );
+  });
+
+  it("formats session with pages/h when pageStart and pageEnd provided", () => {
+    const result = formatSessionConfirmation({
+      surahStart: 2,
+      ayahStart: 77,
+      surahEnd: 2,
+      ayahEnd: 83,
+      ayahCount: 7,
+      durationSeconds: 300,
+      type: "extra",
+      pageStart: 300,
+      pageEnd: 300,
+    });
+    expect(result).toBe(
+      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 5m (12.0 pages/h)",
+    );
+  });
+
+  it("does not show speed when durationSeconds is 0", () => {
+    const result = formatSessionConfirmation({
+      surahStart: 2,
+      ayahStart: 77,
+      surahEnd: 2,
+      ayahEnd: 83,
+      ayahCount: 7,
+      durationSeconds: 0,
+    });
+    expect(result).toBe(
+      "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 0m",
     );
   });
 });
@@ -450,18 +481,18 @@ describe("parsePage", () => {
 // --- formatReadConfirmation ---
 
 describe("formatReadConfirmation", () => {
-  it("formats single page read", () => {
+  it("formats single page read with speed", () => {
     const result = formatReadConfirmation({
       pageStart: 42,
       pageEnd: 42,
-      durationSeconds: 300,
+      durationSeconds: 360,
       totalPagesRead: 42,
       totalPages: 604,
     });
-    expect(result).toBe("Page 42 lue en 5m (42/604)\nProchaine page : 43");
+    expect(result).toBe("Page 42 lue en 6m -- 10.0 pages/h (42/604)\nProchaine page : 43");
   });
 
-  it("formats multi-page read", () => {
+  it("formats multi-page read with speed", () => {
     const result = formatReadConfirmation({
       pageStart: 42,
       pageEnd: 44,
@@ -469,7 +500,7 @@ describe("formatReadConfirmation", () => {
       totalPagesRead: 44,
       totalPages: 604,
     });
-    expect(result).toBe("Pages 42-44 lues en 15m (44/604)\nProchaine page : 45");
+    expect(result).toBe("Pages 42-44 lues en 15m -- 12.0 pages/h (44/604)\nProchaine page : 45");
   });
 
   it("formats last page (604)", () => {
@@ -480,14 +511,25 @@ describe("formatReadConfirmation", () => {
       totalPagesRead: 604,
       totalPages: 604,
     });
-    expect(result).toBe("Page 604 lue en 5m (604/604)\nCoran termine ! Alhamdulillah !");
+    expect(result).toBe("Page 604 lue en 5m -- 12.0 pages/h (604/604)\nCoran termine ! Alhamdulillah !");
+  });
+
+  it("does not show speed when durationSeconds is 0", () => {
+    const result = formatReadConfirmation({
+      pageStart: 42,
+      pageEnd: 42,
+      durationSeconds: 0,
+      totalPagesRead: 42,
+      totalPages: 604,
+    });
+    expect(result).toBe("Page 42 lue en 0m (42/604)\nProchaine page : 43");
   });
 });
 
 // --- formatKahfPageConfirmation ---
 
 describe("formatKahfPageConfirmation", () => {
-  it("formats in progress (3/12)", () => {
+  it("formats in progress (3/12) with speed", () => {
     const result = formatKahfPageConfirmation({
       kahfPage: 3,
       kahfTotal: 12,
@@ -496,7 +538,33 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 840,
       isComplete: false,
     });
-    expect(result).toBe("Al-Kahf page 3/12 lue en 5m\nCette semaine : 3/12 pages, 14m au total");
+    expect(result).toBe("Al-Kahf page 3/12 lue en 5m -- 12.0 pages/h\nCette semaine : 3/12 pages, 14m au total");
+  });
+
+  it("formats multi-page kahf session with correct speed", () => {
+    // 3 pages in 15m = 3 / (900/3600) = 12.0 pages/h
+    const result = formatKahfPageConfirmation({
+      kahfPage: 6,
+      kahfTotal: 12,
+      durationSeconds: 900,
+      weekPagesRead: 6,
+      weekTotalSeconds: 1800,
+      isComplete: false,
+      sessionPages: 3,
+    });
+    expect(result).toBe("Al-Kahf page 6/12 lue en 15m -- 12.0 pages/h\nCette semaine : 6/12 pages, 30m au total");
+  });
+
+  it("does not show speed when durationSeconds is 0", () => {
+    const result = formatKahfPageConfirmation({
+      kahfPage: 3,
+      kahfTotal: 12,
+      durationSeconds: 0,
+      weekPagesRead: 3,
+      weekTotalSeconds: 840,
+      isComplete: false,
+    });
+    expect(result).toBe("Al-Kahf page 3/12 lue en 0m\nCette semaine : 3/12 pages, 14m au total");
   });
 
   it("formats completion (12/12) without comparisons", () => {
@@ -620,7 +688,7 @@ describe("formatSessionConfirmation with type", () => {
       type: "extra",
     });
     expect(result).toBe(
-      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53",
+      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
   });
 });
