@@ -3,6 +3,7 @@ import { getSurah } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
 import { addDays, type Session, type SessionType, type SpeedAverages, type TypeSpeed } from "./db";
 import { getCompletedSurahs } from "./quran";
+import type { WeeklyRecapData } from "./weeklyRecap";
 
 export type SpeedReportData = {
   averages: SpeedAverages;
@@ -577,4 +578,41 @@ export function formatError(description: string, example?: string): string {
     return `Erreur : ${description}\nExemple : ${example}`;
   }
   return `Erreur : ${description}`;
+}
+
+function formatPercentChange(current: number, previous: number): string {
+  if (previous === 0) return "";
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct > 0) return ` (+${pct}%)`;
+  if (pct < 0) return ` (${pct}%)`;
+  return "";
+}
+
+export function formatWeeklyRecap(data: WeeklyRecapData): string {
+  if (data.thisWeek.sessions === 0) {
+    return "-- Recap hebdomadaire --\n\nAucune session cette semaine. C'est le moment de reprendre !";
+  }
+
+  const hasLastWeek = data.lastWeek.sessions > 0;
+
+  const pagesStr = `Pages lues : ${data.thisWeekPages}${hasLastWeek ? formatPercentChange(data.thisWeekPages, data.lastWeekPages) : ""}`;
+  const durationStr = `Duree : ${formatDuration(data.thisWeek.seconds)}${hasLastWeek ? formatPercentChange(data.thisWeek.seconds, data.lastWeek.seconds) : ""}`;
+  const sessionsStr = `Sessions : ${data.thisWeek.sessions}${hasLastWeek ? formatPercentChange(data.thisWeek.sessions, data.lastWeek.sessions) : ""}`;
+  const streakStr = `Streak : ${data.streak.currentStreak} jours consecutifs`;
+
+  const lines = [
+    "-- Recap hebdomadaire --",
+    "",
+    pagesStr,
+    durationStr,
+    sessionsStr,
+    streakStr,
+  ];
+
+  if (data.completedSurahs.length > 0) {
+    lines.push("");
+    lines.push(formatSurahsComplete(data.completedSurahs));
+  }
+
+  return lines.join("\n");
 }
