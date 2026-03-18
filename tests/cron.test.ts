@@ -31,7 +31,12 @@ vi.mock("../src/services/prayer", async (importOriginal) => {
 
 vi.mock("../src/services/format", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/services/format")>();
-  return { ...actual, formatReminder: vi.fn(), formatKahfReminder: vi.fn() };
+  return { ...actual, formatReminder: vi.fn(), formatKahfReminder: vi.fn(), formatWeeklyRecap: vi.fn() };
+});
+
+vi.mock("../src/services/weeklyRecap", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/weeklyRecap")>();
+  return { ...actual, buildWeeklyRecap: vi.fn() };
 });
 
 import { handleScheduled } from "../src/index";
@@ -49,7 +54,8 @@ import {
   setConfig,
 } from "../src/services/db";
 import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "../src/services/prayer";
-import { formatReminder, formatKahfReminder } from "../src/services/format";
+import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "../src/services/format";
+import { buildWeeklyRecap } from "../src/services/weeklyRecap";
 
 describe("handleScheduled", () => {
   const db = {} as D1Database;
@@ -420,6 +426,113 @@ describe("handleScheduled", () => {
         lastDate: "2026-03-07",
         lastDuration: 1500,
       });
+    });
+  });
+
+  describe("Weekly recap Sunday", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function setupSundayMocks(overrides: {
+      nowHHMM?: string;
+      recapLast?: string | null;
+      dayOfWeek?: string;
+      date?: string;
+    } = {}) {
+      const date = overrides.date ?? "2026-03-15";
+      // 2026-03-15 is a Sunday
+      vi.setSystemTime(new Date(`${date}T${overrides.nowHHMM === "20:30" ? "20:30" : "21:05"}:00Z`));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "UTC";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        if (key === "weekly_recap_last") return overrides.recapLast ?? null;
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue(date);
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date,
+        fajr: "05:30", dhuhr: "12:00", asr: "15:45", maghrib: "18:30", isha: "20:00",
+        fajr_sent: 1, dhuhr_sent: 1, asr_sent: 1, maghrib_sent: 1, isha_sent: 1,
+        fetched_at: date,
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue(overrides.nowHHMM ?? "21:05");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+    }
+
+    it("envoie le recap le dimanche a 21h+", async () => {
+      setupSundayMocks();
+      vi.mocked(buildWeeklyRecap).mockResolvedValue({
+        thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+        lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+        thisWeekPages: 12,
+        lastWeekPages: 10,
+        streak: { currentStreak: 8, bestStreak: 15 },
+        completedSurahs: [],
+      });
+      vi.mocked(formatWeeklyRecap).mockReturnValue("Recap test");
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(buildWeeklyRecap).toHaveBeenCalledWith(db, "UTC");
+      expect(formatWeeklyRecap).toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.telegram.org/botTOKEN/sendMessage",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ chat_id: "123", text: "Recap test" }),
+        }),
+      );
+      expect(setConfig).toHaveBeenCalledWith(db, "weekly_recap_last", "2026-03-15");
+    });
+
+    it("pas d'envoi en dehors du dimanche", async () => {
+      // 2026-03-11 is a Wednesday
+      vi.setSystemTime(new Date("2026-03-11T21:05:00Z"));
+
+      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+        if (key === "chat_id") return "123";
+        if (key === "timezone") return "UTC";
+        if (key === "city") return "PDC";
+        if (key === "country") return "MX";
+        return null;
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-11",
+        fajr: "05:30", dhuhr: "12:00", asr: "15:45", maghrib: "18:30", isha: "20:00",
+        fajr_sent: 1, dhuhr_sent: 1, asr_sent: 1, maghrib_sent: 1, isha_sent: 1,
+        fetched_at: "2026-03-11",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("21:05");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(buildWeeklyRecap).not.toHaveBeenCalled();
+    });
+
+    it("pas d'envoi si weekly_recap_last == today (guard anti-double)", async () => {
+      setupSundayMocks({ recapLast: "2026-03-15" });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(buildWeeklyRecap).not.toHaveBeenCalled();
+    });
+
+    it("pas d'envoi avant 21h le dimanche", async () => {
+      setupSundayMocks({ nowHHMM: "20:30" });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(buildWeeklyRecap).not.toHaveBeenCalled();
     });
   });
 });
