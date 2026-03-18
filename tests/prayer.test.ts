@@ -84,7 +84,7 @@ describe("buildAladhanUrl", () => {
   it("convertit YYYY-MM-DD en DD-MM-YYYY pour Aladhan", () => {
     const url = buildAladhanUrl("2026-03-14", "Playa del Carmen", "MX");
     expect(url).toBe(
-      "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=2",
+      "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=99&methodSettings=18,0,17",
     );
   });
 });

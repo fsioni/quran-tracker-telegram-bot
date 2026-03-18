@@ -1,5 +1,5 @@
 import type { CustomContext } from "../bot";
-import { getConfig, setConfig } from "../services/db";
+import { getConfig, setConfig, clearPrayerCache } from "../services/db";
 import { formatError } from "../services/format";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 
@@ -44,7 +44,6 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
     const timezone = timezoneRaw ?? DEFAULT_TZ;
     const suffix = (raw: string | null) => (raw ? "" : " (defaut)");
 
-
     await ctx.reply(
       [
         "-- Configuration --",
@@ -72,16 +71,16 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
 
   switch (subCommand) {
     case "city":
-      await setConfig(ctx.db, "city", value);
-      await ctx.reply(`Ville mise a jour : ${value}`);
+      await Promise.all([setConfig(ctx.db, "city", value), clearPrayerCache(ctx.db)]);
+      await ctx.reply(`Ville mise a jour : ${value}\nCache des prieres reinitialise.`);
       break;
     case "country":
       if (!/^[A-Za-z]{2}$/.test(value)) {
         await ctx.reply(formatError("le code pays doit faire 2 lettres (ISO)", "/config country MX"));
         return;
       }
-      await setConfig(ctx.db, "country", value.toUpperCase());
-      await ctx.reply(`Pays mis a jour : ${value.toUpperCase()}`);
+      await Promise.all([setConfig(ctx.db, "country", value.toUpperCase()), clearPrayerCache(ctx.db)]);
+      await ctx.reply(`Pays mis a jour : ${value.toUpperCase()}\nCache des prieres reinitialise.`);
       break;
     case "timezone":
     case "tz":
