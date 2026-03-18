@@ -2,7 +2,7 @@ import { Bot, Context } from "grammy";
 import { startHandler, helpHandler, configHandler } from "./handlers/config";
 import { sessionHandler } from "./handlers/session";
 import { importHandler } from "./handlers/import";
-import { historyHandler, statsHandler, progressHandler } from "./handlers/stats";
+import { historyHandler, statsHandler, progressHandler, speedHandler } from "./handlers/stats";
 import { readHandler } from "./handlers/read";
 import { extraHandler } from "./handlers/extra";
 import { kahfHandler } from "./handlers/kahf";
@@ -20,10 +20,13 @@ import {
   timerResponseHandler,
   confirmTimerStopCallback,
   cancelTimerStopCallback,
+  stopTimerCallback,
   CALLBACK_TIMER_CONFIRM_RE,
   CALLBACK_TIMER_CANCEL_RE,
+  CALLBACK_TIMER_STOP_RE,
 } from "./handlers/timer";
 import { debugHandler } from "./handlers/debug";
+import { prayerHandler } from "./handlers/prayer";
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -44,7 +47,9 @@ export const BOT_COMMANDS = [
   { command: "progress", description: "Progression dans le Coran" },
   { command: "undo", description: "Annuler la derniere session" },
   { command: "delete", description: "Supprimer une session" },
+  { command: "speed", description: "Vitesse de lecture" },
   { command: "config", description: "Configurer ville, pays, fuseau horaire" },
+  { command: "prayer", description: "Rafraichir les horaires de priere" },
 ];
 
 export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
@@ -82,12 +87,15 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.command("history", historyHandler);
   bot.command("stats", statsHandler);
   bot.command("progress", progressHandler);
+  bot.command("speed", speedHandler);
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
   bot.command("config", configHandler);
+  bot.command("prayer", prayerHandler);
   bot.command("debug", debugHandler);
 
   // Callbacks inline keyboard
+  bot.callbackQuery(CALLBACK_TIMER_STOP_RE, stopTimerCallback);
   bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);

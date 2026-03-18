@@ -1,8 +1,15 @@
 import { Result, ok, err } from "../types";
 import { getSurah } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
-import { addDays } from "./db";
+import { addDays, type Session, type SessionType, type SpeedAverages, type TypeSpeed } from "./db";
 import { getCompletedSurahs } from "./quran";
+
+export type SpeedReportData = {
+  averages: SpeedAverages;
+  bestSession: Session | null;
+  longestSession: Session | null;
+  byType: TypeSpeed[];
+};
 
 export type ParsedRange = {
   surahStart: number;
@@ -260,6 +267,8 @@ export function formatHistoryLine(session: {
   ayahEnd: number;
   ayahCount: number;
   type?: "normal" | "extra" | "kahf";
+  pageStart?: number | null;
+  pageEnd?: number | null;
 }): string {
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
   const s = session.startedAt;
@@ -275,7 +284,18 @@ export function formatHistoryLine(session: {
   const tagMap: Record<string, string> = { normal: "[N]", extra: "[E]", kahf: "[K]" };
   const tag = tagMap[t] ?? "[N]";
 
-  return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
+  let speedSuffix = "";
+  if (session.durationSeconds > 0) {
+    if (session.pageStart != null && session.pageEnd != null) {
+      const pagesPerHour = (session.pageEnd - session.pageStart + 1) / (session.durationSeconds / 3600);
+      speedSuffix = `, ${pagesPerHour.toFixed(1)}p/h`;
+    } else {
+      const versetsPerHour = Math.round(session.ayahCount / (session.durationSeconds / 3600));
+      speedSuffix = `, ${versetsPerHour}v/h`;
+    }
+  }
+
+  return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v${speedSuffix})`;
 }
 
 export function formatStats(data: {
@@ -529,6 +549,51 @@ export function appendCompletedSurahs(
   if (completed.length > 0) {
     parts.push(formatSurahsComplete(completed));
   }
+}
+
+export function formatSpeedReport(data: SpeedReportData): string {
+  const lines: string[] = ["-- Vitesse de lecture --", ""];
+
+  if (data.averages.global !== null) {
+    lines.push(`Moyenne globale : ${data.averages.global} versets/h`);
+  }
+  if (data.averages.last7Days !== null) {
+    lines.push(`Moyenne 7 derniers jours : ${data.averages.last7Days} versets/h`);
+  }
+  if (data.averages.last30Days !== null) {
+    lines.push(`Moyenne 30 derniers jours : ${data.averages.last30Days} versets/h`);
+  }
+
+  if (data.bestSession || data.longestSession) {
+    lines.push("");
+    if (data.bestSession) {
+      const speed = Math.round(data.bestSession.ayahCount / (data.bestSession.durationSeconds / 3600));
+      const day = data.bestSession.startedAt.substring(8, 10);
+      const month = data.bestSession.startedAt.substring(5, 7);
+      lines.push(`Meilleure session : #${data.bestSession.id} (${speed} versets/h) - ${day}/${month}`);
+    }
+    if (data.longestSession) {
+      const duration = formatDuration(data.longestSession.durationSeconds);
+      const day = data.longestSession.startedAt.substring(8, 10);
+      const month = data.longestSession.startedAt.substring(5, 7);
+      lines.push(`Plus longue session : #${data.longestSession.id} (${duration}) - ${day}/${month}`);
+    }
+  }
+
+  if (data.byType.length > 0) {
+    lines.push("");
+    lines.push("Par type :");
+    const typeLabels: Record<string, string> = { normal: "Normal", extra: "Extra", kahf: "Kahf" };
+    const maxLabelLen = Math.max(...data.byType.map((t) => (typeLabels[t.type] ?? t.type).length));
+    for (const t of data.byType) {
+      const label = typeLabels[t.type] ?? t.type;
+      const padded = label.padEnd(maxLabelLen);
+      const speedStr = t.unit === 'pages/h' ? `${t.avgSpeed} pages/h` : `${t.avgSpeed} versets/h`;
+      lines.push(`  ${padded} : ${speedStr} (${t.sessionCount} sessions)`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 export function formatError(description: string, example?: string): string {
