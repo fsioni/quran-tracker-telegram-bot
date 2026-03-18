@@ -16,7 +16,9 @@ import {
   formatKhatmaMessage,
   formatSurahsComplete,
   formatError,
+  formatSpeedReport,
 } from "../src/services/format";
+import type { Session } from "../src/services/db";
 
 // --- parseDuration ---
 
@@ -840,5 +842,119 @@ describe("formatProgress with khatmaCount", () => {
       lastAyah: 10,
     });
     expect(result).not.toContain("Khatmas");
+  });
+});
+
+// --- formatSpeedReport ---
+
+describe("formatSpeedReport", () => {
+  const makeSession = (overrides: Partial<Session> = {}): Session => ({
+    id: 42,
+    startedAt: "2026-03-10 13:30:00",
+    durationSeconds: 533,
+    surahStart: 2,
+    ayahStart: 77,
+    surahEnd: 2,
+    ayahEnd: 83,
+    ayahCount: 7,
+    type: "normal",
+    pageStart: null,
+    pageEnd: null,
+    createdAt: "2026-03-10 13:30:00",
+    ...overrides,
+  });
+
+  it("formate le rapport complet avec les 3 types", () => {
+    const result = formatSpeedReport({
+      averages: { global: 155, last7Days: 162, last30Days: 148 },
+      bestSession: makeSession({ id: 42, ayahCount: 50, durationSeconds: 800 }),
+      longestSession: makeSession({ id: 38, startedAt: "2026-03-08 10:00:00", durationSeconds: 4320 }),
+      byType: [
+        { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "versets/h" },
+        { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "versets/h" },
+        { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages/h" },
+      ],
+    });
+
+    expect(result).toBe(
+      [
+        "-- Vitesse de lecture --",
+        "",
+        "Moyenne globale : 155 versets/h",
+        "Moyenne 7 derniers jours : 162 versets/h",
+        "Moyenne 30 derniers jours : 148 versets/h",
+        "",
+        "Meilleure session : #42 (225 versets/h) - 10/03",
+        "Plus longue session : #38 (1h12m) - 08/03",
+        "",
+        "Par type :",
+        "  Normal : 155 versets/h (45 sessions)",
+        "  Extra  : 180 versets/h (12 sessions)",
+        "  Kahf   : 8.5 pages/h (8 sessions)",
+      ].join("\n"),
+    );
+  });
+
+  it("formate avec seulement 1 type", () => {
+    const result = formatSpeedReport({
+      averages: { global: 120, last7Days: null, last30Days: 120 },
+      bestSession: null,
+      longestSession: null,
+      byType: [
+        { type: "normal", avgSpeed: 120, sessionCount: 5, unit: "versets/h" },
+      ],
+    });
+
+    expect(result).toContain("Moyenne globale : 120 versets/h");
+    expect(result).not.toContain("Moyenne 7 derniers jours");
+    expect(result).toContain("Moyenne 30 derniers jours : 120 versets/h");
+    expect(result).not.toContain("Meilleure session");
+    expect(result).not.toContain("Plus longue session");
+    expect(result).toContain("Normal : 120 versets/h (5 sessions)");
+  });
+
+  it("formate sans records (bestSession/longestSession null)", () => {
+    const result = formatSpeedReport({
+      averages: { global: 100, last7Days: 100, last30Days: 100 },
+      bestSession: null,
+      longestSession: null,
+      byType: [
+        { type: "normal", avgSpeed: 100, sessionCount: 3, unit: "versets/h" },
+      ],
+    });
+
+    expect(result).not.toContain("Meilleure session");
+    expect(result).not.toContain("Plus longue session");
+    expect(result).toContain("Par type :");
+  });
+
+  it("formate les dates en DD/MM", () => {
+    const result = formatSpeedReport({
+      averages: { global: 100, last7Days: null, last30Days: null },
+      bestSession: makeSession({ startedAt: "2026-01-05 09:00:00", ayahCount: 30, durationSeconds: 600 }),
+      longestSession: makeSession({ id: 10, startedAt: "2026-12-25 14:00:00", durationSeconds: 7200 }),
+      byType: [],
+    });
+
+    expect(result).toContain("05/01");
+    expect(result).toContain("25/12");
+  });
+
+  it("aligne les labels des types avec padding", () => {
+    const result = formatSpeedReport({
+      averages: { global: 100, last7Days: null, last30Days: null },
+      bestSession: null,
+      longestSession: null,
+      byType: [
+        { type: "normal", avgSpeed: 100, sessionCount: 10, unit: "versets/h" },
+        { type: "extra", avgSpeed: 120, sessionCount: 5, unit: "versets/h" },
+        { type: "kahf", avgSpeed: 8, sessionCount: 3, unit: "pages/h" },
+      ],
+    });
+
+    // "Normal" (6 chars) is the longest, so "Extra" and "Kahf" should be padded
+    expect(result).toContain("  Normal : 100 versets/h (10 sessions)");
+    expect(result).toContain("  Extra  : 120 versets/h (5 sessions)");
+    expect(result).toContain("  Kahf   : 8 pages/h (3 sessions)");
   });
 });

@@ -10,9 +10,13 @@ import {
   getRecentPace,
   getTodayInTimezone,
   getKhatmaCount,
+  getSpeedAverages,
+  getBestSpeedSession,
+  getLongestSession,
+  getSpeedByType,
   type SessionType,
 } from "../services/db";
-import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError } from "../services/format";
+import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError, formatSpeedReport } from "../services/format";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import { TOTAL_PAGES } from "../data/pages";
 const MSG_NO_SESSION = "Aucune session enregistree.";
@@ -83,6 +87,23 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
   }
 
   await ctx.reply(msg);
+}
+
+export async function speedHandler(ctx: CustomContext): Promise<void> {
+  const tz = await getTimezone(ctx.db);
+  const [averages, bestSession, longestSession, byType] = await Promise.all([
+    getSpeedAverages(ctx.db, tz),
+    getBestSpeedSession(ctx.db),
+    getLongestSession(ctx.db),
+    getSpeedByType(ctx.db),
+  ]);
+
+  if (averages.global === null) {
+    await ctx.reply(MSG_NO_SESSION);
+    return;
+  }
+
+  await ctx.reply(formatSpeedReport({ averages, bestSession, longestSession, byType }));
 }
 
 export async function historyHandler(ctx: CustomContext): Promise<void> {
