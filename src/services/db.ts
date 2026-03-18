@@ -445,25 +445,36 @@ export async function calculateStreak(
 
 // --- Pace ---
 
+function diffDays(from: string, to: string): number {
+  const a = new Date(from + "T00:00:00Z");
+  const b = new Date(to + "T00:00:00Z");
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export async function getRecentPace(
   db: D1Database,
   tz: string,
   days: number = 14,
 ): Promise<number> {
-  const startDate = addDays(getTodayInTimezone(tz), -(days - 1));
+  const today = getTodayInTimezone(tz);
+  const startDate = addDays(today, -(days - 1));
   const row = await db
     .prepare(
-      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages
+      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages,
+              MIN(started_at) AS first_started_at
        FROM sessions
        WHERE type = 'normal'
          AND page_start IS NOT NULL
          AND page_end IS NOT NULL
-         AND substr(started_at, 1, 10) >= ?`,
+         AND started_at >= ?`,
     )
-    .bind(startDate)
-    .first<{ total_pages: number }>();
-  if (!row) return 0;
-  return row.total_pages / days;
+    .bind(`${startDate} 00:00:00`)
+    .first<{ total_pages: number; first_started_at: string | null }>();
+  if (!row || row.total_pages === 0) return 0;
+
+  const firstDate = row.first_started_at!.substring(0, 10);
+  const effectiveDays = diffDays(firstDate, today) + 1;
+  return row.total_pages / Math.min(days, effectiveDays);
 }
 
 // --- Timer state ---
