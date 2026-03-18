@@ -19,6 +19,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     getRecentPace: vi.fn(),
     getTodayInTimezone: vi.fn(),
     getKhatmaCount: vi.fn(),
+    getPreviousWeekStats: vi.fn(),
   };
 });
 
@@ -33,6 +34,7 @@ import {
   getRecentPace,
   getTodayInTimezone,
   getKhatmaCount,
+  getPreviousWeekStats,
 } from "../../src/services/db";
 
 function makeCtx(match = ""): CustomContext {
@@ -135,6 +137,10 @@ describe("historyHandler", () => {
 describe("statsHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getPreviousWeekStats).mockResolvedValue({
+      ok: true,
+      value: { sessions: 0, ayahs: 0, seconds: 0 },
+    });
   });
 
   it("affiche les stats formatees selon la spec", async () => {
@@ -182,6 +188,52 @@ describe("statsHandler", () => {
 
     expect(getTimezone).toHaveBeenCalledWith(ctx.db);
     expect(getPeriodStats).toHaveBeenCalledWith(ctx.db, "week", "America/Cancun");
+  });
+
+  it("affiche la tendance quand les donnees de la semaine precedente sont disponibles", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getPeriodStats)
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 3, ayahs: 120, seconds: 2700 } })
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 7, ayahs: 340, seconds: 8100 } });
+    vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 5, bestStreak: 12 });
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getPreviousWeekStats).mockResolvedValue({
+      ok: true,
+      value: { sessions: 3, ayahs: 100, seconds: 2520 },
+    });
+
+    const ctx = makeCtx();
+    await statsHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Vitesse : 160 versets/h");
+    expect(msg).toContain("vs semaine derniere");
+  });
+
+  it("n'affiche pas la tendance quand getPreviousWeekStats echoue", async () => {
+    vi.mocked(getGlobalStats).mockResolvedValue({ ok: true, value: {
+      totalSessions: 10, totalAyahs: 342, totalSeconds: 15780,
+      avgAyahsPerSession: 34, avgSecondsPerSession: 1578,
+    }});
+    vi.mocked(getPeriodStats)
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 3, ayahs: 120, seconds: 2700 } })
+      .mockResolvedValueOnce({ ok: true, value: { sessions: 7, ayahs: 340, seconds: 8100 } });
+    vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 5, bestStreak: 12 });
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getPreviousWeekStats).mockResolvedValue({
+      ok: false,
+      error: "db error",
+    });
+
+    const ctx = makeCtx();
+    await statsHandler(ctx);
+
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Vitesse : 160 versets/h");
+    expect(msg).not.toContain("vs semaine derniere");
   });
 });
 
