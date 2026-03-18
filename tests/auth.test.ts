@@ -20,8 +20,18 @@ function makeUpdate(userId: number): Update {
   };
 }
 
+function makeMockDb(): D1Database {
+  return {
+    prepare: () => ({
+      bind: () => ({ first: async () => null, run: async () => ({ success: true }) }),
+      first: async () => null,
+      run: async () => ({ success: true }),
+    }),
+  } as unknown as D1Database;
+}
+
 function setupBot(): { bot: Bot<CustomContext>; handlerCalled: ReturnType<typeof vi.fn> } {
-  const bot = createBot("fake-token", {} as D1Database, String(ALLOWED_ID));
+  const bot = createBot("fake-token", makeMockDb(), String(ALLOWED_ID));
   bot.api.config.use(() => ({ ok: true, result: true }) as never);
   const handlerCalled = vi.fn();
   bot.on("message:text", handlerCalled);

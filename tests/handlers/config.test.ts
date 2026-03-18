@@ -7,10 +7,11 @@ vi.mock("../../src/services/db", async (importOriginal) => {
     ...actual,
     getConfig: vi.fn(),
     setConfig: vi.fn(),
+    clearPrayerCache: vi.fn(),
   };
 });
 
-import { getConfig, setConfig } from "../../src/services/db";
+import { getConfig, setConfig, clearPrayerCache } from "../../src/services/db";
 import {
   startHandler,
   helpHandler,
@@ -112,11 +113,14 @@ describe("configHandler", () => {
     expect(msg).toContain("(defaut)");
   });
 
-  it("met a jour la ville", async () => {
+  it("met a jour la ville et vide le cache", async () => {
     const ctx = makeConfigCtx("city Cancun");
     await configHandler(ctx);
     expect(setConfig).toHaveBeenCalledWith(ctx.db, "city", "Cancun");
-    expect(ctx.reply).toHaveBeenCalledWith("Ville mise a jour : Cancun");
+    expect(clearPrayerCache).toHaveBeenCalledWith(ctx.db);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Cancun");
+    expect(msg).toContain("reinitialise");
   });
 
   it("accepte une ville avec espaces", async () => {
@@ -125,10 +129,11 @@ describe("configHandler", () => {
     expect(setConfig).toHaveBeenCalledWith(ctx.db, "city", "Playa del Carmen");
   });
 
-  it("met a jour le pays", async () => {
+  it("met a jour le pays et vide le cache", async () => {
     const ctx = makeConfigCtx("country MX");
     await configHandler(ctx);
     expect(setConfig).toHaveBeenCalledWith(ctx.db, "country", "MX");
+    expect(clearPrayerCache).toHaveBeenCalledWith(ctx.db);
   });
 
   it("normalise le pays en majuscules", async () => {
@@ -181,4 +186,5 @@ describe("configHandler", () => {
     expect(msg).toContain("Erreur");
     expect(msg).toContain("valeur manquante");
   });
+
 });
