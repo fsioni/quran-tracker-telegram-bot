@@ -260,6 +260,8 @@ export function formatHistoryLine(session: {
   ayahEnd: number;
   ayahCount: number;
   type?: "normal" | "extra" | "kahf";
+  pageStart?: number | null;
+  pageEnd?: number | null;
 }): string {
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
   const s = session.startedAt;
@@ -275,7 +277,18 @@ export function formatHistoryLine(session: {
   const tagMap: Record<string, string> = { normal: "[N]", extra: "[E]", kahf: "[K]" };
   const tag = tagMap[t] ?? "[N]";
 
-  return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v)`;
+  let speedSuffix = "";
+  if (session.durationSeconds > 0) {
+    if (session.pageStart != null && session.pageEnd != null) {
+      const pagesPerHour = (session.pageEnd - session.pageStart + 1) / (session.durationSeconds / 3600);
+      speedSuffix = `, ${pagesPerHour.toFixed(1)}p/h`;
+    } else {
+      const versetsPerHour = Math.round(session.ayahCount / (session.durationSeconds / 3600));
+      speedSuffix = `, ${versetsPerHour}v/h`;
+    }
+  }
+
+  return `${tag} #${session.id} | ${day}/${month} ${hour}h${minute} | ${duration} | ${range} (${session.ayahCount}v${speedSuffix})`;
 }
 
 export function formatStats(data: {
