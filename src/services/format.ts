@@ -401,12 +401,14 @@ export function formatKahfPageConfirmation(data: {
   weekTotalSeconds: number;
   isComplete: boolean;
   lastWeekTotalSeconds?: number;
+  sessionPages?: number;
 }): string {
   const duration = formatDuration(data.durationSeconds);
+  const pages = data.sessionPages ?? 1;
 
   let speedPart = "";
   if (data.durationSeconds > 0) {
-    const pagesPerHour = 1 / (data.durationSeconds / 3600);
+    const pagesPerHour = pages / (data.durationSeconds / 3600);
     speedPart = ` -- ${pagesPerHour.toFixed(1)} pages/h`;
   }
 

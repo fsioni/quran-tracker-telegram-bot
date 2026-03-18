@@ -93,6 +93,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
         weekTotalSeconds,
         isComplete: true,
         lastWeekTotalSeconds: lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+        sessionPages: count,
       }),
     );
   } else {
@@ -104,6 +105,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
         weekPagesRead,
         weekTotalSeconds,
         isComplete: false,
+        sessionPages: count,
       }),
     );
   }

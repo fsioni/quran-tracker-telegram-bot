@@ -541,6 +541,20 @@ describe("formatKahfPageConfirmation", () => {
     expect(result).toBe("Al-Kahf page 3/12 lue en 5m -- 12.0 pages/h\nCette semaine : 3/12 pages, 14m au total");
   });
 
+  it("formats multi-page kahf session with correct speed", () => {
+    // 3 pages in 15m = 3 / (900/3600) = 12.0 pages/h
+    const result = formatKahfPageConfirmation({
+      kahfPage: 6,
+      kahfTotal: 12,
+      durationSeconds: 900,
+      weekPagesRead: 6,
+      weekTotalSeconds: 1800,
+      isComplete: false,
+      sessionPages: 3,
+    });
+    expect(result).toBe("Al-Kahf page 6/12 lue en 15m -- 12.0 pages/h\nCette semaine : 6/12 pages, 30m au total");
+  });
+
   it("does not show speed when durationSeconds is 0", () => {
     const result = formatKahfPageConfirmation({
       kahfPage: 3,
