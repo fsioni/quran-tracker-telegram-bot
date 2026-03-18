@@ -47,6 +47,11 @@ npm run dev
 | `/start` | Demarrer le bot |
 | `/help` | Afficher l'aide |
 | `/session <range> <duree>` | Enregistrer une session (ex: `/session 2:77-83 8m53`) |
+| `/go` | Demarrer un timer de lecture |
+| `/stop` | Arreter le timer |
+| `/read` | Lire la prochaine page |
+| `/extra` | Enregistrer une lecture extra |
+| `/kahf` | Lire sourate Al-Kahf (vendredi) |
 | `/import` | Importer des sessions en lot |
 | `/history` | Historique des sessions |
 | `/stats` | Statistiques de lecture (global, semaine, mois, streak) |
@@ -54,6 +59,7 @@ npm run dev
 | `/undo` | Annuler la derniere session |
 | `/delete <id>` | Supprimer une session par ID |
 | `/config [cle] [valeur]` | Configurer ville, pays, fuseau horaire |
+| `/debug` | Afficher l'etat interne du bot |
 
 ## Deploiement sur Cloudflare Workers
 
