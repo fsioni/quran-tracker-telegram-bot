@@ -56,6 +56,19 @@ export type StreakResult = {
   bestStreak: number;
 };
 
+export type SpeedAverages = {
+  global: number | null;
+  last7Days: number | null;
+  last30Days: number | null;
+};
+
+export type TypeSpeed = {
+  type: SessionType;
+  avgSpeed: number;
+  sessionCount: number;
+  unit: 'versets/h' | 'pages/h';
+};
+
 export type PrayerTimes = {
   date: string;
   fajr: string;
@@ -475,6 +488,125 @@ export async function getRecentPace(
   const firstDate = row.first_started_at!.substring(0, 10);
   const effectiveDays = diffDays(firstDate, today) + 1;
   return row.total_pages / Math.min(days, effectiveDays);
+}
+
+// --- Speed functions ---
+
+export async function getSpeedAverages(
+  db: D1Database,
+  tz: string,
+): Promise<SpeedAverages> {
+  const today = getTodayInTimezone(tz);
+  const date7d = addDays(today, -7);
+  const date30d = addDays(today, -30);
+
+  const row = await db
+    .prepare(
+      `SELECT
+        SUM(ayah_count) as total_ayahs,
+        SUM(duration_seconds) as total_seconds,
+        SUM(CASE WHEN started_at >= ? THEN ayah_count ELSE 0 END) as ayahs_7d,
+        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_7d,
+        SUM(CASE WHEN started_at >= ? THEN ayah_count ELSE 0 END) as ayahs_30d,
+        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_30d
+      FROM sessions`,
+    )
+    .bind(
+      `${date7d} 00:00:00`,
+      `${date7d} 00:00:00`,
+      `${date30d} 00:00:00`,
+      `${date30d} 00:00:00`,
+    )
+    .first<{
+      total_ayahs: number | null;
+      total_seconds: number | null;
+      ayahs_7d: number;
+      seconds_7d: number;
+      ayahs_30d: number;
+      seconds_30d: number;
+    }>();
+
+  if (!row || !row.total_seconds) {
+    return { global: null, last7Days: null, last30Days: null };
+  }
+
+  const global = Math.round(row.total_ayahs! / (row.total_seconds / 3600));
+  const last7Days = row.seconds_7d > 0
+    ? Math.round(row.ayahs_7d / (row.seconds_7d / 3600))
+    : null;
+  const last30Days = row.seconds_30d > 0
+    ? Math.round(row.ayahs_30d / (row.seconds_30d / 3600))
+    : null;
+
+  return { global, last7Days, last30Days };
+}
+
+export async function getBestSpeedSession(
+  db: D1Database,
+): Promise<Session | null> {
+  const row = await db
+    .prepare(
+      `SELECT * FROM sessions
+       WHERE duration_seconds >= 60
+       ORDER BY CAST(ayah_count AS REAL) / duration_seconds DESC
+       LIMIT 1`,
+    )
+    .first<SessionRow>();
+  return row ? mapRow(row) : null;
+}
+
+export async function getLongestSession(
+  db: D1Database,
+): Promise<Session | null> {
+  const row = await db
+    .prepare(
+      `SELECT * FROM sessions
+       ORDER BY duration_seconds DESC
+       LIMIT 1`,
+    )
+    .first<SessionRow>();
+  return row ? mapRow(row) : null;
+}
+
+export async function getSpeedByType(
+  db: D1Database,
+): Promise<TypeSpeed[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT type,
+        SUM(ayah_count) as total_ayahs,
+        SUM(duration_seconds) as total_seconds,
+        SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
+        COUNT(*) as session_count
+      FROM sessions
+      GROUP BY type`,
+    )
+    .all<{
+      type: string;
+      total_ayahs: number;
+      total_seconds: number;
+      total_pages: number;
+      session_count: number;
+    }>();
+
+  return results
+    .filter((r) => r.total_seconds > 0)
+    .map((r) => {
+      if (r.type === 'kahf') {
+        return {
+          type: r.type as SessionType,
+          avgSpeed: parseFloat((r.total_pages / (r.total_seconds / 3600)).toFixed(1)),
+          sessionCount: r.session_count,
+          unit: 'pages/h' as const,
+        };
+      }
+      return {
+        type: r.type as SessionType,
+        avgSpeed: Math.round(r.total_ayahs / (r.total_seconds / 3600)),
+        sessionCount: r.session_count,
+        unit: 'versets/h' as const,
+      };
+    });
 }
 
 // --- Timer state ---
