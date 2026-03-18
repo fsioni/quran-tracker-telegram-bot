@@ -441,6 +441,7 @@ export async function timerResponseHandler(
               weekTotalSeconds,
               isComplete: true,
               lastWeekTotalSeconds: lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+              sessionPages: count,
             }),
           );
         } else {
@@ -452,6 +453,7 @@ export async function timerResponseHandler(
               weekPagesRead,
               weekTotalSeconds,
               isComplete: false,
+              sessionPages: count,
             }),
           );
         }
