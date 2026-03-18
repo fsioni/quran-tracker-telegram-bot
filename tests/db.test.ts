@@ -12,6 +12,7 @@ import {
   getGlobalStats,
   getStatsByType,
   getPeriodStats,
+  getPreviousWeekStats,
   calculateStreak,
   getConfig,
   setConfig,
@@ -771,6 +772,43 @@ describe("cleanOldCache", () => {
     expect(await getPrayerCache(db, "2026-03-01")).toBeNull();
     expect(await getPrayerCache(db, "2026-03-10")).not.toBeNull();
     expect(await getPrayerCache(db, "2026-03-14")).not.toBeNull();
+  });
+});
+
+// --- getPreviousWeekStats ---
+
+describe("getPreviousWeekStats", () => {
+  it("returns stats from previous week only", async () => {
+    // Today is Wednesday 2026-03-18 -> current week Mon 16 - Sun 22
+    // Previous week: Mon 9 - Sun 15
+    await insertSession(db, makeSession({
+      startedAt: "2026-03-10 10:00:00", // prev week (Tue)
+      ayahCount: 50,
+      durationSeconds: 1200,
+    }));
+    await insertSession(db, makeSession({
+      startedAt: "2026-03-17 10:00:00", // current week (Mon)
+      ayahCount: 30,
+      durationSeconds: 600,
+    }));
+
+    const result = await getPreviousWeekStats(db, "UTC", "2026-03-18");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.ayahs).toBe(50);
+      expect(result.value.seconds).toBe(1200);
+      expect(result.value.sessions).toBe(1);
+    }
+  });
+
+  it("returns zeros when no sessions in previous week", async () => {
+    const result = await getPreviousWeekStats(db, "UTC", "2026-03-18");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.ayahs).toBe(0);
+      expect(result.value.seconds).toBe(0);
+      expect(result.value.sessions).toBe(0);
+    }
   });
 });
 

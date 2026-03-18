@@ -388,6 +388,32 @@ export async function getPeriodStats(
   return ok(row);
 }
 
+export async function getPreviousWeekStats(
+  db: D1Database,
+  tz: string,
+  todayOverride?: string,
+): Promise<Result<PeriodStats>> {
+  const today = todayOverride ?? getTodayInTimezone(tz);
+  const currentWeek = getWeekBounds(today);
+  const start = addDays(currentWeek.start, -7);
+  const end = addDays(currentWeek.start, -1);
+
+  const row = await db
+    .prepare(
+      `SELECT
+        COALESCE(COUNT(*), 0) AS sessions,
+        COALESCE(SUM(ayah_count), 0) AS ayahs,
+        COALESCE(SUM(duration_seconds), 0) AS seconds
+      FROM sessions
+      WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`,
+    )
+    .bind(start, end)
+    .first<{ sessions: number; ayahs: number; seconds: number }>();
+
+  if (!row) return err("getPreviousWeekStats: D1 returned no row");
+  return ok(row);
+}
+
 // --- Streak ---
 
 export async function calculateStreak(
