@@ -228,12 +228,12 @@ export async function getLastSession(
 export async function deleteSessionById(
   db: D1Database,
   id: number,
-): Promise<boolean> {
-  const result = await db
-    .prepare("DELETE FROM sessions WHERE id = ?")
+): Promise<Session | null> {
+  const row = await db
+    .prepare("DELETE FROM sessions WHERE id = ? RETURNING *")
     .bind(id)
-    .run();
-  return result.meta.changes > 0;
+    .first<SessionRow>();
+  return row ? mapRow(row) : null;
 }
 
 export async function insertBatch(
