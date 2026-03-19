@@ -151,7 +151,13 @@ describe("handleScheduled", () => {
       "https://api.telegram.org/botTOKEN/sendMessage",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ chat_id: "123", text: "Rappel test" }),
+        body: JSON.stringify({
+          chat_id: "123",
+          text: "Rappel test",
+          reply_markup: {
+            inline_keyboard: [[{ text: "Go", callback_data: "timer_go" }]],
+          },
+        }),
       }),
     );
     expect(markPrayerSent).toHaveBeenCalledWith(db, "2026-03-14", "dhuhr");
