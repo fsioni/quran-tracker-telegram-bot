@@ -5,7 +5,7 @@ import {
   getSessionById,
   deleteSessionById,
 } from "../services/db";
-import { formatError, formatRange } from "../services/format";
+import { formatError, formatRange, formatDuration } from "../services/format";
 
 const CALLBACK_CONFIRM = "delete_confirm";
 const CALLBACK_CANCEL = "delete_cancel";
@@ -73,9 +73,14 @@ export async function confirmDeleteCallback(
   }
 
   const id = parseInt(data.split(":")[1], 10);
+  const session = await getSessionById(ctx.db, id);
   const deleted = await deleteSessionById(ctx.db, id);
 
-  if (deleted) {
+  if (deleted && session) {
+    const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
+    const duration = formatDuration(session.durationSeconds);
+    await ctx.editMessageText(`Session #${id} supprimee.\n${range} -- ${session.ayahCount} versets en ${duration}`);
+  } else if (deleted) {
     await ctx.editMessageText(`Session #${id} supprimee.`);
   } else {
     await ctx.editMessageText(`Session #${id} introuvable.`);

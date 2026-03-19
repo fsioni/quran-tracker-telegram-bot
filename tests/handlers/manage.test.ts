@@ -38,10 +38,11 @@ function createCommandContext(match = "", firstResult: unknown = null): CustomCo
   } as unknown as CustomContext;
 }
 
-function createCallbackContext(data: string, changes = 1): CustomContext {
+function createCallbackContext(data: string, changes = 1, sessionRow: unknown = null): CustomContext {
   const runFn = vi.fn().mockResolvedValue({ meta: { changes } });
-  const bindFn = vi.fn().mockReturnValue({ run: runFn, first: vi.fn(), all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: runFn, first: vi.fn(), all: vi.fn() });
+  const firstFn = vi.fn().mockResolvedValue(sessionRow);
+  const bindFn = vi.fn().mockReturnValue({ run: runFn, first: firstFn, all: vi.fn() });
+  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: runFn, first: firstFn, all: vi.fn() });
 
   return {
     callbackQuery: { data },
@@ -117,8 +118,19 @@ describe("deleteHandler", () => {
 });
 
 describe("confirmDeleteCallback", () => {
-  it("supprime la session et edite le message", async () => {
-    const ctx = createCallbackContext("delete_confirm:42", 1);
+  it("supprime la session et affiche les details", async () => {
+    const ctx = createCallbackContext("delete_confirm:42", 1, MOCK_SESSION_ROW);
+    await confirmDeleteCallback(ctx);
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Session #42 supprimee.");
+    expect(msg).toContain("Al-Baqara 2:77-83");
+    expect(msg).toContain("7 versets");
+    expect(msg).toContain("8m53");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("supprime sans details si session deja absente de la DB", async () => {
+    const ctx = createCallbackContext("delete_confirm:42", 1, null);
     await confirmDeleteCallback(ctx);
     expect(ctx.editMessageText).toHaveBeenCalledWith("Session #42 supprimee.");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
