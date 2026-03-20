@@ -210,18 +210,19 @@ describe("getLastSession", () => {
 // --- deleteSessionById ---
 
 describe("deleteSessionById", () => {
-  it("returns true when a session is deleted", async () => {
+  it("returns the deleted session", async () => {
     const session = unwrap(await insertSession(db, makeSession()));
     const deleted = await deleteSessionById(db, session.id);
-    expect(deleted).toBe(true);
+    expect(deleted).not.toBeNull();
+    expect(deleted!.id).toBe(session.id);
 
     const found = await getSessionById(db, session.id);
     expect(found).toBeNull();
   });
 
-  it("returns false for a non-existent ID", async () => {
+  it("returns null for a non-existent ID", async () => {
     const deleted = await deleteSessionById(db, 999);
-    expect(deleted).toBe(false);
+    expect(deleted).toBeNull();
   });
 });
 
