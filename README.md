@@ -1,99 +1,138 @@
 # Quran Telegram Bot
 
-Bot Telegram personnel pour suivre ses sessions de lecture du Coran, avec rappels de priere automatiques. Deploye sur Cloudflare Workers avec D1 (SQLite).
+A Telegram bot for tracking Quran reading sessions with automatic prayer time reminders, deployed on Cloudflare Workers with D1 (SQLite).
 
-## Stack technique
+[![CI](https://github.com/fsioni/quran-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/fsioni/quran-telegram-bot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 
-- **Runtime** : Cloudflare Workers
-- **Base de donnees** : Cloudflare D1 (SQLite)
-- **Framework bot** : grammY
-- **Langage** : TypeScript
-- **Tests** : Vitest
+## Features
 
-## Prerequis
+- Session tracking with full Quran range validation (surah:ayah)
+- Live reading timer with start/stop controls
+- Automatic prayer time reminders via the Aladhan API
+- Reading stats: speed analytics, streaks, and weekly recap
+- Progress tracking through the entire Quran
+- Bulk import of past sessions
+- Khatma (full Quran completion) tracking
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `/start` | Start the bot |
+| `/help` | Show help |
+| `/session <range> <duration>` | Log a reading session (e.g. `/session 2:77-83 8m53`) |
+| `/go` | Start a reading timer |
+| `/stop` | Stop the timer |
+| `/read` | Read the next page |
+| `/extra` | Log an extra reading |
+| `/kahf` | Read Surah Al-Kahf (Fridays) |
+| `/import` | Bulk import sessions |
+| `/history` | View session history |
+| `/stats` | Reading statistics |
+| `/progress` | Quran completion progress |
+| `/speed` | Reading speed analytics |
+| `/undo` | Undo the last session |
+| `/delete <id>` | Delete a session by ID |
+| `/config [key] [value]` | Configure city, country, timezone |
+| `/prayer` | Refresh prayer times |
+
+## Prerequisites
 
 - Node.js >= 18
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) (`npm i -g wrangler`)
-- Un compte Cloudflare
-- Un bot Telegram (cree via [@BotFather](https://t.me/BotFather))
+- [pnpm](https://pnpm.io/)
+- A [Cloudflare](https://dash.cloudflare.com/sign-up) account
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
-## Installation locale
+## Quick Start
 
 ```bash
-# Cloner et installer
-git clone <repo-url>
+git clone https://github.com/fsioni/quran-telegram-bot.git
 cd quran-telegram-bot
-npm install
+pnpm install
 
-# Creer la base D1 locale
+# Create D1 database
 wrangler d1 create quran-tracker
-# Copier le database_id retourne dans wrangler.toml
+# Copy the returned database_id into wrangler.toml
 
-# Appliquer le schema
+# Apply schema
 wrangler d1 execute quran-tracker --local --file=schema.sql
 
-# Configurer le token
+# Configure environment
 cp .env.example .dev.vars
-# Remplir BOT_TOKEN dans .dev.vars
+# Fill in BOT_TOKEN and ALLOWED_USER_ID in .dev.vars
 
-# Lancer en dev
-npm run dev
+# Start dev server
+pnpm dev
 ```
 
-## Commandes du bot
+## Deployment
 
-| Commande | Description |
-|---|---|
-| `/start` | Demarrer le bot |
-| `/help` | Afficher l'aide |
-| `/session <range> <duree>` | Enregistrer une session (ex: `/session 2:77-83 8m53`) |
-| `/go` | Demarrer un timer de lecture |
-| `/stop` | Arreter le timer |
-| `/read` | Lire la prochaine page |
-| `/extra` | Enregistrer une lecture extra |
-| `/kahf` | Lire sourate Al-Kahf (vendredi) |
-| `/import` | Importer des sessions en lot |
-| `/history` | Historique des sessions |
-| `/stats` | Statistiques de lecture (global, semaine, mois, streak) |
-| `/progress` | Progression dans le Coran |
-| `/undo` | Annuler la derniere session |
-| `/delete <id>` | Supprimer une session par ID |
-| `/config [cle] [valeur]` | Configurer ville, pays, fuseau horaire |
-| `/debug` | Afficher l'etat interne du bot |
-
-## Deploiement sur Cloudflare Workers
+### 1. Create and configure the D1 database
 
 ```bash
-# 1. Creer la base D1
 wrangler d1 create quran-tracker
-# Copier le UUID retourne dans wrangler.toml (champ database_id)
+# Copy the returned database_id into wrangler.toml
 
-# 2. Appliquer le schema en remote
 wrangler d1 execute quran-tracker --remote --file=schema.sql
+```
 
-# 3. Ajouter le token du bot comme secret
+### 2. Set secrets
+
+```bash
 wrangler secret put BOT_TOKEN
+wrangler secret put ALLOWED_USER_ID
+```
 
-# 4. Deployer
+### 3. Deploy
+
+```bash
 wrangler deploy
 ```
 
-## Configuration post-deploiement
+### 4. Register the webhook
 
-Apres le deploiement, deux etapes manuelles :
+Point Telegram to your Worker URL:
 
-1. **Enregistrer le menu de commandes** (une seule fois, ou apres ajout de commandes) :
+```bash
+curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=<WORKER_URL>"
+```
+
+Replace `<BOT_TOKEN>` with your bot token and `<WORKER_URL>` with the deployed Worker URL.
+
+### 5. Register bot commands
 
 ```bash
 curl -X POST <WORKER_URL>/setup -H "Authorization: Bearer <BOT_TOKEN>"
 ```
 
-2. **Configurer le webhook Telegram** pour que les messages arrivent au Worker :
+This registers the command menu in Telegram. Run it once after deploying, or again after adding new commands.
+
+The cron trigger (`*/5 * * * *`) handles prayer time reminders automatically.
+
+## Configuration
+
+Use `/config` to set your location for prayer time reminders:
 
 ```
-https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=<WORKER_URL>
+/config city Playa del Carmen
+/config country Mexico
+/config timezone America/Cancun
 ```
 
-Remplacer `<BOT_TOKEN>` par le token du bot et `<WORKER_URL>` par l'URL du Worker deploye.
+Defaults to Playa del Carmen, Mexico (`America/Cancun`) if not configured.
 
-Le cron (`*/5 * * * *`) gere automatiquement les rappels de priere.
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Runtime | Cloudflare Workers |
+| Database | Cloudflare D1 (SQLite) |
+| Bot Framework | grammY |
+| Language | TypeScript |
+| Tests | Vitest |
+
+## License
+
+[MIT](LICENSE)
