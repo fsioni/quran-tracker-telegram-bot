@@ -2,7 +2,7 @@
 
 A Telegram bot for tracking Quran reading sessions with automatic prayer time reminders, deployed on Cloudflare Workers with D1 (SQLite).
 
-[![CI](https://github.com/fsioni/quran-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/fsioni/quran-telegram-bot/actions/workflows/ci.yml)
+[![CI](https://github.com/fsioni/quran-tracker-telegram-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/fsioni/quran-tracker-telegram-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 
@@ -48,8 +48,8 @@ A Telegram bot for tracking Quran reading sessions with automatic prayer time re
 ## Quick Start
 
 ```bash
-git clone https://github.com/fsioni/quran-telegram-bot.git
-cd quran-telegram-bot
+git clone https://github.com/fsioni/quran-tracker-telegram-bot.git
+cd quran-tracker-telegram-bot
 pnpm install
 
 # Create D1 database

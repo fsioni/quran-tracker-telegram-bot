@@ -9,8 +9,8 @@
 ## Local setup
 
 ```bash
-git clone https://github.com/<your-fork>/quran-telegram-bot.git
-cd quran-telegram-bot
+git clone https://github.com/<your-fork>/quran-tracker-telegram-bot.git
+cd quran-tracker-telegram-bot
 pnpm install
 wrangler d1 create quran-tracker
 wrangler d1 execute quran-tracker --local --file=schema.sql
