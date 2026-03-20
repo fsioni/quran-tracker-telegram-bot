@@ -117,7 +117,7 @@ Use `/config` to set your location for prayer time reminders:
 
 ```
 /config city Mecca
-/config country Saudi Arabia
+/config country SA
 /config timezone Asia/Riyadh
 ```
 
