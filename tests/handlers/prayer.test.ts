@@ -48,7 +48,7 @@ describe("prayerHandler", () => {
     const ctx = makeCtx();
     await prayerHandler(ctx);
 
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Playa del Carmen", "MX");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Mecca", "SA");
     expect(deletePrayerCacheForDate).toHaveBeenCalledWith(ctx.db, "2026-03-18");
     expect(setPrayerCache).toHaveBeenCalledWith(ctx.db, MOCK_TIMES);
 

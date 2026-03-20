@@ -116,12 +116,12 @@ The cron trigger (`*/5 * * * *`) handles prayer time reminders automatically.
 Use `/config` to set your location for prayer time reminders:
 
 ```
-/config city Playa del Carmen
-/config country Mexico
-/config timezone America/Cancun
+/config city Mecca
+/config country Saudi Arabia
+/config timezone Asia/Riyadh
 ```
 
-Defaults to Playa del Carmen, Mexico (`America/Cancun`) if not configured.
+Defaults to Mecca, Saudi Arabia (`Asia/Riyadh`) if not configured.
 
 ## Tech Stack
 
