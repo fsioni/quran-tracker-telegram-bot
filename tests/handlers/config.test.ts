@@ -109,7 +109,7 @@ describe("configHandler", () => {
     const ctx = makeConfigCtx("");
     await configHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Playa del Carmen");
+    expect(msg).toContain("Mecca");
     expect(msg).toContain("(defaut)");
   });
 
