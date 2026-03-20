@@ -19,6 +19,7 @@ import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } fr
 import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "./services/format";
 import { buildWeeklyRecap } from "./services/weeklyRecap";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
+import { CALLBACK_TIMER_GO } from "./handlers/timer";
 
 export interface Env {
   DB: D1Database;
@@ -30,12 +31,15 @@ async function sendTelegramMessage(
   botToken: string,
   chatId: string,
   text: string,
+  replyMarkup?: unknown,
 ): Promise<boolean> {
   try {
+    const body: Record<string, unknown> = { chat_id: chatId, text };
+    if (replyMarkup) body.reply_markup = replyMarkup;
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify(body),
     });
     if (!response.ok) {
       console.error(`Telegram sendMessage HTTP ${response.status}`);
@@ -121,7 +125,10 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
       message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
     }
 
-    const sent = await sendTelegramMessage(botToken, chatId, message);
+    const goKeyboard = {
+      inline_keyboard: [[{ text: "Go", callback_data: CALLBACK_TIMER_GO }]],
+    };
+    const sent = await sendTelegramMessage(botToken, chatId, message, goKeyboard);
     if (sent) {
       for (const prayer of duePrayers) {
         await markPrayerSent(db, today, prayer);

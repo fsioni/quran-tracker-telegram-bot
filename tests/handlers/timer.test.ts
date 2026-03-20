@@ -4,6 +4,7 @@ import {
   goHandler,
   stopHandler,
   stopTimerCallback,
+  goTimerCallback,
   timerResponseHandler,
   confirmTimerStopCallback,
   cancelTimerStopCallback,
@@ -808,5 +809,45 @@ describe("timerResponseHandler", () => {
     } as unknown as CustomContext;
     await timerResponseHandler(ctx, next);
     expect(next).toHaveBeenCalled();
+  });
+});
+
+describe("goTimerCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSetTimerState.mockResolvedValue(undefined);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 10:00:00");
+  });
+
+  it("demarre un timer normal_page et affiche le clavier Stop", async () => {
+    mockGetTimerState.mockResolvedValue(null);
+    mockGetLastSession.mockResolvedValue({ pageEnd: 10 } as Session);
+
+    const ctx = createCallbackContext("timer_go");
+    await goTimerCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: "normal_page", args: "{}" }),
+    );
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("Timer demarre");
+    const opts = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toHaveProperty("reply_markup");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("timer deja actif -> erreur et answerCallbackQuery", async () => {
+    const epoch = Date.now() - 300000;
+    mockGetTimerState.mockResolvedValue(makeTimerState({ startedEpoch: epoch }));
+
+    const ctx = createCallbackContext("timer_go");
+    await goTimerCallback(ctx);
+
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(msg).toContain("timer est deja actif");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

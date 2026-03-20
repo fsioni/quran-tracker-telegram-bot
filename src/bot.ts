@@ -21,9 +21,11 @@ import {
   confirmTimerStopCallback,
   cancelTimerStopCallback,
   stopTimerCallback,
+  goTimerCallback,
   CALLBACK_TIMER_CONFIRM_RE,
   CALLBACK_TIMER_CANCEL_RE,
   CALLBACK_TIMER_STOP_RE,
+  CALLBACK_TIMER_GO_RE,
 } from "./handlers/timer";
 import { debugHandler } from "./handlers/debug";
 import { prayerHandler } from "./handlers/prayer";
@@ -96,6 +98,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
 
   // Callbacks inline keyboard
   bot.callbackQuery(CALLBACK_TIMER_STOP_RE, stopTimerCallback);
+  bot.callbackQuery(CALLBACK_TIMER_GO_RE, goTimerCallback);
   bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);

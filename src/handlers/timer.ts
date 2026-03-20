@@ -34,11 +34,13 @@ import { getPageRange, TOTAL_PAGES, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_P
 const CALLBACK_TIMER_CONFIRM = "timer_confirm_stop";
 const CALLBACK_TIMER_CANCEL = "timer_cancel_stop";
 const CALLBACK_TIMER_STOP = "timer_stop";
+export const CALLBACK_TIMER_GO = "timer_go";
 const MAX_TIMER_SECONDS = 4 * 3600;
 
 export const CALLBACK_TIMER_CONFIRM_RE = /^timer_confirm_stop$/;
 export const CALLBACK_TIMER_CANCEL_RE = /^timer_cancel_stop$/;
 export const CALLBACK_TIMER_STOP_RE = /^timer_stop$/;
+export const CALLBACK_TIMER_GO_RE = /^timer_go$/;
 
 // --- Parsed argument types ---
 
@@ -53,6 +55,11 @@ type ParsedGoArgs =
 
 export async function goHandler(ctx: CustomContext): Promise<void> {
   const input = ((ctx.match as string) || "").trim();
+
+  // No args => normal_page, use shared logic
+  if (!input) {
+    return executeTimerGoNormalPage(ctx.db, (...args) => ctx.reply(...args));
+  }
 
   // Check if timer already active
   const existing = await getTimerState(ctx.db);
@@ -72,14 +79,7 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
   // Validate starting position
   const tz = await getTimezone(ctx.db);
 
-  if (parsed.type === "normal_page") {
-    const lastSession = await getLastSession(ctx.db, "normal");
-    const currentPage = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
-    if (currentPage > TOTAL_PAGES) {
-      await ctx.reply("Tu as termine le Coran ! Alhamdulillah !");
-      return;
-    }
-  } else if (parsed.type === "normal_verse" || parsed.type === "extra_verse") {
+  if (parsed.type === "normal_verse" || parsed.type === "extra_verse") {
     const valid = validateAyah(parsed.surah, parsed.ayah);
     if (!valid.ok) {
       await ctx.reply(formatError(valid.error));
@@ -261,6 +261,45 @@ export async function cancelTimerStopCallback(ctx: CustomContext): Promise<void>
 
 export async function stopTimerCallback(ctx: CustomContext): Promise<void> {
   await executeTimerStop(ctx.db, (...args) => ctx.editMessageText(...args));
+  await ctx.answerCallbackQuery();
+}
+
+// --- Shared go logic (normal_page, no args) ---
+
+async function executeTimerGoNormalPage(db: D1Database, send: SendFn): Promise<void> {
+  const existing = await getTimerState(db);
+  if (existing) {
+    const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
+    await send(formatError(`un timer est deja actif depuis ${formatDuration(elapsed)}. Utilise /stop pour l'arreter`));
+    return;
+  }
+
+  const lastSession = await getLastSession(db, "normal");
+  const currentPage = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
+  if (currentPage > TOTAL_PAGES) {
+    await send("Tu as termine le Coran ! Alhamdulillah !");
+    return;
+  }
+
+  const tz = await getTimezone(db);
+  const now = getNowTimestamp(tz);
+  await setTimerState(db, {
+    startedAt: now,
+    startedEpoch: Date.now(),
+    type: "normal_page",
+    args: "{}",
+    awaitingResponse: false,
+  });
+
+  await send("Timer demarre ! Lecture normale (pages).", {
+    reply_markup: new InlineKeyboard().text("Stop", CALLBACK_TIMER_STOP),
+  });
+}
+
+// --- Callback for inline Go button (prayer reminder) ---
+
+export async function goTimerCallback(ctx: CustomContext): Promise<void> {
+  await executeTimerGoNormalPage(ctx.db, (...args) => ctx.editMessageText(...args));
   await ctx.answerCallbackQuery();
 }
 
