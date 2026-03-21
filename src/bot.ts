@@ -58,7 +58,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
 
   // Middleware to inject locale into context (cached to avoid DB hit per message)
   bot.use(async (ctx, next) => {
-    ctx.locale = await resolveLocale(db);
+    ctx.locale = await resolveLocale(db, ctx.from?.language_code ?? null);
     return next();
   });
 
