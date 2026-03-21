@@ -13,14 +13,13 @@ export const LANGUAGES: Language[] = ["en", "fr"];
 const locales: Record<Language, Locale> = { en, fr };
 
 export function getLocale(lang: string | null): Locale {
-  if (lang && lang in locales) {
+  if (lang && Object.prototype.hasOwnProperty.call(locales, lang)) {
     return locales[lang as Language];
   }
   return en;
 }
 
 // Single source of truth for all bot commands (order = Telegram menu order).
-// `debug` is excluded from the welcome message but registered with Telegram.
 const BOT_COMMANDS: (keyof Locale["commands"])[] = [
   "start", "help", "session", "go", "stop", "read", "extra", "kahf",
   "import", "history", "stats", "progress", "undo", "delete", "speed",
