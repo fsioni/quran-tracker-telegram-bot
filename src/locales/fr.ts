@@ -277,5 +277,5 @@ export const fr: Locale = {
     apiError: (message) => `Aladhan API erreur: ${message}`,
   },
 
-  nativeName: "Francais",
+  nativeName: "Français",
 };
