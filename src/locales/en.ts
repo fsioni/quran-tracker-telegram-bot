@@ -17,7 +17,7 @@ export const en: Locale = {
     undo: "Undo the last session",
     delete: "Delete a session",
     speed: "Reading speed",
-    config: "Configure city, country, timezone",
+    config: "Configure city, country, timezone, language",
     prayer: "Refresh prayer times",
   },
 
@@ -70,9 +70,8 @@ export const en: Locale = {
     session: "/session 2:77-83 8m53",
     read: "/read 5m or /read 3 15m",
     extra: "/extra 300 5m or /extra 2:77-83 8m",
-    extraPage: "/extra 300 5m or /extra 2:77-83 8m",
     kahf: "/kahf 5m or /kahf 3 15m",
-    import: "/import\n10/03, 13h30 - 8m53 - 2:77-83",
+    import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
   },
 
   session: {
@@ -96,8 +95,8 @@ export const en: Locale = {
     versesPerHour: "verses/hour",
     versesPerHourShort: "verses/h",
     pagesPerHourShort: "pages/h",
-    currentStreak: (days) => `Current streak: ${days} days`,
-    bestStreak: (days) => `Best streak: ${days} days`,
+    currentStreak: (days) => `Current streak: ${days} ${days === 1 ? "day" : "days"}`,
+    bestStreak: (days) => `Best streak: ${days} ${days === 1 ? "day" : "days"}`,
     thisWeek: "-- This week --",
     thisMonth: "-- This month --",
     versesLabel: "Verses",
@@ -117,8 +116,8 @@ export const en: Locale = {
   reminder: {
     title: "Quran reading reminder",
     lastSession: (date, surahName, ayah) => `Last session: ${date} - surah ${surahName} v.${ayah}`,
-    thisWeek: (sessions, ayahs) => `This week: ${sessions} sessions, ${ayahs} verses`,
-    streak: (days) => `Streak: ${days} consecutive days`,
+    thisWeek: (sessions, ayahs) => `This week: ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} verses`,
+    streak: (days) => `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
     keepItUp: "Keep it up!",
     timeToResume: "Time to get back to it!",
     noSession: "Quran reading reminder\n\nNo session recorded. Start with /session!",
@@ -184,7 +183,7 @@ export const en: Locale = {
     typeNormal: "Normal",
     typeExtra: "Extra",
     typeKahf: "Kahf",
-    sessionsCount: (count) => `${count} sessions`,
+    sessionsCount: (count) => `${count} ${count === 1 ? "session" : "sessions"}`,
   },
 
   recap: {
@@ -193,7 +192,7 @@ export const en: Locale = {
     pagesRead: "Pages read",
     duration: "Duration",
     sessions: "Sessions",
-    streak: (days) => `Streak: ${days} consecutive days`,
+    streak: (days) => `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
   },
 
   timer: {

@@ -63,7 +63,7 @@ describe("parseDuration", () => {
     const result = parseDuration("abc", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain("format de duree invalide");
+      expect(result.error).toContain("format de durée invalide");
     }
   });
 });
@@ -141,6 +141,19 @@ describe("parseImportLine", () => {
     }
   });
 
+  it("parses a complete import line with HH:MM format", () => {
+    const result = parseImportLine("10/03, 13:30 - 8m53 - 2:77-83", fr, 2026, march13);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.date).toBe("2026-03-10");
+      expect(result.value.time).toBe("13:30");
+      expect(result.value.duration).toBe(533);
+      expect(result.value.range).toEqual({
+        surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83,
+      });
+    }
+  });
+
   it("rejects invalid line format", () => {
     const result = parseImportLine("invalid line", fr);
     expect(result.ok).toBe(false);
@@ -204,7 +217,7 @@ describe("formatSessionConfirmation", () => {
       durationSeconds: 533,
     }, fr);
     expect(result).toBe(
-      "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
+      "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
   });
 
@@ -218,7 +231,7 @@ describe("formatSessionConfirmation", () => {
       durationSeconds: 533,
     }, fr);
     expect(result).toBe(
-      "Session enregistree : sourate Al-Baqara v.280 a sourate Al-Imran v.10 -- 17 versets en 8m53 (115 versets/h)",
+      "Session enregistrée : sourate Al-Baqara v.280 à sourate Al-Imran v.10 -- 17 versets en 8m53 (115 versets/h)",
     );
   });
 
@@ -235,7 +248,7 @@ describe("formatSessionConfirmation", () => {
       pageEnd: 300,
     }, fr);
     expect(result).toBe(
-      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 5m (12.0 pages/h)",
+      "Session extra enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 5m (12.0 pages/h)",
     );
   });
 
@@ -249,7 +262,7 @@ describe("formatSessionConfirmation", () => {
       durationSeconds: 0,
     }, fr);
     expect(result).toBe(
-      "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 0m",
+      "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 0m",
     );
   });
 });
@@ -360,16 +373,16 @@ describe("formatStats", () => {
       [
         "-- Stats globales --",
         "Versets lus : 342",
-        "Duree totale : 4h23m",
+        "Durée totale : 4h23m",
         "Vitesse moyenne : 78 versets/heure",
         "Streak actuel : 5 jours",
         "Meilleur streak : 12 jours",
         "",
         "-- Cette semaine --",
-        "Versets : 45 | Duree : 38m | Vitesse : 71 versets/h",
+        "Versets : 45 | Durée : 38m | Vitesse : 71 versets/h",
         "",
         "-- Ce mois --",
-        "Versets : 187 | Duree : 2h15m | Vitesse : 83 versets/h",
+        "Versets : 187 | Durée : 2h15m | Vitesse : 83 versets/h",
       ].join("\n"),
     );
   });
@@ -401,8 +414,8 @@ describe("formatStats", () => {
       monthAyahs: 340,
       monthSeconds: 8100, // 2h15m -> 340/8100*3600 = 151
     }, fr);
-    expect(result).toContain("Versets : 120 | Duree : 45m | Vitesse : 160 versets/h");
-    expect(result).toContain("Versets : 340 | Duree : 2h15m | Vitesse : 151 versets/h");
+    expect(result).toContain("Versets : 120 | Durée : 45m | Vitesse : 160 versets/h");
+    expect(result).toContain("Versets : 340 | Durée : 2h15m | Vitesse : 151 versets/h");
   });
 
   it("n'affiche pas la vitesse quand seconds est 0", () => {
@@ -416,11 +429,11 @@ describe("formatStats", () => {
       monthAyahs: 0,
       monthSeconds: 0,
     }, fr);
-    expect(result).toContain("Versets : 0 | Duree : 0m");
+    expect(result).toContain("Versets : 0 | Durée : 0m");
     expect(result).not.toContain("Vitesse : 0 versets/h");
   });
 
-  it("affiche la tendance positive vs semaine derniere", () => {
+  it("affiche la tendance positive vs semaine dernière", () => {
     const result = formatStats({
       totalAyahs: 342,
       totalSeconds: 15780,
@@ -433,10 +446,10 @@ describe("formatStats", () => {
       prevWeekAyahs: 100,
       prevWeekSeconds: 2520, // ~143 v/h -> +12%
     }, fr);
-    expect(result).toContain("+12% vs semaine derniere");
+    expect(result).toContain("+12% vs semaine dernière");
   });
 
-  it("affiche la tendance negative vs semaine derniere", () => {
+  it("affiche la tendance negative vs semaine dernière", () => {
     const result = formatStats({
       totalAyahs: 342,
       totalSeconds: 15780,
@@ -449,7 +462,7 @@ describe("formatStats", () => {
       prevWeekAyahs: 120,
       prevWeekSeconds: 2700, // 160 v/h -> -11%
     }, fr);
-    expect(result).toContain("-11% vs semaine derniere");
+    expect(result).toContain("-11% vs semaine dernière");
   });
 
   it("n'affiche pas la tendance si pas de donnees semaine precedente", () => {
@@ -463,7 +476,7 @@ describe("formatStats", () => {
       monthAyahs: 340,
       monthSeconds: 8100,
     }, fr);
-    expect(result).not.toContain("vs semaine derniere");
+    expect(result).not.toContain("vs semaine dernière");
   });
 
   it("n'affiche pas la tendance si prevWeekSeconds est 0", () => {
@@ -479,7 +492,7 @@ describe("formatStats", () => {
       prevWeekAyahs: 0,
       prevWeekSeconds: 0,
     }, fr);
-    expect(result).not.toContain("vs semaine derniere");
+    expect(result).not.toContain("vs semaine dernière");
   });
 });
 
@@ -543,11 +556,11 @@ describe("formatReminder", () => {
       [
         "Rappel lecture du Coran",
         "",
-        "Derniere session : 10/03 - sourate Al-Baqara v.83",
+        "Dernière session : 10/03 - sourate Al-Baqara v.83",
         "Cette semaine : 5 sessions, 120 versets",
-        "Serie : 3 jours consecutifs",
+        "Série : 3 jours consécutifs",
         "",
-        "Continue comme ca !",
+        "Continue comme ça !",
       ].join("\n"),
     );
   });
@@ -644,7 +657,7 @@ describe("formatReadConfirmation", () => {
       totalPagesRead: 604,
       totalPages: 604,
     }, fr);
-    expect(result).toBe("Page 604 lue en 5m -- 12.0 pages/h (604/604)\nCoran termine ! Alhamdulillah !");
+    expect(result).toBe("Page 604 lue en 5m -- 12.0 pages/h (604/604)\nCoran terminé ! Alhamdulillah !");
   });
 
   it("does not show speed when durationSeconds is 0", () => {
@@ -709,7 +722,7 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 3120,
       isComplete: true,
     }, fr);
-    expect(result).toBe("Al-Kahf terminee ! 12/12 pages en 52m");
+    expect(result).toBe("Al-Kahf terminée ! 12/12 pages en 52m");
   });
 
   it("formats completion with last week comparison (faster)", () => {
@@ -723,7 +736,7 @@ describe("formatKahfPageConfirmation", () => {
       lastWeekTotalSeconds: 3480,
     }, fr);
     expect(result).toBe(
-      "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 58m (-6m, bravo !)",
+      "Al-Kahf terminée ! 12/12 pages en 52m\nSemaine dernière : 58m (-6m, bravo !)",
     );
   });
 
@@ -738,7 +751,7 @@ describe("formatKahfPageConfirmation", () => {
       lastWeekTotalSeconds: 3300,
     }, fr);
     expect(result).toBe(
-      "Al-Kahf terminee ! 12/12 pages en 58m\nSemaine derniere : 55m (+3m)",
+      "Al-Kahf terminée ! 12/12 pages en 58m\nSemaine dernière : 55m (+3m)",
     );
   });
 
@@ -753,7 +766,7 @@ describe("formatKahfPageConfirmation", () => {
       lastWeekTotalSeconds: 3120,
     }, fr);
     expect(result).toBe(
-      "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 52m",
+      "Al-Kahf terminée ! 12/12 pages en 52m\nSemaine dernière : 52m",
     );
   });
 });
@@ -767,13 +780,13 @@ describe("formatKahfReminder", () => {
       lastDuration: 1500,
     }, fr);
     expect(result).toBe(
-      "Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.\n\nDerniere lecture : 07/03 en 25m",
+      "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.\n\nDernière lecture : 07/03 en 25m",
     );
   });
 
   it("formats without history", () => {
     const result = formatKahfReminder({}, fr);
-    expect(result).toBe("Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.");
+    expect(result).toBe("Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.");
   });
 });
 
@@ -821,7 +834,7 @@ describe("formatSessionConfirmation with type", () => {
       type: "extra",
     }, fr);
     expect(result).toBe(
-      "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
+      "Session extra enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
   });
 });
@@ -834,23 +847,23 @@ describe("formatEstimation", () => {
   it("formate une date de fin avec un rythme normal", () => {
     // 1.2 pages/jour, 400 pages restantes -> ceil(333.3) = 334 jours -> 2027-02-12
     const result = formatEstimation(1.2, 400, today, fr);
-    expect(result).toBe("A ce rythme (~1.2 pages/jour), tu finiras vers le 12 fevrier 2027");
+    expect(result).toBe("À ce rythme (~1.2 pages/jour), tu finiras vers le 12 février 2027");
   });
 
   it("retourne message 'pas assez de donnees' quand pace est 0", () => {
     const result = formatEstimation(0, 400, today, fr);
-    expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
+    expect(result).toBe("Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)");
   });
 
   it("retourne format en mois quand estimation > 5 ans", () => {
     // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
     const result = formatEstimation(0.1, 500, today, fr);
-    expect(result).toMatch(/^A ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/);
+    expect(result).toMatch(/^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/);
   });
 
   it("retourne message pour pace negatif", () => {
     const result = formatEstimation(-1, 400, today, fr);
-    expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
+    expect(result).toBe("Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)");
   });
 });
 
@@ -873,13 +886,13 @@ describe("formatError", () => {
 describe("formatKhatmaMessage", () => {
   it("formats first khatma", () => {
     expect(formatKhatmaMessage(1, fr)).toBe(
-      "Khatma ! Tu as termine ta premiere lecture complete du Coran. Alhamdulillah !",
+      "Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !",
     );
   });
 
   it("formats second khatma", () => {
     expect(formatKhatmaMessage(2, fr)).toBe(
-      "Khatma ! Tu as termine ta 2e lecture complete du Coran. Alhamdulillah !",
+      "Khatma ! Tu as terminé ta 2e lecture complète du Coran. Alhamdulillah !",
     );
   });
 });
@@ -889,7 +902,7 @@ describe("formatKhatmaMessage", () => {
 describe("formatSurahsComplete", () => {
   it("formats single surah", () => {
     expect(formatSurahsComplete([{ number: 2, name: "Al-Baqara" }], fr)).toBe(
-      "Sourate Al-Baqara (2) terminee !",
+      "Sourate Al-Baqara (2) terminée !",
     );
   });
 
@@ -900,7 +913,7 @@ describe("formatSurahsComplete", () => {
         { number: 113, name: "Al-Falaq" },
         { number: 114, name: "An-Nas" },
       ], fr),
-    ).toBe("Sourates terminees : Al-Ikhlas (112), Al-Falaq (113), An-Nas (114)");
+    ).toBe("Sourates terminées : Al-Ikhlas (112), Al-Falaq (113), An-Nas (114)");
   });
 });
 

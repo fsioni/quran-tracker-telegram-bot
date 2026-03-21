@@ -84,7 +84,7 @@ export function parseImportLine(
 ): Result<ParsedImportLine> {
   // Format: JJ/MM, HHhMM - DUREE - RANGE
   const match = line.match(
-    /^(\d{2})\/(\d{2}),\s*(\d{1,2})h(\d{2})\s*-\s*(.+?)\s*-\s*(.+)$/,
+    /^(\d{2})\/(\d{2}),\s*(\d{1,2})[h:](\d{2})\s*-\s*(.+?)\s*-\s*(.+)$/,
   );
   if (!match) {
     return err(t.parse.invalidImportLineFormat(line));
