@@ -11,6 +11,7 @@ import {
 import { formatRange } from "../services/format";
 
 export async function debugHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const db = ctx.db;
 
   // Timezone needed first for today's date
@@ -34,17 +35,17 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   const lines: string[] = [];
 
   // -- Config --
-  lines.push("-- Config --");
-  lines.push(`city       : ${city ?? "—"}`);
-  lines.push(`country    : ${country ?? "—"}`);
+  lines.push(t.debug.configSection);
+  lines.push(`city       : ${city ?? "\u2014"}`);
+  lines.push(`country    : ${country ?? "\u2014"}`);
   lines.push(`timezone   : ${tz}`);
-  lines.push(`chat_id    : ${chatId ?? "—"}`);
+  lines.push(`chat_id    : ${chatId ?? "\u2014"}`);
   lines.push("");
 
   // -- Cache priere --
   if (prayerCache) {
-    lines.push(`-- Cache priere (${today}) --`);
-    const status = (sent: number) => (sent ? "envoye" : "en attente");
+    lines.push(t.debug.prayerCacheDateSection(today));
+    const status = (sent: number) => (sent ? t.debug.sent : t.debug.pending);
     lines.push(`fajr       : ${prayerCache.fajr} [${status(prayerCache.fajr_sent)}]`);
     lines.push(`dhuhr      : ${prayerCache.dhuhr} [${status(prayerCache.dhuhr_sent)}]`);
     lines.push(`asr        : ${prayerCache.asr} [${status(prayerCache.asr_sent)}]`);
@@ -52,13 +53,13 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
     lines.push(`isha       : ${prayerCache.isha} [${status(prayerCache.isha_sent)}]`);
     lines.push(`fetched_at : ${prayerCache.fetched_at}`);
   } else {
-    lines.push("-- Cache priere --");
-    lines.push("aucun cache");
+    lines.push(t.debug.prayerCacheSection);
+    lines.push(t.debug.noCache);
   }
   lines.push("");
 
   // -- Derniere session --
-  lines.push("-- Derniere session --");
+  lines.push(t.debug.lastSessionSection);
   if (lastSession) {
     const s = lastSession.startedAt;
     const day = s.substring(8, 10);
@@ -70,32 +71,33 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
       lastSession.ayahStart,
       lastSession.surahEnd,
       lastSession.ayahEnd,
+      t,
     );
     lines.push(`id         : ${lastSession.id}`);
-    lines.push(`date       : ${day}/${month} ${hour}h${minute}`);
+    lines.push(`date       : ${t.fmt.dateShort(day, month)} ${t.fmt.timeShort(hour, minute)}`);
     lines.push(`type       : ${lastSession.type}`);
     lines.push(`range      : ${range}`);
   } else {
-    lines.push("aucune session");
+    lines.push(t.debug.noSession);
   }
   lines.push("");
 
   // -- Cron --
-  lines.push("-- Cron --");
-  lines.push(`kahf_reminder_last : ${kahfLast ?? "—"}`);
+  lines.push(t.debug.cronSection);
+  lines.push(`kahf_reminder_last : ${kahfLast ?? "\u2014"}`);
   lines.push("");
 
   // -- DB stats --
-  lines.push("-- DB stats --");
+  lines.push(t.debug.dbStatsSection);
   if (globalStats.ok) {
     lines.push(`total sessions : ${globalStats.value.totalSessions}`);
   } else {
-    lines.push("erreur stats");
+    lines.push(t.debug.statsError);
   }
   lines.push("");
 
   // -- Systeme --
-  lines.push("-- Systeme --");
+  lines.push(t.debug.systemSection);
   lines.push(`serveur (UTC) : ${nowUtc}`);
   lines.push(`user (tz)     : ${nowLocal}`);
 

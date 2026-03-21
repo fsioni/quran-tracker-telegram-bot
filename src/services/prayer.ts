@@ -1,5 +1,6 @@
 import type { PrayerTimes, PrayerCacheRow, PrayerName } from "./db";
 import { Result, ok, err } from "../types";
+import type { Locale } from "../locales";
 
 type AladhanTimings = {
   Fajr: string;
@@ -23,23 +24,23 @@ function stripTimezone(time: string): string {
 
 const REQUIRED_TIMINGS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
-export function parsePrayerResponse(body: AladhanResponse, date: string): Result<PrayerTimes> {
+export function parsePrayerResponse(body: AladhanResponse, date: string, t: Locale): Result<PrayerTimes> {
   if (body.code !== 200 || !body.data?.timings) {
-    return err("Reponse Aladhan invalide");
+    return err(t.prayerApi.invalidResponse);
   }
-  const t = body.data.timings;
+  const timings = body.data.timings;
   for (const key of REQUIRED_TIMINGS) {
-    if (typeof t[key] !== "string") {
-      return err(`Champ manquant dans la reponse Aladhan: ${key}`);
+    if (typeof timings[key] !== "string") {
+      return err(t.prayerApi.missingField(key));
     }
   }
   return ok({
     date,
-    fajr: stripTimezone(t.Fajr),
-    dhuhr: stripTimezone(t.Dhuhr),
-    asr: stripTimezone(t.Asr),
-    maghrib: stripTimezone(t.Maghrib),
-    isha: stripTimezone(t.Isha),
+    fajr: stripTimezone(timings.Fajr),
+    dhuhr: stripTimezone(timings.Dhuhr),
+    asr: stripTimezone(timings.Asr),
+    maghrib: stripTimezone(timings.Maghrib),
+    isha: stripTimezone(timings.Isha),
   });
 }
 
@@ -52,17 +53,18 @@ export async function fetchPrayerTimes(
   date: string,
   city: string,
   country: string,
+  t: Locale,
 ): Promise<Result<PrayerTimes>> {
   try {
     const url = buildAladhanUrl(date, city, country);
     const response = await fetch(url);
     if (!response.ok) {
-      return err(`Aladhan API HTTP ${response.status}`);
+      return err(t.prayerApi.httpError(response.status));
     }
     const body = (await response.json()) as AladhanResponse;
-    return parsePrayerResponse(body, date);
+    return parsePrayerResponse(body, date, t);
   } catch (e) {
-    return err(`Aladhan API erreur: ${(e as Error).message}`);
+    return err(t.prayerApi.apiError((e as Error).message));
   }
 }
 

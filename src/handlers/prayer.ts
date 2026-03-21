@@ -14,6 +14,7 @@ const PRAYER_LABELS: Record<PrayerName, string> = {
 };
 
 export async function prayerHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const [tzRaw, cityRaw, countryRaw] = await Promise.all([
     getConfig(ctx.db, "timezone"),
     getConfig(ctx.db, "city"),
@@ -32,9 +33,9 @@ export async function prayerHandler(ctx: CustomContext): Promise<void> {
     today = getTodayInTimezone(tz);
   }
 
-  const result = await fetchPrayerTimes(today, city, country);
+  const result = await fetchPrayerTimes(today, city, country, t);
   if (!result.ok) {
-    await ctx.reply(formatError(`impossible de recuperer les horaires : ${result.error}`));
+    await ctx.reply(formatError(t.prayer.fetchError(result.error), t));
     return;
   }
 
@@ -43,14 +44,14 @@ export async function prayerHandler(ctx: CustomContext): Promise<void> {
 
   const times = result.value;
   const lines = [
-    `Horaires de priere - ${city}, ${country}`,
-    `Date : ${today}`,
+    t.prayer.title(city, country),
+    `${t.prayer.date} : ${today}`,
     "",
     ...(Object.entries(PRAYER_LABELS) as [PrayerName, string][]).map(
       ([key, label]) => `${label} : ${times[key]}`,
     ),
     "",
-    "Cache rafraichi.",
+    t.prayer.cacheRefreshed,
   ];
 
   await ctx.reply(lines.join("\n"));

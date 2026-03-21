@@ -56,6 +56,7 @@ import {
 import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "../src/services/prayer";
 import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "../src/services/format";
 import { buildWeeklyRecap } from "../src/services/weeklyRecap";
+import { fr } from "../src/locales/fr";
 
 describe("handleScheduled", () => {
   const db = {} as D1Database;
@@ -81,6 +82,7 @@ describe("handleScheduled", () => {
       if (key === "timezone") return "America/Cancun";
       if (key === "city") return "Playa del Carmen";
       if (key === "country") return "MX";
+      if (key === "language") return "fr";
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
@@ -111,6 +113,7 @@ describe("handleScheduled", () => {
       if (key === "timezone") return "America/Cancun";
       if (key === "city") return "PDC";
       if (key === "country") return "MX";
+      if (key === "language") return "fr";
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
@@ -169,6 +172,7 @@ describe("handleScheduled", () => {
       if (key === "timezone") return "America/Cancun";
       if (key === "city") return "PDC";
       if (key === "country") return "MX";
+      if (key === "language") return "fr";
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
@@ -189,7 +193,7 @@ describe("handleScheduled", () => {
 
     await handleScheduled(db, "TOKEN");
 
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-14", "PDC", "MX");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-14", "PDC", "MX", fr);
     expect(setPrayerCache).toHaveBeenCalled();
     // cleanOldCache is called every run, not just on cache miss
     expect(cleanOldCache).toHaveBeenCalledWith(db, "2026-03-14");
@@ -201,6 +205,7 @@ describe("handleScheduled", () => {
       if (key === "timezone") return "America/Cancun";
       if (key === "city") return "PDC";
       if (key === "country") return "MX";
+      if (key === "language") return "fr";
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
@@ -233,6 +238,7 @@ describe("handleScheduled", () => {
   it("envoie message fallback si aucune session", async () => {
     vi.mocked(getConfig).mockImplementation(async (_, key) => {
       if (key === "chat_id") return "123";
+      if (key === "language") return "fr";
       return null;
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
@@ -284,6 +290,7 @@ describe("handleScheduled", () => {
         if (key === "timezone") return "America/Cancun";
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
+      if (key === "language") return "fr";
         if (key === "kahf_reminder_last") return null;
         return null;
       });
@@ -313,7 +320,7 @@ describe("handleScheduled", () => {
       expect(formatKahfReminder).toHaveBeenCalledWith({
         lastDate: undefined,
         lastDuration: undefined,
-      });
+      }, fr);
       expect(fetch).toHaveBeenCalledWith(
         "https://api.telegram.org/botTOKEN/sendMessage",
         expect.objectContaining({
@@ -333,6 +340,7 @@ describe("handleScheduled", () => {
         if (key === "timezone") return "America/Cancun";
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
+      if (key === "language") return "fr";
         return null;
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");
@@ -368,6 +376,7 @@ describe("handleScheduled", () => {
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
         if (key === "kahf_reminder_last") return "2026-03-13";
+      if (key === "language") return "fr";
         return null;
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
@@ -402,6 +411,7 @@ describe("handleScheduled", () => {
         if (key === "timezone") return "America/Cancun";
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
+      if (key === "language") return "fr";
         if (key === "kahf_reminder_last") return null;
         return null;
       });
@@ -431,7 +441,7 @@ describe("handleScheduled", () => {
       expect(formatKahfReminder).toHaveBeenCalledWith({
         lastDate: "2026-03-07",
         lastDuration: 1500,
-      });
+      }, fr);
     });
   });
 
@@ -460,6 +470,7 @@ describe("handleScheduled", () => {
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
         if (key === "weekly_recap_last") return overrides.recapLast ?? null;
+      if (key === "language") return "fr";
         return null;
       });
       vi.mocked(getTodayInTimezone).mockReturnValue(date);
@@ -511,6 +522,7 @@ describe("handleScheduled", () => {
         if (key === "timezone") return "UTC";
         if (key === "city") return "PDC";
         if (key === "country") return "MX";
+      if (key === "language") return "fr";
         return null;
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");

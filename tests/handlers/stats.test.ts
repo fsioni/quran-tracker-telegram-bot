@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { historyHandler, statsHandler, progressHandler } from "../../src/handlers/stats";
 import type { CustomContext } from "../../src/bot";
 import type { Session } from "../../src/services/db";
+import { fr } from "../../src/locales/fr";
 
 // Mock le module db au niveau fichier
 vi.mock("../../src/services/db", async (importOriginal) => {
@@ -42,6 +43,7 @@ function makeCtx(match = ""): CustomContext {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 

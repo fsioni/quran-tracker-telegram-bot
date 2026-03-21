@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -24,6 +25,7 @@ function makeCtx(): CustomContext {
   return {
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -48,7 +50,7 @@ describe("prayerHandler", () => {
     const ctx = makeCtx();
     await prayerHandler(ctx);
 
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Mecca", "SA");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Mecca", "SA", fr);
     expect(deletePrayerCacheForDate).toHaveBeenCalledWith(ctx.db, "2026-03-18");
     expect(setPrayerCache).toHaveBeenCalledWith(ctx.db, MOCK_TIMES);
 
@@ -86,7 +88,7 @@ describe("prayerHandler", () => {
     await prayerHandler(ctx);
 
     expect(getTodayInTimezone).toHaveBeenCalledWith("Asia/Riyadh");
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Riyadh", "SA");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Riyadh", "SA", fr);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Riyadh");

@@ -11,6 +11,7 @@ import {
 } from "../../src/handlers/timer";
 import type { CustomContext } from "../../src/bot";
 import type { Session, TimerState } from "../../src/services/db";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -84,6 +85,7 @@ function createMockContext(match = ""): CustomContext {
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: 12345 },
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -93,6 +95,7 @@ function createCallbackContext(data: string): CustomContext {
     answerCallbackQuery: vi.fn().mockResolvedValue(undefined),
     editMessageText: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -102,6 +105,7 @@ function createMessageContext(text: string): CustomContext {
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: 12345 },
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -806,6 +810,7 @@ describe("timerResponseHandler", () => {
       message: undefined,
       reply: vi.fn(),
       db: {} as D1Database,
+      locale: fr,
     } as unknown as CustomContext;
     await timerResponseHandler(ctx, next);
     expect(next).toHaveBeenCalled();

@@ -1,4 +1,4 @@
-import { createBot, BOT_COMMANDS } from "./bot";
+import { createBot } from "./bot";
 import { Bot } from "grammy";
 import { webhookCallback } from "grammy";
 import {
@@ -20,6 +20,7 @@ import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "./service
 import { buildWeeklyRecap } from "./services/weeklyRecap";
 import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
 import { CALLBACK_TIMER_GO } from "./handlers/timer";
+import { getLocale, getBotCommands } from "./locales";
 
 export interface Env {
   DB: D1Database;
@@ -56,14 +57,17 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
   const chatId = await getConfig(db, "chat_id");
   if (!chatId) return;
 
-  const [tzRaw, cityRaw, countryRaw] = await Promise.all([
+  const [tzRaw, cityRaw, countryRaw, langRaw] = await Promise.all([
     getConfig(db, "timezone"),
     getConfig(db, "city"),
     getConfig(db, "country"),
+    getConfig(db, "language"),
   ]);
   let tz = tzRaw ?? DEFAULT_TZ;
   const city = cityRaw ?? DEFAULT_CITY;
   const country = countryRaw ?? DEFAULT_COUNTRY;
+  const t = getLocale(langRaw);
+
   let today: string;
   try {
     today = getTodayInTimezone(tz);
@@ -75,7 +79,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
   let cache = await getPrayerCache(db, today);
   if (!cache) {
-    const result = await fetchPrayerTimes(today, city, country);
+    const result = await fetchPrayerTimes(today, city, country, t);
     if (!result.ok) {
       console.error("Prayer fetch failed:", result.error);
       return;
@@ -120,13 +124,13 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
         weekSessions: weekStats.sessions,
         weekAyahs: weekStats.ayahs,
         streak: streak.currentStreak,
-      });
+      }, t);
     } else {
-      message = "Rappel lecture du Coran\n\nAucune session enregistree. Commence avec /session !";
+      message = t.reminder.noSession;
     }
 
     const goKeyboard = {
-      inline_keyboard: [[{ text: "Go", callback_data: CALLBACK_TIMER_GO }]],
+      inline_keyboard: [[{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }]],
     };
     const sent = await sendTelegramMessage(botToken, chatId, message, goKeyboard);
     if (sent) {
@@ -149,7 +153,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
         const kahfMsg = formatKahfReminder({
           lastDate: kahfStats.lastDate ?? undefined,
           lastDuration: kahfStats.lastDuration ?? undefined,
-        });
+        }, t);
         const kahfSent = await sendTelegramMessage(botToken, chatId, kahfMsg);
         if (kahfSent) {
           await setConfig(db, "kahf_reminder_last", today);
@@ -167,7 +171,7 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
         if (!recapResult.ok) {
           console.error("buildWeeklyRecap failed:", recapResult.error);
         } else {
-          const recapMsg = formatWeeklyRecap(recapResult.value);
+          const recapMsg = formatWeeklyRecap(recapResult.value, t);
           const recapSent = await sendTelegramMessage(botToken, chatId, recapMsg);
           if (recapSent) {
             await setConfig(db, "weekly_recap_last", today);
@@ -192,7 +196,9 @@ export default {
       }
       try {
         const bot = new Bot(env.BOT_TOKEN);
-        await bot.api.setMyCommands(BOT_COMMANDS);
+        const lang = await getConfig(env.DB, "language");
+        const t = getLocale(lang);
+        await bot.api.setMyCommands(getBotCommands(t));
         return new Response("Commands registered");
       } catch (e) {
         console.error("setMyCommands failed:", (e as Error).message);

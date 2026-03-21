@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { sessionHandler } from "../../src/handlers/session";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 function createMockContext(match = ""): CustomContext {
   const firstFn = vi.fn().mockResolvedValue({
@@ -28,6 +29,7 @@ function createMockContext(match = ""): CustomContext {
       exec: vi.fn(),
       dump: vi.fn(),
     } as unknown as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 

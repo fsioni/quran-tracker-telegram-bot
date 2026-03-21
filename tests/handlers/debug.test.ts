@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -30,6 +31,7 @@ function createMockContext(): CustomContext {
   return {
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 

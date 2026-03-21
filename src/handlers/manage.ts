@@ -6,6 +6,7 @@ import {
   deleteSessionById,
 } from "../services/db";
 import { formatError, formatRange, formatDuration } from "../services/format";
+import type { Locale } from "../locales";
 
 const CALLBACK_CONFIRM = "delete_confirm";
 const CALLBACK_CANCEL = "delete_cancel";
@@ -13,27 +14,29 @@ const CALLBACK_CANCEL = "delete_cancel";
 export const CALLBACK_CONFIRM_RE = /^delete_confirm:\d+$/;
 export const CALLBACK_CANCEL_RE = /^delete_cancel:\d+$/;
 
-function buildConfirmKeyboard(sessionId: number): InlineKeyboard {
+function buildConfirmKeyboard(sessionId: number, t: Locale): InlineKeyboard {
   return new InlineKeyboard()
-    .text("Confirmer", `${CALLBACK_CONFIRM}:${sessionId}`)
-    .text("Annuler", `${CALLBACK_CANCEL}:${sessionId}`);
+    .text(t.manage.confirm, `${CALLBACK_CONFIRM}:${sessionId}`)
+    .text(t.manage.cancel, `${CALLBACK_CANCEL}:${sessionId}`);
 }
 
 async function askDeleteConfirmation(
   ctx: CustomContext,
   session: { id: number; surahStart: number; ayahStart: number; surahEnd: number; ayahEnd: number },
 ): Promise<void> {
-  const desc = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
-  const keyboard = buildConfirmKeyboard(session.id);
-  await ctx.reply(`Supprimer la session #${session.id} (${desc}) ?`, {
+  const t = ctx.locale;
+  const desc = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd, t);
+  const keyboard = buildConfirmKeyboard(session.id, t);
+  await ctx.reply(t.manage.deletePrompt(session.id, desc), {
     reply_markup: keyboard,
   });
 }
 
 export async function undoHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const session = await getLastSession(ctx.db);
   if (!session) {
-    await ctx.reply("Aucune session a annuler.");
+    await ctx.reply(t.manage.noSessionToUndo);
     return;
   }
 
@@ -41,22 +44,23 @@ export async function undoHandler(ctx: CustomContext): Promise<void> {
 }
 
 export async function deleteHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
 
   if (!input) {
-    await ctx.reply(formatError("ID manquant", "/delete 42"));
+    await ctx.reply(formatError(t.manage.missingId, t, "/delete 42"));
     return;
   }
 
   const id = parseInt(input, 10);
   if (isNaN(id) || id <= 0) {
-    await ctx.reply(formatError(`ID invalide '${input}'`, "/delete 42"));
+    await ctx.reply(formatError(t.manage.invalidId(input), t, "/delete 42"));
     return;
   }
 
   const session = await getSessionById(ctx.db, id);
   if (!session) {
-    await ctx.reply(formatError(`la session #${id} n'existe pas`));
+    await ctx.reply(formatError(t.manage.sessionNotFound(id), t));
     return;
   }
 
@@ -66,6 +70,7 @@ export async function deleteHandler(ctx: CustomContext): Promise<void> {
 export async function confirmDeleteCallback(
   ctx: CustomContext,
 ): Promise<void> {
+  const t = ctx.locale;
   const data = ctx.callbackQuery?.data;
   if (!data || !CALLBACK_CONFIRM_RE.test(data)) {
     await ctx.answerCallbackQuery();
@@ -76,11 +81,11 @@ export async function confirmDeleteCallback(
   const session = await deleteSessionById(ctx.db, id);
 
   if (session) {
-    const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd);
+    const range = formatRange(session.surahStart, session.ayahStart, session.surahEnd, session.ayahEnd, t);
     const duration = formatDuration(session.durationSeconds);
-    await ctx.editMessageText(`Session #${id} supprimee.\n${range} -- ${session.ayahCount} versets en ${duration}`);
+    await ctx.editMessageText(t.manage.sessionDeleted(id, range, session.ayahCount, duration));
   } else {
-    await ctx.editMessageText(`Session #${id} introuvable.`);
+    await ctx.editMessageText(t.manage.sessionNotFoundShort(id));
   }
   await ctx.answerCallbackQuery();
 }
@@ -88,6 +93,7 @@ export async function confirmDeleteCallback(
 export async function cancelDeleteCallback(
   ctx: CustomContext,
 ): Promise<void> {
-  await ctx.editMessageText("Suppression annulee.");
+  const t = ctx.locale;
+  await ctx.editMessageText(t.manage.deletionCancelled);
   await ctx.answerCallbackQuery();
 }

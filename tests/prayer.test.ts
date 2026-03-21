@@ -9,6 +9,7 @@ import {
   getNowInTimezone,
 } from "../src/services/prayer";
 import type { PrayerCacheRow } from "../src/services/db";
+import { fr } from "../src/locales/fr";
 
 describe("parsePrayerResponse", () => {
   it("parse une reponse Aladhan valide", () => {
@@ -22,7 +23,7 @@ describe("parsePrayerResponse", () => {
         },
       },
     };
-    const result = parsePrayerResponse(body, "2026-03-14");
+    const result = parsePrayerResponse(body, "2026-03-14", fr);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value).toEqual({
@@ -44,7 +45,7 @@ describe("parsePrayerResponse", () => {
         },
       },
     };
-    const result = parsePrayerResponse(body, "2026-03-14");
+    const result = parsePrayerResponse(body, "2026-03-14", fr);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.fajr).toBe("05:30");
@@ -53,13 +54,13 @@ describe("parsePrayerResponse", () => {
 
   it("retourne erreur si code != 200", () => {
     const body = { code: 400, data: { timings: {} } };
-    const result = parsePrayerResponse(body as any, "2026-03-14");
+    const result = parsePrayerResponse(body as any, "2026-03-14", fr);
     expect(result.ok).toBe(false);
   });
 
   it("retourne erreur si timings absent", () => {
     const body = { code: 200, data: {} };
-    const result = parsePrayerResponse(body as any, "2026-03-14");
+    const result = parsePrayerResponse(body as any, "2026-03-14", fr);
     expect(result.ok).toBe(false);
   });
 
@@ -74,7 +75,7 @@ describe("parsePrayerResponse", () => {
         },
       },
     };
-    const result = parsePrayerResponse(body as any, "2026-03-14");
+    const result = parsePrayerResponse(body as any, "2026-03-14", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("Isha");
   });
@@ -107,20 +108,20 @@ describe("fetchPrayerTimes", () => {
       }),
     }));
 
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.fajr).toBe("05:30");
   });
 
   it("retourne erreur si HTTP echoue", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
     expect(result.ok).toBe(false);
   });
 
   it("retourne erreur si fetch throw", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX");
+    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
     expect(result.ok).toBe(false);
   });
 });

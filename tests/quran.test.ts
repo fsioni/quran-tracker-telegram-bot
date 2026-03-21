@@ -5,10 +5,11 @@ import {
   calculateAyahCount,
   getCompletedSurahs,
 } from "../src/services/quran";
+import { fr } from "../src/locales/fr";
 
 describe("validateSurah", () => {
   it("accepts surah 1 (Al-Fatiha)", () => {
-    const result = validateSurah(1);
+    const result = validateSurah(1, fr);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.number).toBe(1);
@@ -17,7 +18,7 @@ describe("validateSurah", () => {
   });
 
   it("accepts surah 2 (Al-Baqara)", () => {
-    const result = validateSurah(2);
+    const result = validateSurah(2, fr);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.number).toBe(2);
@@ -26,7 +27,7 @@ describe("validateSurah", () => {
   });
 
   it("accepts surah 114 (An-Nas)", () => {
-    const result = validateSurah(114);
+    const result = validateSurah(114, fr);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.number).toBe(114);
@@ -34,7 +35,7 @@ describe("validateSurah", () => {
   });
 
   it("rejects surah 0", () => {
-    const result = validateSurah(0);
+    const result = validateSurah(0, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la sourate 0 n'existe pas (1-114)");
@@ -42,7 +43,7 @@ describe("validateSurah", () => {
   });
 
   it("rejects surah 115", () => {
-    const result = validateSurah(115);
+    const result = validateSurah(115, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la sourate 115 n'existe pas (1-114)");
@@ -50,7 +51,7 @@ describe("validateSurah", () => {
   });
 
   it("rejects surah -1", () => {
-    const result = validateSurah(-1);
+    const result = validateSurah(-1, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la sourate -1 n'existe pas (1-114)");
@@ -58,7 +59,7 @@ describe("validateSurah", () => {
   });
 
   it("rejects non-integer 1.5", () => {
-    const result = validateSurah(1.5);
+    const result = validateSurah(1.5, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la sourate 1.5 n'existe pas (1-114)");
@@ -68,22 +69,22 @@ describe("validateSurah", () => {
 
 describe("validateAyah", () => {
   it("accepts ayah 1 of surah 1", () => {
-    const result = validateAyah(1, 1);
+    const result = validateAyah(1, 1, fr);
     expect(result.ok).toBe(true);
   });
 
   it("accepts max ayah of surah 1 (7)", () => {
-    const result = validateAyah(1, 7);
+    const result = validateAyah(1, 7, fr);
     expect(result.ok).toBe(true);
   });
 
   it("accepts max ayah of surah 2 (286)", () => {
-    const result = validateAyah(2, 286);
+    const result = validateAyah(2, 286, fr);
     expect(result.ok).toBe(true);
   });
 
   it("rejects ayah 0", () => {
-    const result = validateAyah(1, 0);
+    const result = validateAyah(1, 0, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
@@ -93,7 +94,7 @@ describe("validateAyah", () => {
   });
 
   it("rejects ayah beyond max (surah 1 has 7 ayahs)", () => {
-    const result = validateAyah(1, 8);
+    const result = validateAyah(1, 8, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
@@ -103,7 +104,7 @@ describe("validateAyah", () => {
   });
 
   it("propagates invalid surah error", () => {
-    const result = validateAyah(0, 1);
+    const result = validateAyah(0, 1, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la sourate 0 n'existe pas (1-114)");
@@ -113,22 +114,22 @@ describe("validateAyah", () => {
 
 describe("validateRange", () => {
   it("accepts same surah range (1:1 to 1:7)", () => {
-    const result = validateRange(1, 1, 1, 7);
+    const result = validateRange(1, 1, 1, 7, fr);
     expect(result.ok).toBe(true);
   });
 
   it("accepts single ayah range (2:100 to 2:100)", () => {
-    const result = validateRange(2, 100, 2, 100);
+    const result = validateRange(2, 100, 2, 100, fr);
     expect(result.ok).toBe(true);
   });
 
   it("accepts cross-surah range (2:280 to 3:10)", () => {
-    const result = validateRange(2, 280, 3, 10);
+    const result = validateRange(2, 280, 3, 10, fr);
     expect(result.ok).toBe(true);
   });
 
   it("rejects reverse order in same surah (1:5 to 1:3)", () => {
-    const result = validateRange(1, 5, 1, 3);
+    const result = validateRange(1, 5, 1, 3, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la fin (1:3) precede le debut (1:5)");
@@ -136,7 +137,7 @@ describe("validateRange", () => {
   });
 
   it("rejects reverse surah order (3:1 to 2:1)", () => {
-    const result = validateRange(3, 1, 2, 1);
+    const result = validateRange(3, 1, 2, 1, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("la fin (2:1) precede le debut (3:1)");
@@ -144,12 +145,12 @@ describe("validateRange", () => {
   });
 
   it("propagates invalid start surah error", () => {
-    const result = validateRange(0, 1, 1, 1);
+    const result = validateRange(0, 1, 1, 1, fr);
     expect(result.ok).toBe(false);
   });
 
   it("propagates invalid end ayah error", () => {
-    const result = validateRange(1, 1, 1, 999);
+    const result = validateRange(1, 1, 1, 999, fr);
     expect(result.ok).toBe(false);
   });
 });

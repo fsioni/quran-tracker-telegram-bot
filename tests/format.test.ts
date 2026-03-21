@@ -19,47 +19,48 @@ import {
   formatSpeedReport,
 } from "../src/services/format";
 import type { Session } from "../src/services/db";
+import { fr } from "../src/locales/fr";
 
 // --- parseDuration ---
 
 describe("parseDuration", () => {
   it("parses minutes and seconds: 8m53 -> 533s", () => {
-    const result = parseDuration("8m53");
+    const result = parseDuration("8m53", fr);
     expect(result).toEqual({ ok: true, value: 533 });
   });
 
   it("parses minutes only: 8m -> 480s", () => {
-    const result = parseDuration("8m");
+    const result = parseDuration("8m", fr);
     expect(result).toEqual({ ok: true, value: 480 });
   });
 
   it("parses hours and minutes: 1h30m -> 5400s", () => {
-    const result = parseDuration("1h30m");
+    const result = parseDuration("1h30m", fr);
     expect(result).toEqual({ ok: true, value: 5400 });
   });
 
   it("parses hours, minutes, and seconds: 1h8m53 -> 4133s", () => {
-    const result = parseDuration("1h8m53");
+    const result = parseDuration("1h8m53", fr);
     expect(result).toEqual({ ok: true, value: 4133 });
   });
 
   it("parses zero: 0m -> 0s", () => {
-    const result = parseDuration("0m");
+    const result = parseDuration("0m", fr);
     expect(result).toEqual({ ok: true, value: 0 });
   });
 
   it("rejects 8min", () => {
-    const result = parseDuration("8min");
+    const result = parseDuration("8min", fr);
     expect(result.ok).toBe(false);
   });
 
   it("rejects bare number 53", () => {
-    const result = parseDuration("53");
+    const result = parseDuration("53", fr);
     expect(result.ok).toBe(false);
   });
 
   it("rejects abc", () => {
-    const result = parseDuration("abc");
+    const result = parseDuration("abc", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("format de duree invalide");
@@ -71,7 +72,7 @@ describe("parseDuration", () => {
 
 describe("parseRange", () => {
   it("parses same-surah range: 2:77-83", () => {
-    const result = parseRange("2:77-83");
+    const result = parseRange("2:77-83", fr);
     expect(result).toEqual({
       ok: true,
       value: { surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83 },
@@ -79,7 +80,7 @@ describe("parseRange", () => {
   });
 
   it("parses cross-surah range: 2:280-3:10", () => {
-    const result = parseRange("2:280-3:10");
+    const result = parseRange("2:280-3:10", fr);
     expect(result).toEqual({
       ok: true,
       value: { surahStart: 2, ayahStart: 280, surahEnd: 3, ayahEnd: 10 },
@@ -87,7 +88,7 @@ describe("parseRange", () => {
   });
 
   it("parses last surah range: 114:1-6", () => {
-    const result = parseRange("114:1-6");
+    const result = parseRange("114:1-6", fr);
     expect(result).toEqual({
       ok: true,
       value: { surahStart: 114, ayahStart: 1, surahEnd: 114, ayahEnd: 6 },
@@ -95,7 +96,7 @@ describe("parseRange", () => {
   });
 
   it("rejects invalid format: abc", () => {
-    const result = parseRange("abc");
+    const result = parseRange("abc", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("format de plage invalide");
@@ -103,7 +104,7 @@ describe("parseRange", () => {
   });
 
   it("rejects format missing colon: 2-83", () => {
-    const result = parseRange("2-83");
+    const result = parseRange("2-83", fr);
     expect(result.ok).toBe(false);
   });
 });
@@ -115,7 +116,7 @@ describe("parseImportLine", () => {
   const march13 = new Date(2026, 2, 13); // March 13, 2026
 
   it("parses a complete import line", () => {
-    const result = parseImportLine("10/03, 13h30 - 8m53 - 2:77-83", 2026, march13);
+    const result = parseImportLine("10/03, 13h30 - 8m53 - 2:77-83", fr, 2026, march13);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.date).toBe("2026-03-10");
@@ -133,7 +134,7 @@ describe("parseImportLine", () => {
   it("deduces previous year when date is in the future", () => {
     // December date when reference year is 2026 and referenceDate is March
     // 15/12 is in the future relative to March, so it should use 2025
-    const result = parseImportLine("15/12, 8h00 - 5m - 1:1-7", 2026, march13);
+    const result = parseImportLine("15/12, 8h00 - 5m - 1:1-7", fr, 2026, march13);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.date).toBe("2025-12-15");
@@ -141,12 +142,12 @@ describe("parseImportLine", () => {
   });
 
   it("rejects invalid line format", () => {
-    const result = parseImportLine("invalid line");
+    const result = parseImportLine("invalid line", fr);
     expect(result.ok).toBe(false);
   });
 
   it("rejects invalid month (13)", () => {
-    const result = parseImportLine("15/13, 8h00 - 5m - 1:1-7", 2026, march13);
+    const result = parseImportLine("15/13, 8h00 - 5m - 1:1-7", fr, 2026, march13);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("mois invalide");
@@ -154,7 +155,7 @@ describe("parseImportLine", () => {
   });
 
   it("rejects invalid day (32) for March", () => {
-    const result = parseImportLine("32/03, 8h00 - 5m - 1:1-7", 2026, march13);
+    const result = parseImportLine("32/03, 8h00 - 5m - 1:1-7", fr, 2026, march13);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("jour invalide");
@@ -162,7 +163,7 @@ describe("parseImportLine", () => {
   });
 
   it("rejects Feb 30", () => {
-    const result = parseImportLine("30/02, 8h00 - 5m - 1:1-7", 2026, march13);
+    const result = parseImportLine("30/02, 8h00 - 5m - 1:1-7", fr, 2026, march13);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("jour invalide");
@@ -201,7 +202,7 @@ describe("formatSessionConfirmation", () => {
       ayahEnd: 83,
       ayahCount: 7,
       durationSeconds: 533,
-    });
+    }, fr);
     expect(result).toBe(
       "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
@@ -215,7 +216,7 @@ describe("formatSessionConfirmation", () => {
       ayahEnd: 10,
       ayahCount: 17,
       durationSeconds: 533,
-    });
+    }, fr);
     expect(result).toBe(
       "Session enregistree : sourate Al-Baqara v.280 a sourate Al-Imran v.10 -- 17 versets en 8m53 (115 versets/h)",
     );
@@ -232,7 +233,7 @@ describe("formatSessionConfirmation", () => {
       type: "extra",
       pageStart: 300,
       pageEnd: 300,
-    });
+    }, fr);
     expect(result).toBe(
       "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 5m (12.0 pages/h)",
     );
@@ -246,7 +247,7 @@ describe("formatSessionConfirmation", () => {
       ayahEnd: 83,
       ayahCount: 7,
       durationSeconds: 0,
-    });
+    }, fr);
     expect(result).toBe(
       "Session enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 0m",
     );
@@ -266,7 +267,7 @@ describe("formatHistoryLine", () => {
       surahEnd: 2,
       ayahEnd: 83,
       ayahCount: 7,
-    });
+    }, fr);
     // 7 ayahs / (533/3600) h = 47 v/h
     expect(result).toBe(
       "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)",
@@ -283,7 +284,7 @@ describe("formatHistoryLine", () => {
       surahEnd: 3,
       ayahEnd: 10,
       ayahCount: 17,
-    });
+    }, fr);
     expect(result).toBe(
       "[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:280 - Al-Imran 3:10 (17v, 115v/h)",
     );
@@ -299,7 +300,7 @@ describe("formatHistoryLine", () => {
       surahEnd: 1,
       ayahEnd: 7,
       ayahCount: 7,
-    });
+    }, fr);
     expect(result).toBe(
       "[N] #1 | 10/03 13h30 | 8m | Al-Fatiha 1:1-7 (7v, 53v/h)",
     );
@@ -317,7 +318,7 @@ describe("formatHistoryLine", () => {
       ayahCount: 7,
       pageStart: 10,
       pageEnd: 10,
-    });
+    }, fr);
     // 1 page / (300/3600) h = 12.0 p/h
     expect(result).toBe(
       "[N] #10 | 10/03 13h30 | 5m | Al-Baqara 2:77-83 (7v, 12.0p/h)",
@@ -334,7 +335,7 @@ describe("formatHistoryLine", () => {
       surahEnd: 1,
       ayahEnd: 7,
       ayahCount: 7,
-    });
+    }, fr);
     expect(result).toBe(
       "[N] #5 | 10/03 13h30 | 0m | Al-Fatiha 1:1-7 (7v)",
     );
@@ -354,7 +355,7 @@ describe("formatStats", () => {
       weekSeconds: 2280, // 38m
       monthAyahs: 187,
       monthSeconds: 8100, // 2h15m
-    });
+    }, fr);
     expect(result).toBe(
       [
         "-- Stats globales --",
@@ -383,7 +384,7 @@ describe("formatStats", () => {
       weekSeconds: 0,
       monthAyahs: 0,
       monthSeconds: 0,
-    });
+    }, fr);
     expect(result).toContain("Versets lus : 0");
     expect(result).toContain("Vitesse moyenne : 0 versets/heure");
     expect(result).not.toContain("Vitesse : 0 versets/h");
@@ -399,7 +400,7 @@ describe("formatStats", () => {
       weekSeconds: 2700, // 45m -> 120/2700*3600 = 160
       monthAyahs: 340,
       monthSeconds: 8100, // 2h15m -> 340/8100*3600 = 151
-    });
+    }, fr);
     expect(result).toContain("Versets : 120 | Duree : 45m | Vitesse : 160 versets/h");
     expect(result).toContain("Versets : 340 | Duree : 2h15m | Vitesse : 151 versets/h");
   });
@@ -414,7 +415,7 @@ describe("formatStats", () => {
       weekSeconds: 0,
       monthAyahs: 0,
       monthSeconds: 0,
-    });
+    }, fr);
     expect(result).toContain("Versets : 0 | Duree : 0m");
     expect(result).not.toContain("Vitesse : 0 versets/h");
   });
@@ -431,7 +432,7 @@ describe("formatStats", () => {
       monthSeconds: 8100,
       prevWeekAyahs: 100,
       prevWeekSeconds: 2520, // ~143 v/h -> +12%
-    });
+    }, fr);
     expect(result).toContain("+12% vs semaine derniere");
   });
 
@@ -447,7 +448,7 @@ describe("formatStats", () => {
       monthSeconds: 8100,
       prevWeekAyahs: 120,
       prevWeekSeconds: 2700, // 160 v/h -> -11%
-    });
+    }, fr);
     expect(result).toContain("-11% vs semaine derniere");
   });
 
@@ -461,7 +462,7 @@ describe("formatStats", () => {
       weekSeconds: 2700,
       monthAyahs: 340,
       monthSeconds: 8100,
-    });
+    }, fr);
     expect(result).not.toContain("vs semaine derniere");
   });
 
@@ -477,7 +478,7 @@ describe("formatStats", () => {
       monthSeconds: 8100,
       prevWeekAyahs: 0,
       prevWeekSeconds: 0,
-    });
+    }, fr);
     expect(result).not.toContain("vs semaine derniere");
   });
 });
@@ -491,7 +492,7 @@ describe("formatProgress", () => {
       totalAyahs: 6236,
       lastSurah: 3,
       lastAyah: 10,
-    });
+    }, fr);
     // 342/6236 = 5.5%, filled = round(1.1) = 1
     expect(result).toBe(
       [
@@ -508,7 +509,7 @@ describe("formatProgress", () => {
       totalAyahs: 6236,
       lastSurah: 1,
       lastAyah: 1,
-    });
+    }, fr);
     expect(result).toContain("0 / 6236 versets (0.0%)");
     expect(result).toContain("[--------------------]");
   });
@@ -519,7 +520,7 @@ describe("formatProgress", () => {
       totalAyahs: 6236,
       lastSurah: 2,
       lastAyah: 83,
-    });
+    }, fr);
     expect(result).toContain("2494 / 6236 versets (40.0%)");
     expect(result).toContain("[########------------] 40.0%");
     expect(result).toContain("Dernier point : sourate Al-Baqara (2), verset 83");
@@ -537,7 +538,7 @@ describe("formatReminder", () => {
       weekSessions: 5,
       weekAyahs: 120,
       streak: 3,
-    });
+    }, fr);
     expect(result).toBe(
       [
         "Rappel lecture du Coran",
@@ -559,7 +560,7 @@ describe("formatReminder", () => {
       weekSessions: 0,
       weekAyahs: 0,
       streak: 0,
-    });
+    }, fr);
     expect(result).toContain("C'est le moment de reprendre !");
   });
 });
@@ -568,17 +569,17 @@ describe("formatReminder", () => {
 
 describe("parsePage", () => {
   it("parses single page: 300", () => {
-    const result = parsePage("300");
+    const result = parsePage("300", fr);
     expect(result).toEqual({ ok: true, value: { pageStart: 300, pageEnd: 300 } });
   });
 
   it("parses page range: 300-304", () => {
-    const result = parsePage("300-304");
+    const result = parsePage("300-304", fr);
     expect(result).toEqual({ ok: true, value: { pageStart: 300, pageEnd: 304 } });
   });
 
   it("rejects page 0", () => {
-    const result = parsePage("0");
+    const result = parsePage("0", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("page invalide");
@@ -586,7 +587,7 @@ describe("parsePage", () => {
   });
 
   it("rejects page 605", () => {
-    const result = parsePage("605");
+    const result = parsePage("605", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("page invalide");
@@ -594,7 +595,7 @@ describe("parsePage", () => {
   });
 
   it("rejects abc", () => {
-    const result = parsePage("abc");
+    const result = parsePage("abc", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("format de page invalide");
@@ -602,7 +603,7 @@ describe("parsePage", () => {
   });
 
   it("rejects range with end out of bounds: 300-605", () => {
-    const result = parsePage("300-605");
+    const result = parsePage("300-605", fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toContain("page invalide");
@@ -620,7 +621,7 @@ describe("formatReadConfirmation", () => {
       durationSeconds: 360,
       totalPagesRead: 42,
       totalPages: 604,
-    });
+    }, fr);
     expect(result).toBe("Page 42 lue en 6m -- 10.0 pages/h (42/604)\nProchaine page : 43");
   });
 
@@ -631,7 +632,7 @@ describe("formatReadConfirmation", () => {
       durationSeconds: 900,
       totalPagesRead: 44,
       totalPages: 604,
-    });
+    }, fr);
     expect(result).toBe("Pages 42-44 lues en 15m -- 12.0 pages/h (44/604)\nProchaine page : 45");
   });
 
@@ -642,7 +643,7 @@ describe("formatReadConfirmation", () => {
       durationSeconds: 300,
       totalPagesRead: 604,
       totalPages: 604,
-    });
+    }, fr);
     expect(result).toBe("Page 604 lue en 5m -- 12.0 pages/h (604/604)\nCoran termine ! Alhamdulillah !");
   });
 
@@ -653,7 +654,7 @@ describe("formatReadConfirmation", () => {
       durationSeconds: 0,
       totalPagesRead: 42,
       totalPages: 604,
-    });
+    }, fr);
     expect(result).toBe("Page 42 lue en 0m (42/604)\nProchaine page : 43");
   });
 });
@@ -669,7 +670,7 @@ describe("formatKahfPageConfirmation", () => {
       weekPagesRead: 3,
       weekTotalSeconds: 840,
       isComplete: false,
-    });
+    }, fr);
     expect(result).toBe("Al-Kahf page 3/12 lue en 5m -- 12.0 pages/h\nCette semaine : 3/12 pages, 14m au total");
   });
 
@@ -683,7 +684,7 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 1800,
       isComplete: false,
       sessionPages: 3,
-    });
+    }, fr);
     expect(result).toBe("Al-Kahf page 6/12 lue en 15m -- 12.0 pages/h\nCette semaine : 6/12 pages, 30m au total");
   });
 
@@ -695,7 +696,7 @@ describe("formatKahfPageConfirmation", () => {
       weekPagesRead: 3,
       weekTotalSeconds: 840,
       isComplete: false,
-    });
+    }, fr);
     expect(result).toBe("Al-Kahf page 3/12 lue en 0m\nCette semaine : 3/12 pages, 14m au total");
   });
 
@@ -707,7 +708,7 @@ describe("formatKahfPageConfirmation", () => {
       weekPagesRead: 12,
       weekTotalSeconds: 3120,
       isComplete: true,
-    });
+    }, fr);
     expect(result).toBe("Al-Kahf terminee ! 12/12 pages en 52m");
   });
 
@@ -720,7 +721,7 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 3120,
       isComplete: true,
       lastWeekTotalSeconds: 3480,
-    });
+    }, fr);
     expect(result).toBe(
       "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 58m (-6m, bravo !)",
     );
@@ -735,7 +736,7 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 3480,
       isComplete: true,
       lastWeekTotalSeconds: 3300,
-    });
+    }, fr);
     expect(result).toBe(
       "Al-Kahf terminee ! 12/12 pages en 58m\nSemaine derniere : 55m (+3m)",
     );
@@ -750,7 +751,7 @@ describe("formatKahfPageConfirmation", () => {
       weekTotalSeconds: 3120,
       isComplete: true,
       lastWeekTotalSeconds: 3120,
-    });
+    }, fr);
     expect(result).toBe(
       "Al-Kahf terminee ! 12/12 pages en 52m\nSemaine derniere : 52m",
     );
@@ -764,14 +765,14 @@ describe("formatKahfReminder", () => {
     const result = formatKahfReminder({
       lastDate: "2026-03-07 14:00:00",
       lastDuration: 1500,
-    });
+    }, fr);
     expect(result).toBe(
       "Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.\n\nDerniere lecture : 07/03 en 25m",
     );
   });
 
   it("formats without history", () => {
-    const result = formatKahfReminder({});
+    const result = formatKahfReminder({}, fr);
     expect(result).toBe("Rappel : c'est vendredi ! Pense a lire sourate Al-Kahf.");
   });
 });
@@ -791,17 +792,17 @@ describe("formatHistoryLine with type tags", () => {
   };
 
   it("formats with [N] tag for normal type", () => {
-    const result = formatHistoryLine({ ...baseSession, type: "normal" });
+    const result = formatHistoryLine({ ...baseSession, type: "normal" }, fr);
     expect(result).toBe("[N] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 
   it("formats with [E] tag for extra type", () => {
-    const result = formatHistoryLine({ ...baseSession, type: "extra" });
+    const result = formatHistoryLine({ ...baseSession, type: "extra" }, fr);
     expect(result).toBe("[E] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 
   it("formats with [K] tag for kahf type", () => {
-    const result = formatHistoryLine({ ...baseSession, type: "kahf" });
+    const result = formatHistoryLine({ ...baseSession, type: "kahf" }, fr);
     expect(result).toBe("[K] #42 | 10/03 13h30 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)");
   });
 });
@@ -818,7 +819,7 @@ describe("formatSessionConfirmation with type", () => {
       ayahCount: 7,
       durationSeconds: 533,
       type: "extra",
-    });
+    }, fr);
     expect(result).toBe(
       "Session extra enregistree : sourate Al-Baqara v.77 a v.83 -- 7 versets en 8m53 (47 versets/h)",
     );
@@ -832,23 +833,23 @@ describe("formatEstimation", () => {
 
   it("formate une date de fin avec un rythme normal", () => {
     // 1.2 pages/jour, 400 pages restantes -> ceil(333.3) = 334 jours -> 2027-02-12
-    const result = formatEstimation(1.2, 400, today);
+    const result = formatEstimation(1.2, 400, today, fr);
     expect(result).toBe("A ce rythme (~1.2 pages/jour), tu finiras vers le 12 fevrier 2027");
   });
 
   it("retourne message 'pas assez de donnees' quand pace est 0", () => {
-    const result = formatEstimation(0, 400, today);
+    const result = formatEstimation(0, 400, today, fr);
     expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
   });
 
   it("retourne format en mois quand estimation > 5 ans", () => {
     // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
-    const result = formatEstimation(0.1, 500, today);
+    const result = formatEstimation(0.1, 500, today, fr);
     expect(result).toMatch(/^A ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/);
   });
 
   it("retourne message pour pace negatif", () => {
-    const result = formatEstimation(-1, 400, today);
+    const result = formatEstimation(-1, 400, today, fr);
     expect(result).toBe("Pas assez de donnees recentes pour estimer (lis regulierement pour voir une projection)");
   });
 });
@@ -857,13 +858,13 @@ describe("formatEstimation", () => {
 
 describe("formatError", () => {
   it("formats error with example", () => {
-    expect(formatError("description ici", "2:77-83")).toBe(
+    expect(formatError("description ici", fr, "2:77-83")).toBe(
       "Erreur : description ici\nExemple : 2:77-83",
     );
   });
 
   it("formats error without example", () => {
-    expect(formatError("description ici")).toBe("Erreur : description ici");
+    expect(formatError("description ici", fr)).toBe("Erreur : description ici");
   });
 });
 
@@ -871,13 +872,13 @@ describe("formatError", () => {
 
 describe("formatKhatmaMessage", () => {
   it("formats first khatma", () => {
-    expect(formatKhatmaMessage(1)).toBe(
+    expect(formatKhatmaMessage(1, fr)).toBe(
       "Khatma ! Tu as termine ta premiere lecture complete du Coran. Alhamdulillah !",
     );
   });
 
   it("formats second khatma", () => {
-    expect(formatKhatmaMessage(2)).toBe(
+    expect(formatKhatmaMessage(2, fr)).toBe(
       "Khatma ! Tu as termine ta 2e lecture complete du Coran. Alhamdulillah !",
     );
   });
@@ -887,7 +888,7 @@ describe("formatKhatmaMessage", () => {
 
 describe("formatSurahsComplete", () => {
   it("formats single surah", () => {
-    expect(formatSurahsComplete([{ number: 2, nameFr: "Al-Baqara" }])).toBe(
+    expect(formatSurahsComplete([{ number: 2, name: "Al-Baqara" }], fr)).toBe(
       "Sourate Al-Baqara (2) terminee !",
     );
   });
@@ -895,10 +896,10 @@ describe("formatSurahsComplete", () => {
   it("formats multiple surahs", () => {
     expect(
       formatSurahsComplete([
-        { number: 112, nameFr: "Al-Ikhlas" },
-        { number: 113, nameFr: "Al-Falaq" },
-        { number: 114, nameFr: "An-Nas" },
-      ]),
+        { number: 112, name: "Al-Ikhlas" },
+        { number: 113, name: "Al-Falaq" },
+        { number: 114, name: "An-Nas" },
+      ], fr),
     ).toBe("Sourates terminees : Al-Ikhlas (112), Al-Falaq (113), An-Nas (114)");
   });
 });
@@ -913,7 +914,7 @@ describe("formatProgress with khatmaCount", () => {
       lastSurah: 3,
       lastAyah: 10,
       khatmaCount: 2,
-    });
+    }, fr);
     expect(result).toContain("Khatmas : 2");
   });
 
@@ -924,7 +925,7 @@ describe("formatProgress with khatmaCount", () => {
       lastSurah: 3,
       lastAyah: 10,
       khatmaCount: 0,
-    });
+    }, fr);
     expect(result).not.toContain("Khatmas");
   });
 
@@ -934,7 +935,7 @@ describe("formatProgress with khatmaCount", () => {
       totalAyahs: 6236,
       lastSurah: 3,
       lastAyah: 10,
-    });
+    }, fr);
     expect(result).not.toContain("Khatmas");
   });
 });
@@ -964,11 +965,11 @@ describe("formatSpeedReport", () => {
       bestSession: makeSession({ id: 42, ayahCount: 50, durationSeconds: 800 }),
       longestSession: makeSession({ id: 38, startedAt: "2026-03-08 10:00:00", durationSeconds: 4320 }),
       byType: [
-        { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "versets/h" },
-        { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "versets/h" },
-        { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages/h" },
+        { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "verses" },
+        { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "verses" },
+        { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
       ],
-    });
+    }, fr);
 
     expect(result).toBe(
       [
@@ -995,9 +996,9 @@ describe("formatSpeedReport", () => {
       bestSession: null,
       longestSession: null,
       byType: [
-        { type: "normal", avgSpeed: 120, sessionCount: 5, unit: "versets/h" },
+        { type: "normal", avgSpeed: 120, sessionCount: 5, unit: "verses" },
       ],
-    });
+    }, fr);
 
     expect(result).toContain("Moyenne globale : 120 versets/h");
     expect(result).not.toContain("Moyenne 7 derniers jours");
@@ -1013,9 +1014,9 @@ describe("formatSpeedReport", () => {
       bestSession: null,
       longestSession: null,
       byType: [
-        { type: "normal", avgSpeed: 100, sessionCount: 3, unit: "versets/h" },
+        { type: "normal", avgSpeed: 100, sessionCount: 3, unit: "verses" },
       ],
-    });
+    }, fr);
 
     expect(result).not.toContain("Meilleure session");
     expect(result).not.toContain("Plus longue session");
@@ -1028,7 +1029,7 @@ describe("formatSpeedReport", () => {
       bestSession: makeSession({ startedAt: "2026-01-05 09:00:00", ayahCount: 30, durationSeconds: 600 }),
       longestSession: makeSession({ id: 10, startedAt: "2026-12-25 14:00:00", durationSeconds: 7200 }),
       byType: [],
-    });
+    }, fr);
 
     expect(result).toContain("05/01");
     expect(result).toContain("25/12");
@@ -1040,11 +1041,11 @@ describe("formatSpeedReport", () => {
       bestSession: null,
       longestSession: null,
       byType: [
-        { type: "normal", avgSpeed: 100, sessionCount: 10, unit: "versets/h" },
-        { type: "extra", avgSpeed: 120, sessionCount: 5, unit: "versets/h" },
-        { type: "kahf", avgSpeed: 8, sessionCount: 3, unit: "pages/h" },
+        { type: "normal", avgSpeed: 100, sessionCount: 10, unit: "verses" },
+        { type: "extra", avgSpeed: 120, sessionCount: 5, unit: "verses" },
+        { type: "kahf", avgSpeed: 8, sessionCount: 3, unit: "pages" },
       ],
-    });
+    }, fr);
 
     // "Normal" (6 chars) is the longest, so "Extra" and "Kahf" should be padded
     expect(result).toContain("  Normal : 100 versets/h (10 sessions)");

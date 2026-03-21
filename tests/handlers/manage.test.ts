@@ -7,6 +7,7 @@ import {
   cancelDeleteCallback,
 } from "../../src/handlers/manage";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 const MOCK_SESSION_ROW = {
   id: 42,
@@ -35,6 +36,7 @@ function createCommandContext(match = "", firstResult: unknown = null): CustomCo
       exec: vi.fn(),
       dump: vi.fn(),
     } as unknown as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -53,6 +55,7 @@ function createCallbackContext(data: string, sessionRow: unknown = null): Custom
       exec: vi.fn(),
       dump: vi.fn(),
     } as unknown as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 

@@ -4,6 +4,7 @@ import { readHandler } from "../../src/handlers/read";
 import type { CustomContext } from "../../src/bot";
 import type { Session } from "../../src/services/db";
 import { TOTAL_PAGES } from "../../src/data/pages";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -49,6 +50,7 @@ function createMockContext(match = ""): CustomContext {
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: 12345 },
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 

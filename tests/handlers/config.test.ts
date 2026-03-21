@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
+import { buildWelcome } from "../../src/locales";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -16,7 +18,6 @@ import {
   startHandler,
   helpHandler,
   configHandler,
-  WELCOME_MESSAGE,
 } from "../../src/handlers/config";
 
 function createMockContext(chatId = 12345): CustomContext {
@@ -24,6 +25,7 @@ function createMockContext(chatId = 12345): CustomContext {
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: chatId },
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -32,6 +34,7 @@ function makeConfigCtx(match = ""): CustomContext {
     reply: vi.fn().mockResolvedValue(undefined),
     match,
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -40,10 +43,10 @@ describe("startHandler", () => {
     vi.clearAllMocks();
   });
 
-  it("replies with WELCOME_MESSAGE", async () => {
+  it("replies with buildWelcome(fr)", async () => {
     const ctx = createMockContext();
     await startHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith(WELCOME_MESSAGE);
+    expect(ctx.reply).toHaveBeenCalledWith(buildWelcome(fr));
   });
 
   it("calls setConfig to persist chat_id", async () => {
@@ -64,10 +67,10 @@ describe("helpHandler", () => {
     vi.clearAllMocks();
   });
 
-  it("replies with WELCOME_MESSAGE", async () => {
+  it("replies with buildWelcome(fr)", async () => {
     const ctx = createMockContext();
     await helpHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith(WELCOME_MESSAGE);
+    expect(ctx.reply).toHaveBeenCalledWith(buildWelcome(fr));
   });
 
   it("does NOT call setConfig", async () => {

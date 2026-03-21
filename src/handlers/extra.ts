@@ -13,12 +13,13 @@ import { validateRange, calculateAyahCount } from "../services/quran";
 import { insertSession, getTimezone, getNowTimestamp } from "../services/db";
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
   const parts = input.split(/\s+/);
 
   if (parts.length < 2 || !parts[0]) {
     await ctx.reply(
-      formatError("format invalide", "/extra 300 5m ou /extra 2:77-83 8m"),
+      formatError(t.read.formatInvalid, t, t.examples.extra),
     );
     return;
   }
@@ -26,9 +27,9 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   const [targetStr, durationStr] = parts;
 
   // Parse duration first to fail fast
-  const durationResult = parseDuration(durationStr);
+  const durationResult = parseDuration(durationStr, t);
   if (!durationResult.ok) {
-    await ctx.reply(formatError(durationResult.error));
+    await ctx.reply(formatError(durationResult.error, t));
     return;
   }
 
@@ -41,14 +42,14 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   let pageEnd: number | undefined;
 
   // Try page-based first, then verse-based
-  const pageResult = parsePage(targetStr);
+  const pageResult = parsePage(targetStr, t);
   if (pageResult.ok) {
     pageStart = pageResult.value.pageStart;
     pageEnd = pageResult.value.pageEnd;
 
     const rangeData = getPageRange(pageStart, pageEnd);
     if (!rangeData) {
-      await ctx.reply(formatError("pages invalides"));
+      await ctx.reply(formatError(t.read.pagesInvalid, t));
       return;
     }
 
@@ -59,15 +60,16 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     ayahCount = rangeData.ayahCount;
   } else if (/^\d+(-\d+)?$/.test(targetStr)) {
     // Looks like a page number/range but parsePage rejected it (e.g. 0, 605)
-    await ctx.reply(formatError(pageResult.error));
+    await ctx.reply(formatError(pageResult.error, t));
     return;
   } else {
-    const rangeResult = parseRange(targetStr);
+    const rangeResult = parseRange(targetStr, t);
     if (!rangeResult.ok) {
       await ctx.reply(
         formatError(
-          "format invalide",
-          "/extra 300 5m ou /extra 2:77-83 8m",
+          t.read.formatInvalid,
+          t,
+          t.examples.extra,
         ),
       );
       return;
@@ -78,9 +80,9 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     surahEnd = rangeResult.value.surahEnd;
     ayahEnd = rangeResult.value.ayahEnd;
 
-    const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd);
+    const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd, t);
     if (!validResult.ok) {
-      await ctx.reply(formatError(validResult.error));
+      await ctx.reply(formatError(validResult.error, t));
       return;
     }
 
@@ -104,14 +106,14 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     pageEnd,
   });
   if (!result.ok) {
-    await ctx.reply(formatError(result.error));
+    await ctx.reply(formatError(result.error, t));
     return;
   }
 
-  const msgParts: string[] = [formatSessionConfirmation(result.value)];
+  const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
 
   // Check for completed surahs
-  appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd);
+  appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd, t);
 
   await ctx.reply(msgParts.join("\n"));
 }

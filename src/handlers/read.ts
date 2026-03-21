@@ -5,10 +5,11 @@ import { getPageRange, TOTAL_PAGES } from "../data/pages";
 import { insertSession, getLastSession, getTimezone, getNowTimestamp, insertKhatma, getKhatmaCount } from "../services/db";
 
 export async function readHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
-  const parsed = parsePageCountAndDuration(input, "/read 5m ou /read 3 15m");
+  const parsed = parsePageCountAndDuration(input, t.examples.read, t);
   if (!parsed.ok) {
-    await ctx.reply(formatError(parsed.error));
+    await ctx.reply(formatError(parsed.error, t));
     return;
   }
   const { count, durationSeconds } = parsed.value;
@@ -34,7 +35,8 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   if (pageEnd > TOTAL_PAGES) {
     await ctx.reply(
       formatError(
-        `il ne reste que ${TOTAL_PAGES - pageStart + 1} page(s) (page ${pageStart} a ${TOTAL_PAGES})`,
+        t.read.remainingPages(TOTAL_PAGES - pageStart + 1, pageStart, TOTAL_PAGES),
+        t,
       ),
     );
     return;
@@ -43,7 +45,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   // Get page range data (surah/ayah info)
   const rangeData = getPageRange(pageStart, pageEnd);
   if (!rangeData) {
-    await ctx.reply(formatError("pages invalides"));
+    await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
   }
 
@@ -64,7 +66,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     pageEnd,
   });
   if (!result.ok) {
-    await ctx.reply(formatError(result.error));
+    await ctx.reply(formatError(result.error, t));
     return;
   }
   const session = result.value;
@@ -75,7 +77,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   if (pageEnd === TOTAL_PAGES) {
     await insertKhatma(ctx.db, now);
     const khatmaCount = await getKhatmaCount(ctx.db);
-    parts.push(formatKhatmaMessage(khatmaCount));
+    parts.push(formatKhatmaMessage(khatmaCount, t));
   } else {
     parts.push(
       formatReadConfirmation({
@@ -84,12 +86,12 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
         durationSeconds: session.durationSeconds,
         totalPagesRead: session.pageEnd!,
         totalPages: TOTAL_PAGES,
-      }),
+      }, t),
     );
   }
 
   // Check for completed surahs
-  appendCompletedSurahs(parts, rangeData.surahStart, rangeData.ayahStart, rangeData.surahEnd, rangeData.ayahEnd);
+  appendCompletedSurahs(parts, rangeData.surahStart, rangeData.ayahStart, rangeData.surahEnd, rangeData.ayahEnd, t);
 
   await ctx.reply(parts.join("\n"));
 }

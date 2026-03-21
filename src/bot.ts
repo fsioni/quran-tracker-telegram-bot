@@ -29,30 +29,13 @@ import {
 } from "./handlers/timer";
 import { debugHandler } from "./handlers/debug";
 import { prayerHandler } from "./handlers/prayer";
+import { resolveLocale } from "./services/localeCache";
+import type { Locale } from "./locales";
 
 export interface CustomContext extends Context {
   db: D1Database;
+  locale: Locale;
 }
-
-export const BOT_COMMANDS = [
-  { command: "start", description: "Demarrer le bot" },
-  { command: "help", description: "Afficher l'aide" },
-  { command: "session", description: "Enregistrer une session de lecture" },
-  { command: "go", description: "Demarrer un timer de lecture" },
-  { command: "stop", description: "Arreter le timer" },
-  { command: "read", description: "Lire la prochaine page" },
-  { command: "extra", description: "Enregistrer une lecture extra" },
-  { command: "kahf", description: "Lire sourate Al-Kahf (vendredi)" },
-  { command: "import", description: "Importer des sessions" },
-  { command: "history", description: "Historique des sessions" },
-  { command: "stats", description: "Statistiques de lecture" },
-  { command: "progress", description: "Progression dans le Coran" },
-  { command: "undo", description: "Annuler la derniere session" },
-  { command: "delete", description: "Supprimer une session" },
-  { command: "speed", description: "Vitesse de lecture" },
-  { command: "config", description: "Configurer ville, pays, fuseau horaire" },
-  { command: "prayer", description: "Rafraichir les horaires de priere" },
-];
 
 export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
   const bot = new Bot<CustomContext>(token);
@@ -70,6 +53,12 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   // Middleware to inject db into context
   bot.use((ctx, next) => {
     ctx.db = db;
+    return next();
+  });
+
+  // Middleware to inject locale into context (cached to avoid DB hit per message)
+  bot.use(async (ctx, next) => {
+    ctx.locale = await resolveLocale(db);
     return next();
   });
 

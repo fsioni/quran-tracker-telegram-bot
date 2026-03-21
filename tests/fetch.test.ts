@@ -15,7 +15,15 @@ vi.mock("grammy", () => {
 
 vi.mock("../src/bot", () => ({
   createBot: vi.fn().mockReturnValue({}),
-  BOT_COMMANDS: [{ command: "start", description: "test" }],
+}));
+
+vi.mock("../src/locales", () => ({
+  getLocale: vi.fn().mockReturnValue({}),
+  getBotCommands: vi.fn().mockReturnValue([{ command: "start", description: "test" }]),
+}));
+
+vi.mock("../src/services/db", () => ({
+  getConfig: vi.fn().mockResolvedValue(null),
 }));
 
 import handler from "../src/index";

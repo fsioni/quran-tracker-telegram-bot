@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { speedHandler } from "../../src/handlers/stats";
 import type { CustomContext } from "../../src/bot";
 import type { Session } from "../../src/services/db";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -29,6 +30,7 @@ function makeCtx(): CustomContext {
     match: "",
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -71,9 +73,9 @@ describe("speedHandler", () => {
       durationSeconds: 4320,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "versets/h" },
-      { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "versets/h" },
-      { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages/h" },
+      { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "verses" },
+      { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "verses" },
+      { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
     ]);
 
     const ctx = makeCtx();
@@ -117,7 +119,7 @@ describe("speedHandler", () => {
     vi.mocked(getBestSpeedSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getLongestSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 140, sessionCount: 10, unit: "versets/h" },
+      { type: "normal", avgSpeed: 140, sessionCount: 10, unit: "verses" },
     ]);
 
     const ctx = makeCtx();
@@ -141,7 +143,7 @@ describe("speedHandler", () => {
       durationSeconds: 45,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 200, sessionCount: 5, unit: "versets/h" },
+      { type: "normal", avgSpeed: 200, sessionCount: 5, unit: "verses" },
     ]);
 
     const ctx = makeCtx();

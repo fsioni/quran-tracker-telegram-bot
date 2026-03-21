@@ -66,7 +66,7 @@ export type TypeSpeed = {
   type: SessionType;
   avgSpeed: number;
   sessionCount: number;
-  unit: 'versets/h' | 'pages/h';
+  unit: 'pages' | 'verses';
 };
 
 export type PrayerTimes = {
@@ -669,14 +669,14 @@ export async function getSpeedByType(
           type: r.type as SessionType,
           avgSpeed: parseFloat((r.total_pages / (r.total_seconds / 3600)).toFixed(1)),
           sessionCount: r.session_count,
-          unit: 'pages/h' as const,
+          unit: 'pages' as const,
         };
       }
       return {
         type: r.type as SessionType,
         avgSpeed: Math.round(r.total_ayahs / (r.total_seconds / 3600)),
         sessionCount: r.session_count,
-        unit: 'versets/h' as const,
+        unit: 'verses' as const,
       };
     });
 }

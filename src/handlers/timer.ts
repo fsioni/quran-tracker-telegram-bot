@@ -28,6 +28,7 @@ import {
 } from "../services/format";
 import { validateAyah, validateRange, calculateAyahCount } from "../services/quran";
 import { getPageRange, TOTAL_PAGES, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_PAGES } from "../data/pages";
+import type { Locale } from "../locales";
 
 // --- Constants ---
 
@@ -54,25 +55,26 @@ type ParsedGoArgs =
 // --- /go handler ---
 
 export async function goHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
 
   // No args => normal_page, use shared logic
   if (!input) {
-    return executeTimerGoNormalPage(ctx.db, (...args) => ctx.reply(...args));
+    return executeTimerGoNormalPage(ctx.db, (...args) => ctx.reply(...args), t);
   }
 
   // Check if timer already active
   const existing = await getTimerState(ctx.db);
   if (existing) {
     const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
-    await ctx.reply(formatError(`un timer est deja actif depuis ${formatDuration(elapsed)}. Utilise /stop pour l'arreter`));
+    await ctx.reply(formatError(t.timer.alreadyActive(formatDuration(elapsed)), t));
     return;
   }
 
   // Parse arguments -> determine type + args
-  const parsed = parseGoArgs(input);
+  const parsed = parseGoArgs(input, t);
   if (typeof parsed === "string") {
-    await ctx.reply(formatError(parsed));
+    await ctx.reply(formatError(parsed, t));
     return;
   }
 
@@ -80,22 +82,22 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
   const tz = await getTimezone(ctx.db);
 
   if (parsed.type === "normal_verse" || parsed.type === "extra_verse") {
-    const valid = validateAyah(parsed.surah, parsed.ayah);
+    const valid = validateAyah(parsed.surah, parsed.ayah, t);
     if (!valid.ok) {
-      await ctx.reply(formatError(valid.error));
+      await ctx.reply(formatError(valid.error, t));
       return;
     }
   } else if (parsed.type === "extra_page") {
-    const pageResult = parsePage(String(parsed.page));
+    const pageResult = parsePage(String(parsed.page), t);
     if (!pageResult.ok) {
-      await ctx.reply(formatError(pageResult.error));
+      await ctx.reply(formatError(pageResult.error, t));
       return;
     }
   } else if (parsed.type === "kahf") {
     const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
     const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
     if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {
-      await ctx.reply("Al-Kahf deja terminee cette semaine !");
+      await ctx.reply(t.kahf.alreadyComplete);
       return;
     }
   }
@@ -113,41 +115,41 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
 
   // Reply with context
   const messages: Record<TimerType, string> = {
-    normal_page: "Timer demarre ! Lecture normale (pages).",
-    normal_verse: `Timer demarre ! Lecture depuis ${input}.`,
-    extra_page: `Timer demarre ! Lecture extra page ${"page" in parsed ? parsed.page : ""}.`,
-    extra_verse: `Timer demarre ! Lecture extra depuis ${input.substring(6).trim()}.`,
-    kahf: "Timer demarre ! Lecture d'Al-Kahf.",
+    normal_page: t.timer.startedNormalPage,
+    normal_verse: t.timer.startedNormalVerse(input),
+    extra_page: t.timer.startedExtraPage("page" in parsed ? String(parsed.page) : ""),
+    extra_verse: t.timer.startedExtraVerse(input.substring(6).trim()),
+    kahf: t.timer.startedKahf,
   };
 
   await ctx.reply(messages[parsed.type], {
-    reply_markup: new InlineKeyboard().text("Stop", CALLBACK_TIMER_STOP),
+    reply_markup: new InlineKeyboard().text(t.timer.stop, CALLBACK_TIMER_STOP),
   });
 }
 
-function parseGoArgs(input: string): ParsedGoArgs | string {
+function parseGoArgs(input: string, t: Locale): ParsedGoArgs | string {
   if (!input) return { type: "normal_page" };
 
   if (input === "kahf") return { type: "kahf" };
 
   if (input.startsWith("extra ")) {
     const rest = input.substring(6).trim();
-    const verseResult = parseVerseStart(rest);
+    const verseResult = parseVerseStart(rest, t);
     if (verseResult.ok) {
       return { type: "extra_verse", surah: verseResult.value.surah, ayah: verseResult.value.ayah };
     }
-    const pageResult = parsePage(rest);
+    const pageResult = parsePage(rest, t);
     if (pageResult.ok) {
       return { type: "extra_page", page: pageResult.value.pageStart };
     }
-    return "format invalide\nExemple : /go extra 300 ou /go extra 2:77";
+    return t.timer.invalidGoExtraFormat;
   }
 
-  const verseResult = parseVerseStart(input);
+  const verseResult = parseVerseStart(input, t);
   if (verseResult.ok) {
     return { type: "normal_verse", surah: verseResult.value.surah, ayah: verseResult.value.ayah };
   }
-  return "format invalide\nExemple : /go ou /go 2:77 ou /go extra 300 ou /go kahf";
+  return t.timer.invalidGoFormat;
 }
 
 function argsToJson(parsed: ParsedGoArgs): string {
@@ -160,15 +162,15 @@ function argsToJson(parsed: ParsedGoArgs): string {
 
 type SendFn = (...args: [text: string, opts?: { reply_markup?: InlineKeyboard }]) => Promise<unknown>;
 
-async function executeTimerStop(db: D1Database, send: SendFn): Promise<void> {
+async function executeTimerStop(db: D1Database, send: SendFn, t: Locale): Promise<void> {
   const state = await getTimerState(db);
   if (!state) {
-    await send("Aucun timer actif.");
+    await send(t.timer.noActiveTimer);
     return;
   }
 
   if (state.awaitingResponse) {
-    await send(getQuestionForType(state.type, state.durationSeconds!));
+    await send(getQuestionForType(state.type, state.durationSeconds!, t));
     return;
   }
 
@@ -176,11 +178,11 @@ async function executeTimerStop(db: D1Database, send: SendFn): Promise<void> {
 
   if (durationSeconds > MAX_TIMER_SECONDS) {
     const keyboard = new InlineKeyboard()
-      .text("Oui", CALLBACK_TIMER_CONFIRM)
-      .text("Non", CALLBACK_TIMER_CANCEL);
+      .text(t.timer.yes, CALLBACK_TIMER_CONFIRM)
+      .text(t.timer.no, CALLBACK_TIMER_CANCEL);
     await setTimerState(db, { ...state, durationSeconds });
     await send(
-      `Le timer tourne depuis ${formatDuration(durationSeconds)} (plus de 4h). Confirmer l'arret ?`,
+      t.timer.confirmLongTimer(formatDuration(durationSeconds)),
       { reply_markup: keyboard },
     );
     return;
@@ -192,49 +194,51 @@ async function executeTimerStop(db: D1Database, send: SendFn): Promise<void> {
     durationSeconds,
   });
 
-  await send(getQuestionForType(state.type, durationSeconds));
+  await send(getQuestionForType(state.type, durationSeconds, t));
 }
 
 // --- /stop handler ---
 
 export async function stopHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
 
   // /stop cancel
   if (input === "cancel") {
     const state = await getTimerState(ctx.db);
     if (!state) {
-      await ctx.reply("Aucun timer actif.");
+      await ctx.reply(t.timer.noActiveTimer);
       return;
     }
     await clearTimerState(ctx.db);
-    await ctx.reply("Timer annule.");
+    await ctx.reply(t.timer.cancelled);
     return;
   }
 
-  await executeTimerStop(ctx.db, (...args) => ctx.reply(...args));
+  await executeTimerStop(ctx.db, (...args) => ctx.reply(...args), t);
 }
 
-function getQuestionForType(type: TimerType, durationSeconds: number): string {
+function getQuestionForType(type: TimerType, durationSeconds: number, t: Locale): string {
   const dur = formatDuration(durationSeconds);
   switch (type) {
     case "normal_page":
     case "extra_page":
-      return `Session arretee (${dur})\nCombien de pages as-tu lues ?`;
+      return t.timer.questionPages(dur);
     case "normal_verse":
     case "extra_verse":
-      return `Session arretee (${dur})\nJusqu'ou as-tu lu ? (ex: 2:83 ou 3:10)`;
+      return t.timer.questionVerses(dur);
     case "kahf":
-      return `Session arretee (${dur})\nCombien de pages d'Al-Kahf as-tu lues ?`;
+      return t.timer.questionKahfPages(dur);
   }
 }
 
 // --- Callbacks for 4h confirmation ---
 
 export async function confirmTimerStopCallback(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const state = await getTimerState(ctx.db);
   if (!state) {
-    await ctx.editMessageText("Timer introuvable.");
+    await ctx.editMessageText(t.timer.notFound);
     await ctx.answerCallbackQuery();
     return;
   }
@@ -247,37 +251,39 @@ export async function confirmTimerStopCallback(ctx: CustomContext): Promise<void
     durationSeconds,
   });
 
-  await ctx.editMessageText(getQuestionForType(state.type, durationSeconds));
+  await ctx.editMessageText(getQuestionForType(state.type, durationSeconds, t));
   await ctx.answerCallbackQuery();
 }
 
 export async function cancelTimerStopCallback(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   await clearTimerState(ctx.db);
-  await ctx.editMessageText("Timer annule.");
+  await ctx.editMessageText(t.timer.cancelled);
   await ctx.answerCallbackQuery();
 }
 
 // --- Callback for inline Stop button ---
 
 export async function stopTimerCallback(ctx: CustomContext): Promise<void> {
-  await executeTimerStop(ctx.db, (...args) => ctx.editMessageText(...args));
+  const t = ctx.locale;
+  await executeTimerStop(ctx.db, (...args) => ctx.editMessageText(...args), t);
   await ctx.answerCallbackQuery();
 }
 
 // --- Shared go logic (normal_page, no args) ---
 
-async function executeTimerGoNormalPage(db: D1Database, send: SendFn): Promise<void> {
+async function executeTimerGoNormalPage(db: D1Database, send: SendFn, t: Locale): Promise<void> {
   const existing = await getTimerState(db);
   if (existing) {
     const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
-    await send(formatError(`un timer est deja actif depuis ${formatDuration(elapsed)}. Utilise /stop pour l'arreter`));
+    await send(formatError(t.timer.alreadyActive(formatDuration(elapsed)), t));
     return;
   }
 
   const lastSession = await getLastSession(db, "normal");
   const currentPage = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
   if (currentPage > TOTAL_PAGES) {
-    await send("Tu as termine le Coran ! Alhamdulillah !");
+    await send(t.timer.quranFinished);
     return;
   }
 
@@ -291,15 +297,16 @@ async function executeTimerGoNormalPage(db: D1Database, send: SendFn): Promise<v
     awaitingResponse: false,
   });
 
-  await send("Timer demarre ! Lecture normale (pages).", {
-    reply_markup: new InlineKeyboard().text("Stop", CALLBACK_TIMER_STOP),
+  await send(t.timer.startedNormalPage, {
+    reply_markup: new InlineKeyboard().text(t.timer.stop, CALLBACK_TIMER_STOP),
   });
 }
 
 // --- Callback for inline Go button (prayer reminder) ---
 
 export async function goTimerCallback(ctx: CustomContext): Promise<void> {
-  await executeTimerGoNormalPage(ctx.db, (...args) => ctx.editMessageText(...args));
+  const t = ctx.locale;
+  await executeTimerGoNormalPage(ctx.db, (...args) => ctx.editMessageText(...args), t);
   await ctx.answerCallbackQuery();
 }
 
@@ -320,19 +327,20 @@ async function handlePageResponse(
   overflowMsg: (pageEnd: number) => string,
   formatReply: (session: Session, pageStart: number, pageEnd: number, duration: number) => string,
 ): Promise<void> {
+  const t = ctx.locale;
   const count = parsePageCount(trimmed);
   if (!count) {
-    await ctx.reply(formatError("nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler"));
+    await ctx.reply(formatError(t.timer.invalidPageCount, t));
     return;
   }
   const pageEnd = pageStart + count - 1;
   if (pageEnd > maxPage) {
-    await ctx.reply(formatError(overflowMsg(pageEnd)));
+    await ctx.reply(formatError(overflowMsg(pageEnd), t));
     return;
   }
   const rangeData = getPageRange(pageStart, pageEnd);
   if (!rangeData) {
-    await ctx.reply(formatError("pages invalides"));
+    await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
   }
   const result = await insertSession(ctx.db, {
@@ -348,7 +356,7 @@ async function handlePageResponse(
     pageEnd,
   });
   if (!result.ok) {
-    await ctx.reply(formatError(result.error));
+    await ctx.reply(formatError(result.error, t));
     return;
   }
   await Promise.all([
@@ -363,17 +371,18 @@ async function handleVerseResponse(
   trimmed: string,
   sessionType: SessionType,
 ): Promise<void> {
-  const endResult = parseVerseStart(trimmed);
+  const t = ctx.locale;
+  const endResult = parseVerseStart(trimmed, t);
   if (!endResult.ok) {
-    await ctx.reply(formatError("format de verset invalide. Envoie ex: 2:83 ou /stop cancel pour annuler"));
+    await ctx.reply(formatError(t.timer.invalidVerseFormat, t));
     return;
   }
   const parsedArgs = JSON.parse(state.args);
   const { surah: surahStart, ayah: ayahStart } = parsedArgs;
   const { surah: surahEnd, ayah: ayahEnd } = endResult.value;
-  const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd);
+  const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd, t);
   if (!validResult.ok) {
-    await ctx.reply(formatError(validResult.error));
+    await ctx.reply(formatError(validResult.error, t));
     return;
   }
   const ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
@@ -388,12 +397,12 @@ async function handleVerseResponse(
     type: sessionType,
   });
   if (!result.ok) {
-    await ctx.reply(formatError(result.error));
+    await ctx.reply(formatError(result.error, t));
     return;
   }
   await Promise.all([
     clearTimerState(ctx.db),
-    ctx.reply(formatSessionConfirmation({ ...result.value, type: sessionType })),
+    ctx.reply(formatSessionConfirmation({ ...result.value, type: sessionType }, t)),
   ]);
 }
 
@@ -414,6 +423,7 @@ export async function timerResponseHandler(
     return next();
   }
 
+  const t = ctx.locale;
   const trimmed = text.trim();
   const tz = await getTimezone(ctx.db);
 
@@ -423,16 +433,16 @@ export async function timerResponseHandler(
         const lastSession = await getLastSession(ctx.db, "normal");
         const pageStart = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
         return handlePageResponse(ctx, state, trimmed, "normal", pageStart, TOTAL_PAGES,
-          () => `il ne reste que ${TOTAL_PAGES - pageStart + 1} page(s) (page ${pageStart} a ${TOTAL_PAGES})`,
-          (_r, ps, pe, dur) => formatReadConfirmation({ pageStart: ps, pageEnd: pe, durationSeconds: dur, totalPagesRead: pe, totalPages: TOTAL_PAGES }),
+          () => t.read.remainingPages(TOTAL_PAGES - pageStart + 1, pageStart, TOTAL_PAGES),
+          (_r, ps, pe, dur) => formatReadConfirmation({ pageStart: ps, pageEnd: pe, durationSeconds: dur, totalPagesRead: pe, totalPages: TOTAL_PAGES }, t),
         );
       }
 
       case "extra_page": {
         const parsedArgs = JSON.parse(state.args);
         return handlePageResponse(ctx, state, trimmed, "extra", parsedArgs.page, TOTAL_PAGES,
-          (pe) => `depassement: pages ${parsedArgs.page}-${pe} (max ${TOTAL_PAGES})`,
-          (s) => formatSessionConfirmation({ ...s, type: "extra" }),
+          (pe) => t.timer.overflowPages(parsedArgs.page, pe, TOTAL_PAGES),
+          (s) => formatSessionConfirmation({ ...s, type: "extra" }, t),
         );
       }
 
@@ -445,7 +455,7 @@ export async function timerResponseHandler(
       case "kahf": {
         const count = parsePageCount(trimmed);
         if (!count) {
-          await ctx.reply(formatError("nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler"));
+          await ctx.reply(formatError(t.timer.invalidPageCount, t));
           return;
         }
         const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
@@ -454,12 +464,12 @@ export async function timerResponseHandler(
         const pageEnd = pageStart + count - 1;
         if (pageEnd > KAHF_PAGE_END) {
           const remaining = KAHF_TOTAL_PAGES - pagesAlreadyRead;
-          await ctx.reply(formatError(`il ne reste que ${remaining} page(s) d'Al-Kahf cette semaine`));
+          await ctx.reply(formatError(t.kahf.remainingPages(remaining, pageStart, KAHF_PAGE_END), t));
           return;
         }
         const rangeData = getPageRange(pageStart, pageEnd);
         if (!rangeData) {
-          await ctx.reply(formatError("pages invalides"));
+          await ctx.reply(formatError(t.read.pagesInvalid, t));
           return;
         }
         const result = await insertSession(ctx.db, {
@@ -475,7 +485,7 @@ export async function timerResponseHandler(
           pageEnd,
         });
         if (!result.ok) {
-          await ctx.reply(formatError(result.error));
+          await ctx.reply(formatError(result.error, t));
           return;
         }
         await clearTimerState(ctx.db);
@@ -500,7 +510,7 @@ export async function timerResponseHandler(
               isComplete: true,
               lastWeekTotalSeconds: lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
               sessionPages: count,
-            }),
+            }, t),
           );
         } else {
           await ctx.reply(
@@ -512,7 +522,7 @@ export async function timerResponseHandler(
               weekTotalSeconds,
               isComplete: false,
               sessionPages: count,
-            }),
+            }, t),
           );
         }
         return;
@@ -520,6 +530,6 @@ export async function timerResponseHandler(
     }
   } catch (e) {
     console.error("timerResponseHandler error:", e);
-    await ctx.reply(formatError("erreur interne lors du traitement de la reponse"));
+    await ctx.reply(formatError(t.timer.internalError, t));
   }
 }

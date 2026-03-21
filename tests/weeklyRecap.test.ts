@@ -15,6 +15,7 @@ import { buildWeeklyRecap } from "../src/services/weeklyRecap";
 import { formatWeeklyRecap } from "../src/services/format";
 import { getPeriodStats, getWeekPages, getWeekSessions, calculateStreak } from "../src/services/db";
 import type { WeeklyRecapData } from "../src/services/weeklyRecap";
+import { fr } from "../src/locales/fr";
 
 describe("buildWeeklyRecap", () => {
   const db = {} as D1Database;
@@ -142,7 +143,7 @@ describe("formatWeeklyRecap", () => {
       completedSurahs: [],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("-- Recap hebdomadaire --");
     expect(msg).toContain("Pages lues : 12 (+20%)");
@@ -161,7 +162,7 @@ describe("formatWeeklyRecap", () => {
       completedSurahs: [],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("Pages lues : 8 (-33%)");
     expect(msg).toContain("Sessions : 3 (-40%)");
@@ -178,7 +179,7 @@ describe("formatWeeklyRecap", () => {
       completedSurahs: [],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("Pages lues : 5");
     expect(msg).not.toContain("%");
@@ -196,7 +197,7 @@ describe("formatWeeklyRecap", () => {
       completedSurahs: [],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toBe("-- Recap hebdomadaire --\n\nAucune session cette semaine. C'est le moment de reprendre !");
   });
@@ -208,10 +209,10 @@ describe("formatWeeklyRecap", () => {
       thisWeekPages: 12,
       lastWeekPages: 10,
       streak: { currentStreak: 8, bestStreak: 15 },
-      completedSurahs: [{ number: 3, nameAr: "آل عمران", nameFr: "Al-Imran", ayahCount: 200 }],
+      completedSurahs: [{ number: 3, nameAr: "آل عمران", name: "Al-Imran", ayahCount: 200 }],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("Sourate Al-Imran (3) terminee !");
   });
@@ -226,7 +227,7 @@ describe("formatWeeklyRecap", () => {
       completedSurahs: [],
     };
 
-    const msg = formatWeeklyRecap(data);
+    const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).not.toContain("Sourate");
     expect(msg).not.toContain("terminee");
