@@ -113,7 +113,7 @@ describe("configHandler", () => {
     await configHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Mecca");
-    expect(msg).toContain("(defaut)");
+    expect(msg).toContain("(défaut)");
   });
 
   it("met a jour la ville et vide le cache", async () => {
@@ -123,7 +123,7 @@ describe("configHandler", () => {
     expect(clearPrayerCache).toHaveBeenCalledWith(ctx.db);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Cancun");
-    expect(msg).toContain("reinitialise");
+    expect(msg).toContain("réinitialisé");
   });
 
   it("accepte une ville avec espaces", async () => {
@@ -179,7 +179,7 @@ describe("configHandler", () => {
     await configHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("parametre inconnu");
+    expect(msg).toContain("paramètre inconnu");
   });
 
   it("rejette une valeur manquante", async () => {

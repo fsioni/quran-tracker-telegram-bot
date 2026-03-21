@@ -75,7 +75,6 @@ export type Locale = {
     session: string;
     read: string;
     extra: string;
-    extraPage: string;
     kahf: string;
     import: string;
   };
@@ -294,4 +293,7 @@ export type Locale = {
     httpError: (status: number) => string;
     apiError: (message: string) => string;
   };
+
+  // Native language name for inline keyboard
+  nativeName: string;
 };

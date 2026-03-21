@@ -10,6 +10,9 @@ export type Language = "en" | "fr";
 
 export const LANGUAGES: Language[] = ["en", "fr"];
 
+export const CALLBACK_LANG_SET = "lang_set";
+export const CALLBACK_LANG_SET_RE = /^lang_set:(.+)$/;
+
 const locales: Record<Language, Locale> = { en, fr };
 
 export function getLocale(lang: string | null): Locale {

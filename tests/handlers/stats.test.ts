@@ -73,7 +73,7 @@ describe("historyHandler", () => {
     vi.mocked(getHistory).mockResolvedValue([]);
     const ctx = makeCtx();
     await historyHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
   it("affiche une session formatee avec tag type", async () => {
@@ -212,7 +212,7 @@ describe("statsHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Vitesse : 160 versets/h");
-    expect(msg).toContain("vs semaine derniere");
+    expect(msg).toContain("vs semaine dernière");
   });
 
   it("n'affiche pas la tendance quand getPreviousWeekStats echoue", async () => {
@@ -235,7 +235,7 @@ describe("statsHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Vitesse : 160 versets/h");
-    expect(msg).not.toContain("vs semaine derniere");
+    expect(msg).not.toContain("vs semaine dernière");
   });
 });
 
@@ -339,7 +339,7 @@ describe("progressHandler", () => {
     const ctx = makeCtx();
     await progressHandler(ctx);
 
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
   it("affiche l'estimation quand pageEnd est present et pace > 0", async () => {
@@ -358,7 +358,7 @@ describe("progressHandler", () => {
     await progressHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("A ce rythme (~2.5 pages/jour)");
+    expect(msg).toContain("À ce rythme (~2.5 pages/jour)");
     expect(msg).toContain("tu finiras vers le");
   });
 
@@ -378,7 +378,7 @@ describe("progressHandler", () => {
     await progressHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Pas assez de donnees recentes pour estimer");
+    expect(msg).toContain("Pas assez de données récentes pour estimer");
   });
 
   it("n'affiche pas d'estimation quand pageEnd == 604 (termine)", async () => {

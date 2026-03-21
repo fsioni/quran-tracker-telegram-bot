@@ -133,7 +133,7 @@ describe("goHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     expect(msg).toContain("normale");
   });
 
@@ -149,7 +149,7 @@ describe("goHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     expect(msg).toContain("2:77");
   });
 
@@ -165,7 +165,7 @@ describe("goHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     expect(msg).toContain("extra");
     expect(msg).toContain("300");
   });
@@ -182,7 +182,7 @@ describe("goHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     expect(msg).toContain("extra");
   });
 
@@ -198,7 +198,7 @@ describe("goHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     expect(msg).toContain("Al-Kahf");
   });
 
@@ -210,7 +210,7 @@ describe("goHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("timer est deja actif");
+    expect(msg).toContain("timer est déjà actif");
     expect(mockSetTimerState).not.toHaveBeenCalled();
   });
 
@@ -232,7 +232,7 @@ describe("goHandler", () => {
     await goHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Al-Kahf deja terminee cette semaine");
+    expect(msg).toContain("Al-Kahf déjà terminée cette semaine");
     expect(mockSetTimerState).not.toHaveBeenCalled();
   });
 
@@ -243,7 +243,7 @@ describe("goHandler", () => {
     await goHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("termine le Coran");
+    expect(msg).toContain("terminé le Coran");
     expect(mockSetTimerState).not.toHaveBeenCalled();
   });
 
@@ -298,7 +298,7 @@ describe("stopHandler", () => {
       }),
     );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
+    expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("pages");
   });
 
@@ -312,8 +312,8 @@ describe("stopHandler", () => {
     await stopHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
-    expect(msg).toContain("Jusqu'ou");
+    expect(msg).toContain("Session arrêtée");
+    expect(msg).toContain("Jusqu'où");
   });
 
   it("/stop avec timer -> question kahf", async () => {
@@ -326,7 +326,7 @@ describe("stopHandler", () => {
     await stopHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
+    expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("Al-Kahf");
   });
 
@@ -346,7 +346,7 @@ describe("stopHandler", () => {
     await stopHandler(ctx);
 
     expect(mockClearTimerState).toHaveBeenCalled();
-    expect(ctx.reply).toHaveBeenCalledWith("Timer annule.");
+    expect(ctx.reply).toHaveBeenCalledWith("Timer annulé.");
   });
 
   it("/stop cancel en attente -> annule", async () => {
@@ -358,7 +358,7 @@ describe("stopHandler", () => {
     await stopHandler(ctx);
 
     expect(mockClearTimerState).toHaveBeenCalled();
-    expect(ctx.reply).toHaveBeenCalledWith("Timer annule.");
+    expect(ctx.reply).toHaveBeenCalledWith("Timer annulé.");
   });
 
   it("/stop avec timer > 4h -> keyboard confirmation", async () => {
@@ -398,7 +398,7 @@ describe("stopHandler", () => {
     await stopHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
+    expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("pages");
     // Should not call setTimerState again
     expect(mockSetTimerState).not.toHaveBeenCalled();
@@ -450,7 +450,7 @@ describe("cancelTimerStopCallback", () => {
     await cancelTimerStopCallback(ctx);
 
     expect(mockClearTimerState).toHaveBeenCalled();
-    expect(ctx.editMessageText).toHaveBeenCalledWith("Timer annule.");
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Timer annulé.");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });
@@ -486,7 +486,7 @@ describe("stopTimerCallback", () => {
       expect.objectContaining({ awaitingResponse: true }),
     );
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
+    expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("pages");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
@@ -521,7 +521,7 @@ describe("stopTimerCallback", () => {
     await stopTimerCallback(ctx);
 
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session arretee");
+    expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("pages");
     expect(mockSetTimerState).not.toHaveBeenCalled();
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
@@ -661,7 +661,7 @@ describe("timerResponseHandler", () => {
     );
     expect(mockClearTimerState).toHaveBeenCalled();
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session enregistree");
+    expect(msg).toContain("Session enregistrée");
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -837,7 +837,7 @@ describe("goTimerCallback", () => {
       expect.objectContaining({ type: "normal_page", args: "{}" }),
     );
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Timer demarre");
+    expect(msg).toContain("Timer démarré");
     const opts = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(opts).toHaveProperty("reply_markup");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
@@ -852,7 +852,7 @@ describe("goTimerCallback", () => {
 
     expect(mockSetTimerState).not.toHaveBeenCalled();
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("timer est deja actif");
+    expect(msg).toContain("timer est déjà actif");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

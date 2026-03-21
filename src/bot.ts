@@ -1,5 +1,5 @@
 import { Bot, Context } from "grammy";
-import { startHandler, helpHandler, configHandler } from "./handlers/config";
+import { startHandler, helpHandler, configHandler, langSetCallback } from "./handlers/config";
 import { sessionHandler } from "./handlers/session";
 import { importHandler } from "./handlers/import";
 import { historyHandler, statsHandler, progressHandler, speedHandler } from "./handlers/stats";
@@ -30,7 +30,7 @@ import {
 import { debugHandler } from "./handlers/debug";
 import { prayerHandler } from "./handlers/prayer";
 import { resolveLocale } from "./services/localeCache";
-import type { Locale } from "./locales";
+import { CALLBACK_LANG_SET_RE, type Locale } from "./locales";
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -92,6 +92,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
+  bot.callbackQuery(CALLBACK_LANG_SET_RE, langSetCallback);
 
   // Error handler global
   bot.catch((err) => {

@@ -281,4 +281,6 @@ export const en: Locale = {
     httpError: (status) => `Aladhan API HTTP ${status}`,
     apiError: (message) => `Aladhan API error: ${message}`,
   },
+
+  nativeName: "English",
 };

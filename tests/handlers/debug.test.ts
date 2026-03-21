@@ -116,11 +116,11 @@ describe("debugHandler", () => {
     expect(msg).toContain("MX");
     expect(msg).toContain("America/Cancun");
     expect(msg).toContain("123456");
-    expect(msg).toContain("-- Cache priere (2026-03-15) --");
+    expect(msg).toContain("-- Cache prière (2026-03-15) --");
     expect(msg).toContain("05:30");
-    expect(msg).toContain("[envoye]");
+    expect(msg).toContain("[envoyé]");
     expect(msg).toContain("[en attente]");
-    expect(msg).toContain("-- Derniere session --");
+    expect(msg).toContain("-- Dernière session --");
     expect(msg).toContain("id         : 42");
     expect(msg).toContain("15/03 08h30");
     expect(msg).toContain("normal");
@@ -129,7 +129,7 @@ describe("debugHandler", () => {
     expect(msg).toContain("2026-03-14");
     expect(msg).toContain("-- DB stats --");
     expect(msg).toContain("total sessions : 42");
-    expect(msg).toContain("-- Systeme --");
+    expect(msg).toContain("-- Système --");
     expect(msg).toContain("serveur (UTC)");
     expect(msg).toContain("user (tz)");
   });

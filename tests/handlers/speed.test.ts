@@ -107,7 +107,7 @@ describe("speedHandler", () => {
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
   it("gere le cas partiel : pas de sessions dans les 7 derniers jours", async () => {

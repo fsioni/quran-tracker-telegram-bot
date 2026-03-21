@@ -88,7 +88,7 @@ describe("validateAyah", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
-        "la sourate 1 n'a que 7 versets (verset 0 demande)",
+        "la sourate 1 n'a que 7 versets (verset 0 demandé)",
       );
     }
   });
@@ -98,7 +98,7 @@ describe("validateAyah", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
-        "la sourate 1 n'a que 7 versets (verset 8 demande)",
+        "la sourate 1 n'a que 7 versets (verset 8 demandé)",
       );
     }
   });
@@ -132,7 +132,7 @@ describe("validateRange", () => {
     const result = validateRange(1, 5, 1, 3, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toBe("la fin (1:3) precede le debut (1:5)");
+      expect(result.error).toBe("la fin (1:3) précède le début (1:5)");
     }
   });
 
@@ -140,7 +140,7 @@ describe("validateRange", () => {
     const result = validateRange(3, 1, 2, 1, fr);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toBe("la fin (2:1) precede le debut (3:1)");
+      expect(result.error).toBe("la fin (2:1) précède le début (3:1)");
     }
   });
 

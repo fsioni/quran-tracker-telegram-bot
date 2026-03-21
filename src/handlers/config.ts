@@ -1,9 +1,10 @@
+import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import { invalidateLocaleCache } from "../services/localeCache";
 import { getConfig, setConfig, clearPrayerCache } from "../services/db";
 import { formatError } from "../services/format";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
-import { LANGUAGES, getLocale, buildWelcome } from "../locales";
+import { LANGUAGES, CALLBACK_LANG_SET, getLocale, getBotCommands, buildWelcome } from "../locales";
 
 export async function startHandler(ctx: CustomContext): Promise<void> {
   await setConfig(ctx.db, "chat_id", String(ctx.chat!.id));
@@ -40,6 +41,18 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
         `${t.config.languageLabel} : ${lang}${suffix(langRaw)}`,
       ].join("\n"),
     );
+    return;
+  }
+
+  // Handle "/config language" or "/config lang" without a value -> show keyboard
+  const inputLower = input.toLowerCase();
+  if (inputLower === "language" || inputLower === "lang") {
+    const keyboard = new InlineKeyboard();
+    for (const lang of LANGUAGES) {
+      const locale = getLocale(lang);
+      keyboard.text(locale.nativeName, `${CALLBACK_LANG_SET}:${lang}`);
+    }
+    await ctx.reply(t.config.languageLabel, { reply_markup: keyboard });
     return;
   }
 
@@ -90,12 +103,30 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       }
       await setConfig(ctx.db, "language", lang);
       invalidateLocaleCache();
-      // Respond in the NEW language
       const newT = getLocale(lang);
-      await ctx.reply(newT.config.languageUpdated(lang));
+      await Promise.all([
+        ctx.reply(newT.config.languageUpdated(lang)),
+        ctx.api.setMyCommands(getBotCommands(newT)),
+      ]);
       break;
     }
     default:
       await ctx.reply(formatError(t.config.unknownParam(subCommand), t, "/config city Playa del Carmen"));
   }
+}
+
+export async function langSetCallback(ctx: CustomContext): Promise<void> {
+  const match = ctx.callbackQuery?.data?.match(/^lang_set:(.+)$/);
+  if (!match) return;
+  const lang = match[1];
+  if (!LANGUAGES.includes(lang as typeof LANGUAGES[number])) return;
+
+  await setConfig(ctx.db, "language", lang);
+  invalidateLocaleCache();
+  const newT = getLocale(lang);
+  await Promise.all([
+    ctx.answerCallbackQuery(),
+    ctx.editMessageText(newT.config.languageUpdated(lang)),
+    ctx.api.setMyCommands(getBotCommands(newT)),
+  ]);
 }

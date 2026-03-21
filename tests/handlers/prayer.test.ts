@@ -60,7 +60,7 @@ describe("prayerHandler", () => {
     expect(msg).toContain("Asr : 15:45");
     expect(msg).toContain("Maghrib : 18:30");
     expect(msg).toContain("Isha : 20:00");
-    expect(msg).toContain("rafraichi");
+    expect(msg).toContain("rafraîchi");
   });
 
   it("does not delete cache when fetch fails", async () => {

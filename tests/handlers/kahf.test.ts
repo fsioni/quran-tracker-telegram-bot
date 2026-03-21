@@ -68,7 +68,7 @@ describe("kahfHandler", () => {
     mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
   });
 
-  it("/kahf 5m -> premiere page de la semaine (page 293), kahf page 1/12", async () => {
+  it("/kahf 5m -> première page de la semaine (page 293), kahf page 1/12", async () => {
     const session = makeSession({
       id: 1,
       durationSeconds: 300,
@@ -95,7 +95,7 @@ describe("kahfHandler", () => {
     );
   });
 
-  it("/kahf 5m avec 2 pages deja lues -> page 295, kahf page 3/12", async () => {
+  it("/kahf 5m avec 2 pages déjà lues -> page 295, kahf page 3/12", async () => {
     mockGetKahfSessionsThisWeek.mockResolvedValue([
       makeSession({ pageStart: 293, pageEnd: 294, durationSeconds: 600 }),
     ]);
@@ -123,7 +123,7 @@ describe("kahfHandler", () => {
     );
   });
 
-  it("/kahf 3 15m -> plusieurs pages a la fois", async () => {
+  it("/kahf 3 15m -> plusieurs pages à la fois", async () => {
     const session = makeSession({
       id: 3,
       pageStart: 293,
@@ -151,7 +151,7 @@ describe("kahfHandler", () => {
     );
   });
 
-  it("/kahf 5m quand les 12 pages sont terminees -> message deja terminee", async () => {
+  it("/kahf 5m quand les 12 pages sont terminées -> message déjà terminée", async () => {
     // 12 pages already read
     mockGetKahfSessionsThisWeek.mockResolvedValue([
       makeSession({ pageStart: 293, pageEnd: 304, durationSeconds: 3600 }),
@@ -162,7 +162,7 @@ describe("kahfHandler", () => {
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Al-Kahf deja terminee cette semaine");
+    expect(msg).toContain("Al-Kahf déjà terminée cette semaine");
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
@@ -202,12 +202,12 @@ describe("kahfHandler", () => {
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("terminee");
+    expect(msg).toContain("terminée");
     expect(msg).toContain("12/12");
-    expect(msg).toContain("Semaine derniere");
+    expect(msg).toContain("Semaine dernière");
   });
 
-  it("erreur: duree manquante", async () => {
+  it("erreur: durée manquante", async () => {
     const ctx = createMockContext("");
     await kahfHandler(ctx);
 
@@ -217,7 +217,7 @@ describe("kahfHandler", () => {
     expect(msg).toContain("format invalide");
   });
 
-  it("passe type='kahf' a insertSession", async () => {
+  it("passe type='kahf' à insertSession", async () => {
     const session = makeSession();
     mockInsertSession.mockResolvedValue({ ok: true, value: session });
 

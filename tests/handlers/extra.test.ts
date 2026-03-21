@@ -77,7 +77,7 @@ describe("extraHandler", () => {
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session extra enregistree");
+    expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
@@ -110,7 +110,7 @@ describe("extraHandler", () => {
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session extra enregistree");
+    expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
@@ -141,7 +141,7 @@ describe("extraHandler", () => {
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session extra enregistree");
+    expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
@@ -201,7 +201,7 @@ describe("extraHandler", () => {
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
-  it("passe type='extra' a insertSession", async () => {
+  it("passe type='extra' à insertSession", async () => {
     const session = makeSession();
     mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
@@ -229,8 +229,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session extra enregistree");
-    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+    expect(msg).toContain("Session extra enregistrée");
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminée");
   });
 
   it("/extra 2:100-150 8m en milieu de sourate -> pas de message de fin", async () => {
@@ -248,6 +248,6 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).not.toContain("terminee");
+    expect(msg).not.toContain("terminée");
   });
 });

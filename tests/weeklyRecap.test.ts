@@ -24,7 +24,7 @@ describe("buildWeeklyRecap", () => {
     vi.clearAllMocks();
   });
 
-  it("retourne les bonnes donnees avec sessions", async () => {
+  it("retourne les bonnes données avec sessions", async () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({ ok: true, value: { sessions: 5, ayahs: 100, seconds: 3000 } })
       .mockResolvedValueOnce({ ok: true, value: { sessions: 4, ayahs: 80, seconds: 2500 } });
@@ -53,7 +53,7 @@ describe("buildWeeklyRecap", () => {
     expect(result.value.completedSurahs[0].number).toBe(1);
   });
 
-  it("detecte les sourates completes et deduplique", async () => {
+  it("detecte les sourates complètes et deduplique", async () => {
     vi.mocked(getPeriodStats).mockResolvedValue({ ok: true, value: { sessions: 2, ayahs: 50, seconds: 1000 } });
     vi.mocked(getWeekPages).mockResolvedValue({ ok: true, value: 5 });
     vi.mocked(calculateStreak).mockResolvedValue({ currentStreak: 3, bestStreak: 3 });
@@ -145,11 +145,11 @@ describe("formatWeeklyRecap", () => {
 
     const msg = formatWeeklyRecap(data, fr);
 
-    expect(msg).toContain("-- Recap hebdomadaire --");
+    expect(msg).toContain("-- Récap hebdomadaire --");
     expect(msg).toContain("Pages lues : 12 (+20%)");
     expect(msg).toContain("Sessions : 5 (+25%)");
-    expect(msg).toContain("Streak : 8 jours consecutifs");
-    expect(msg).toContain("Duree : 2h35m");
+    expect(msg).toContain("Streak : 8 jours consécutifs");
+    expect(msg).toContain("Durée : 2h35m");
   });
 
   it("format correct avec comparaison S-1 negative", () => {
@@ -166,7 +166,7 @@ describe("formatWeeklyRecap", () => {
 
     expect(msg).toContain("Pages lues : 8 (-33%)");
     expect(msg).toContain("Sessions : 3 (-40%)");
-    expect(msg).toContain("Duree : 1h30m (-25%)");
+    expect(msg).toContain("Durée : 1h30m (-25%)");
   });
 
   it("pas de % quand S-1 est vide", () => {
@@ -184,7 +184,7 @@ describe("formatWeeklyRecap", () => {
     expect(msg).toContain("Pages lues : 5");
     expect(msg).not.toContain("%");
     expect(msg).toContain("Sessions : 3");
-    expect(msg).toContain("Streak : 3 jours consecutifs");
+    expect(msg).toContain("Streak : 3 jours consécutifs");
   });
 
   it("message special quand S courante est vide", () => {
@@ -199,10 +199,10 @@ describe("formatWeeklyRecap", () => {
 
     const msg = formatWeeklyRecap(data, fr);
 
-    expect(msg).toBe("-- Recap hebdomadaire --\n\nAucune session cette semaine. C'est le moment de reprendre !");
+    expect(msg).toBe("-- Récap hebdomadaire --\n\nAucune session cette semaine. C'est le moment de reprendre !");
   });
 
-  it("sourates terminees incluses quand presentes", () => {
+  it("sourates terminées incluses quand presentes", () => {
     const data: WeeklyRecapData = {
       thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
       lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
@@ -214,10 +214,10 @@ describe("formatWeeklyRecap", () => {
 
     const msg = formatWeeklyRecap(data, fr);
 
-    expect(msg).toContain("Sourate Al-Imran (3) terminee !");
+    expect(msg).toContain("Sourate Al-Imran (3) terminée !");
   });
 
-  it("pas de ligne sourate quand aucune terminee", () => {
+  it("pas de ligne sourate quand aucune terminée", () => {
     const data: WeeklyRecapData = {
       thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
       lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
@@ -230,6 +230,6 @@ describe("formatWeeklyRecap", () => {
     const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).not.toContain("Sourate");
-    expect(msg).not.toContain("terminee");
+    expect(msg).not.toContain("terminée");
   });
 });

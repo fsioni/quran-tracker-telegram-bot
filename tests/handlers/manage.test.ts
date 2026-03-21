@@ -63,7 +63,7 @@ describe("undoHandler", () => {
   it("repond 'Aucune session' si aucune session", async () => {
     const ctx = createCommandContext("", null);
     await undoHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session a annuler.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session à annuler.");
   });
 
   it("affiche la confirmation avec boutons inline", async () => {
@@ -124,7 +124,7 @@ describe("confirmDeleteCallback", () => {
     const ctx = createCallbackContext("delete_confirm:42", MOCK_SESSION_ROW);
     await confirmDeleteCallback(ctx);
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session #42 supprimee.");
+    expect(msg).toContain("Session #42 supprimée.");
     expect(msg).toContain("Al-Baqara 2:77-83");
     expect(msg).toContain("7 versets");
     expect(msg).toContain("8m53");
@@ -142,7 +142,7 @@ describe("cancelDeleteCallback", () => {
   it("edite le message avec annulation", async () => {
     const ctx = createCallbackContext("delete_cancel:42");
     await cancelDeleteCallback(ctx);
-    expect(ctx.editMessageText).toHaveBeenCalledWith("Suppression annulee.");
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Suppression annulée.");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

@@ -39,7 +39,7 @@ describe("sessionHandler", () => {
     await sessionHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session enregistree");
+    expect(msg).toContain("Session enregistrée");
     expect(msg).toContain("Al-Baqara");
     expect(msg).toContain("7 versets");
   });
@@ -73,7 +73,7 @@ describe("sessionHandler", () => {
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("format de duree invalide");
+    expect(msg).toContain("format de durée invalide");
   });
 
   it("repond erreur pour sourate hors bornes", async () => {
@@ -97,7 +97,7 @@ describe("sessionHandler", () => {
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("precede le debut");
+    expect(msg).toContain("précède le début");
   });
 
   it("enregistre une session cross-surah", async () => {
@@ -119,7 +119,7 @@ describe("sessionHandler", () => {
 
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session enregistree");
+    expect(msg).toContain("Session enregistrée");
     expect(msg).toContain("Al-Baqara");
     expect(msg).toContain("Al-Imran");
     expect(msg).toContain("17 versets");
@@ -155,15 +155,15 @@ describe("sessionHandler", () => {
 
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session enregistree");
-    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+    expect(msg).toContain("Session enregistrée");
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminée");
   });
 
   it("session en milieu de sourate -> pas de message de fin", async () => {
     const ctx = createMockContext("2:100-150 8m");
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session enregistree");
-    expect(msg).not.toContain("terminee");
+    expect(msg).toContain("Session enregistrée");
+    expect(msg).not.toContain("terminée");
   });
 });

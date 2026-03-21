@@ -29,7 +29,7 @@ describe("importHandler", () => {
     await importHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("1 session importee");
+    expect(msg).toContain("1 session importée");
     expect(ctx.db.batch).toHaveBeenCalled();
   });
 
@@ -39,14 +39,14 @@ describe("importHandler", () => {
     );
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("2 sessions importees");
+    expect(msg).toContain("2 sessions importées");
   });
 
   it("rapporte les erreurs par ligne", async () => {
     const ctx = createMockContext("invalid line");
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Aucune session importee");
+    expect(msg).toContain("Aucune session importée");
     expect(msg).toContain("1 erreur");
     expect(msg).toContain("Ligne 1");
   });
@@ -57,7 +57,7 @@ describe("importHandler", () => {
     );
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("2 sessions importees");
+    expect(msg).toContain("2 sessions importées");
     expect(msg).toContain("1 erreur");
     expect(msg).toContain("Ligne 2");
   });
@@ -67,14 +67,14 @@ describe("importHandler", () => {
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("aucune donnee");
+    expect(msg).toContain("aucune donnée");
   });
 
   it("filtre les lignes vides", async () => {
     const ctx = createMockContext("\n10/03, 13h30 - 8m53 - 2:77-83\n\n");
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("1 session importee");
+    expect(msg).toContain("1 session importée");
   });
 
   it("n'appelle pas db.batch si toutes les lignes sont invalides", async () => {
@@ -95,7 +95,7 @@ describe("importHandler", () => {
     const ctx = createMockContext("extra\n10/03, 13h30 - 8m53 - 2:77-83");
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("1 session importee");
+    expect(msg).toContain("1 session importée");
     expect(ctx.db.batch).toHaveBeenCalled();
   });
 
@@ -103,7 +103,7 @@ describe("importHandler", () => {
     const ctx = createMockContext("10/03, 13h30 - 8m53 - 2:77-83");
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("1 session importee");
+    expect(msg).toContain("1 session importée");
   });
 
   it("rapporte les numeros de ligne originaux avec prefixe extra", async () => {
@@ -120,6 +120,6 @@ describe("importHandler", () => {
     );
     await importHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("2 sessions importees");
+    expect(msg).toContain("2 sessions importées");
   });
 });
