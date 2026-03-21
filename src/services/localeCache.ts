@@ -7,7 +7,7 @@ export function invalidateLocaleCache(): void {
   cachedLocale = null;
 }
 
-export async function resolveLocale(db: D1Database, telegramLangCode?: string | null): Promise<Locale> {
+export async function resolveLocale(db: D1Database, telegramLangCode: string | null = null): Promise<Locale> {
   if (cachedLocale) return cachedLocale;
   const lang = await getConfig(db, "language");
   // If no language in DB, use Telegram's language_code as fallback (extract 2-letter prefix)

@@ -101,13 +101,8 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
         await ctx.reply(formatError(t.config.languageInvalid(LANGUAGES.join(", ")), t));
         return;
       }
-      await setConfig(ctx.db, "language", lang);
-      invalidateLocaleCache();
-      const newT = getLocale(lang);
-      await Promise.all([
-        ctx.reply(newT.config.languageUpdated(lang)),
-        ctx.api.setMyCommands(getBotCommands(newT)),
-      ]);
+      const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
+      await ctx.reply(newT.config.languageUpdated(lang));
       break;
     }
     default:
@@ -115,18 +110,21 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
   }
 }
 
-export async function langSetCallback(ctx: CustomContext): Promise<void> {
-  const match = ctx.callbackQuery?.data?.match(/^lang_set:(.+)$/);
-  if (!match) return;
-  const lang = match[1];
-  if (!LANGUAGES.includes(lang as typeof LANGUAGES[number])) return;
-
-  await setConfig(ctx.db, "language", lang);
+async function applyLanguageChange(db: D1Database, lang: string, api: CustomContext["api"]): Promise<Locale> {
+  await setConfig(db, "language", lang);
   invalidateLocaleCache();
   const newT = getLocale(lang);
+  await api.setMyCommands(getBotCommands(newT));
+  return newT;
+}
+
+export async function langSetCallback(ctx: CustomContext): Promise<void> {
+  const lang = (ctx.match as string[] | undefined)?.[1];
+  if (!lang || !LANGUAGES.includes(lang as typeof LANGUAGES[number])) return;
+
+  const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
   await Promise.all([
     ctx.answerCallbackQuery(),
     ctx.editMessageText(newT.config.languageUpdated(lang)),
-    ctx.api.setMyCommands(getBotCommands(newT)),
   ]);
 }
