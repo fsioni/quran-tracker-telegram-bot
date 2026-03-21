@@ -1,0 +1,281 @@
+import type { Locale } from "./types";
+
+export const ar: Locale = {
+  commands: {
+    start: "تشغيل البوت",
+    help: "عرض المساعدة",
+    session: "تسجيل جلسة قراءة",
+    go: "بدء مؤقت القراءة",
+    stop: "إيقاف المؤقت",
+    read: "قراءة الصفحة التالية",
+    extra: "تسجيل قراءة إضافية",
+    kahf: "قراءة سورة الكهف (الجمعة)",
+    import: "استيراد الجلسات",
+    history: "سجل الجلسات",
+    stats: "إحصائيات القراءة",
+    progress: "التقدم في القرآن",
+    undo: "التراجع عن آخر جلسة",
+    delete: "حذف جلسة",
+    speed: "سرعة القراءة",
+    config: "إعداد المدينة، البلد، المنطقة الزمنية، اللغة",
+    prayer: "تحديث أوقات الصلاة",
+  },
+
+  welcomeHeader: "مرحبا بك في متتبع قراءة القرآن!",
+  commandsAvailable: "الأوامر المتاحة:",
+
+  error: "خطأ",
+  example: "مثال",
+
+  fmt: {
+    dateShort: (day, month) => `${day}/${month}`,
+    timeShort: (hour, minute) => `${hour}:${minute}`,
+    versesPerHourCompact: (n) => `${n}آ/س`,
+    pagesPerHourCompact: (n) => `${n}ص/س`,
+  },
+
+  config: {
+    title: "-- الإعدادات --",
+    cityLabel: "المدينة",
+    countryLabel: "البلد",
+    timezoneLabel: "المنطقة الزمنية",
+    languageLabel: "اللغة",
+    defaultSuffix: " (افتراضي)",
+    missingValue: "قيمة مفقودة",
+    cityUpdated: (city) => `تم تحديث المدينة: ${city}\nتم مسح ذاكرة الصلاة المؤقتة.`,
+    countryCodeInvalid: "رمز البلد يجب أن يكون حرفين (ISO)",
+    countryUpdated: (country) => `تم تحديث البلد: ${country}\nتم مسح ذاكرة الصلاة المؤقتة.`,
+    timezoneInvalid: "منطقة زمنية غير صالحة",
+    timezoneUpdated: (tz) => `تم تحديث المنطقة الزمنية: ${tz}`,
+    unknownParam: (param) => `معامل غير معروف '${param}'`,
+    languageUpdated: (lang) => `تم تحديث اللغة: ${lang}`,
+    languageInvalid: (available) => `لغة غير صالحة. اللغات المتاحة: ${available}`,
+  },
+
+  parse: {
+    invalidVerseFormat: (input) => `صيغة آية غير صالحة '${input}'. استخدم 2:77`,
+    invalidDurationFormat: (input) => `صيغة مدة غير صالحة '${input}'. استخدم 8m أو 8m53`,
+    invalidRangeFormat: (input) => `صيغة نطاق غير صالحة '${input}'. استخدم 2:77-83 أو 2:280-3:10`,
+    invalidImportLineFormat: (line) => `صيغة سطر غير صالحة '${line}'. استخدم DD/MM, HHhMM - DURATION - RANGE`,
+    invalidMonth: (month) => `شهر غير صالح '${month}' (1-12)`,
+    invalidDay: (day, month, max) => `يوم غير صالح '${day}' للشهر ${month} (1-${max})`,
+    invalidPage: (page, max) => `صفحة غير صالحة '${page}'. الصفحات من 1 إلى ${max}`,
+    pageStartAfterEnd: (start, end) => `صفحة البداية (${start}) يجب أن تكون أقل من أو تساوي صفحة النهاية (${end})`,
+    invalidPageFormat: (input) => `صيغة صفحة غير صالحة '${input}'. استخدم 300 أو 300-304`,
+    invalidFormat: (example) => `صيغة غير صالحة. استخدم ${example}`,
+    invalidPageCount: (example) => `عدد صفحات غير صالح. استخدم ${example}`,
+  },
+
+  examples: {
+    session: "/session 2:77-83 8m53",
+    read: "/read 5m أو /read 3 15m",
+    extra: "/extra 300 5m أو /extra 2:77-83 8m",
+    kahf: "/kahf 5m أو /kahf 3 15m",
+    import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
+  },
+
+  session: {
+    recorded: "تم تسجيل الجلسة:",
+    extraRecorded: "تم تسجيل الجلسة الإضافية:",
+    surahFallback: (num) => `سورة ${num}`,
+    surah: "سورة",
+    verses: "آيات",
+    in: "في",
+    versesPerHour: (n) => `${n} آية/س`,
+    pagesPerHour: (n) => `${n} صفحة/س`,
+    from: "آ.",
+    to: "إلى",
+  },
+
+  stats: {
+    title: "-- الإحصائيات العامة --",
+    versesRead: "الآيات المقروءة",
+    totalDuration: "المدة الإجمالية",
+    averageSpeed: "السرعة المتوسطة",
+    versesPerHour: "آية/ساعة",
+    versesPerHourShort: "آية/س",
+    pagesPerHourShort: "صفحة/س",
+    currentStreak: (days) => `السلسلة الحالية: ${days} ${days === 1 ? "يوم" : "أيام"}`,
+    bestStreak: (days) => `أفضل سلسلة: ${days} ${days === 1 ? "يوم" : "أيام"}`,
+    thisWeek: "-- هذا الأسبوع --",
+    thisMonth: "-- هذا الشهر --",
+    versesLabel: "الآيات",
+    durationLabel: "المدة",
+    speedLabel: "السرعة",
+    vsLastWeek: (pct) => `${pct} مقارنة بالأسبوع الماضي`,
+    noSession: "لا توجد جلسات مسجلة.",
+  },
+
+  progress: {
+    label: (read, total, pct) => `التقدم: ${read} / ${total} آية (${pct}%)`,
+    lastPosition: (surahName, surahNum, ayah) => `آخر موضع: سورة ${surahName} (${surahNum})، الآية ${ayah}`,
+    khatmas: (count) => `الختمات: ${count}`,
+    page: "صفحة",
+  },
+
+  reminder: {
+    title: "تذكير بقراءة القرآن",
+    lastSession: (date, surahName, ayah) => `آخر جلسة: ${date} - سورة ${surahName} آ.${ayah}`,
+    thisWeek: (sessions, ayahs) => `هذا الأسبوع: ${sessions} ${sessions === 1 ? "جلسة" : "جلسات"}، ${ayahs} آية`,
+    streak: (days) => `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+    keepItUp: "استمر على هذا!",
+    timeToResume: "حان وقت العودة للقراءة!",
+    noSession: "تذكير بقراءة القرآن\n\nلا توجد جلسات مسجلة. ابدأ بـ /session!",
+  },
+
+  read: {
+    pageSingularRead: (page, duration) => `تمت قراءة الصفحة ${page} في ${duration}`,
+    pagePluralRead: (start, end, duration) => `تمت قراءة الصفحات ${start}-${end} في ${duration}`,
+    quranComplete: "اكتمل القرآن! الحمد لله!",
+    nextPage: (page) => `الصفحة التالية: ${page}`,
+    remainingPages: (count, start, end) => `لم يتبق سوى ${count} صفحة (الصفحة ${start} إلى ${end})`,
+    pagesInvalid: "صفحات غير صالحة",
+    formatInvalid: "صيغة غير صالحة",
+  },
+
+  kahf: {
+    pageRead: (page, total, duration) => `تمت قراءة صفحة الكهف ${page}/${total} في ${duration}`,
+    thisWeek: (pages, total, duration) => `هذا الأسبوع: ${pages}/${total} صفحة، ${duration} إجمالي`,
+    complete: (page, total, duration) => `اكتملت سورة الكهف! ${page}/${total} صفحة في ${duration}`,
+    lastWeek: (duration) => `الأسبوع الماضي: ${duration}`,
+    lastWeekFaster: (duration, diff) => `الأسبوع الماضي: ${duration} (-${diff}، أحسنت!)`,
+    lastWeekSlower: (duration, diff) => `الأسبوع الماضي: ${duration} (+${diff})`,
+    reminderBase: "تذكير: اليوم الجمعة! لا تنس قراءة سورة الكهف.",
+    reminderLast: (date, duration) => `آخر قراءة: ${date} في ${duration}`,
+    alreadyComplete: "سورة الكهف مكتملة هذا الأسبوع!",
+    remainingPages: (count, start, end) => `لم يتبق سوى ${count} صفحة من الكهف هذا الأسبوع (الصفحة ${start} إلى ${end})`,
+  },
+
+  months: [
+    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+  ],
+
+  estimation: {
+    notEnoughData: "لا توجد بيانات كافية للتقدير (اقرأ بانتظام لرؤية التوقعات)",
+    monthsRemaining: (pace, months) => `بوتيرتك الحالية (~${pace} صفحة/يوم)، يتبقى حوالي ${months} شهر`,
+    dateEstimate: (pace, day, month, year) => `بهذه الوتيرة (~${pace} صفحة/يوم)، ستنتهي حوالي ${day} ${month} ${year}`,
+  },
+
+  khatma: {
+    first: "ختمة! أتممت قراءتك الأولى الكاملة للقرآن الكريم. الحمد لله!",
+    nth: (n) => `ختمة! أتممت القراءة رقم ${n} للقرآن الكريم. الحمد لله!`,
+  },
+
+  surahComplete: {
+    singular: (name, num) => `اكتملت سورة ${name} (${num})!`,
+    plural: (list) => `السور المكتملة: ${list}`,
+  },
+
+  speed: {
+    title: "-- سرعة القراءة --",
+    globalAverage: (speed) => `المتوسط العام: ${speed} آية/س`,
+    last7Days: (speed) => `متوسط آخر 7 أيام: ${speed} آية/س`,
+    last30Days: (speed) => `متوسط آخر 30 يوم: ${speed} آية/س`,
+    bestSession: (id, speed, date) => `أفضل جلسة: #${id} (${speed} آية/س) - ${date}`,
+    longestSession: (id, duration, date) => `أطول جلسة: #${id} (${duration}) - ${date}`,
+    byType: "حسب النوع:",
+    typeNormal: "عادي",
+    typeExtra: "إضافي",
+    typeKahf: "الكهف",
+    sessionsCount: (count) => `${count} ${count === 1 ? "جلسة" : "جلسات"}`,
+  },
+
+  recap: {
+    title: "-- الملخص الأسبوعي --",
+    noSession: "لا توجد جلسات هذا الأسبوع. حان وقت العودة للقراءة!",
+    pagesRead: "الصفحات المقروءة",
+    duration: "المدة",
+    sessions: "الجلسات",
+    streak: (days) => `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+  },
+
+  timer: {
+    startedNormalPage: "بدأ المؤقت! قراءة عادية (صفحات).",
+    startedNormalVerse: (input) => `بدأ المؤقت! القراءة من ${input}.`,
+    startedExtraPage: (page) => `بدأ المؤقت! قراءة إضافية صفحة ${page}.`,
+    startedExtraVerse: (input) => `بدأ المؤقت! قراءة إضافية من ${input}.`,
+    startedKahf: "بدأ المؤقت! قراءة سورة الكهف.",
+    alreadyActive: (duration) => `يوجد مؤقت نشط منذ ${duration}. استخدم /stop لإيقافه`,
+    noActiveTimer: "لا يوجد مؤقت نشط.",
+    cancelled: "تم إلغاء المؤقت.",
+    confirmLongTimer: (duration) => `المؤقت يعمل منذ ${duration} (أكثر من 4 ساعات). تأكيد الإيقاف؟`,
+    questionPages: (duration) => `توقفت الجلسة (${duration})\nكم صفحة قرأت؟`,
+    questionVerses: (duration) => `توقفت الجلسة (${duration})\nأين توقفت؟ (مثال: 2:83 أو 3:10)`,
+    questionKahfPages: (duration) => `توقفت الجلسة (${duration})\nكم صفحة من الكهف قرأت؟`,
+    notFound: "المؤقت غير موجود.",
+    yes: "نعم",
+    no: "لا",
+    stop: "إيقاف",
+    go: "ابدأ",
+    quranFinished: "أتممت القرآن الكريم! الحمد لله!",
+    invalidPageCount: "عدد صفحات غير صالح. أرسل رقما (مثال: 3) أو /stop cancel للإلغاء",
+    invalidVerseFormat: "صيغة آية غير صالحة. أرسل مثلا 2:83 أو /stop cancel للإلغاء",
+    invalidGoFormat: "صيغة غير صالحة\nمثال: /go أو /go 2:77 أو /go extra 300 أو /go kahf",
+    invalidGoExtraFormat: "صيغة غير صالحة\nمثال: /go extra 300 أو /go extra 2:77",
+    overflowPages: (start, end, max) => `تجاوز: الصفحات ${start}-${end} (الحد الأقصى ${max})`,
+    internalError: "خطأ داخلي أثناء معالجة الاستجابة",
+  },
+
+  manage: {
+    confirm: "تأكيد",
+    cancel: "إلغاء",
+    deletePrompt: (id, desc) => `حذف الجلسة #${id} (${desc})؟`,
+    noSessionToUndo: "لا توجد جلسة للتراجع عنها.",
+    missingId: "المعرف مفقود",
+    invalidId: (input) => `معرف غير صالح '${input}'`,
+    sessionNotFound: (id) => `الجلسة #${id} غير موجودة`,
+    sessionDeleted: (id, range, ayahs, duration) => `تم حذف الجلسة #${id}.\n${range} -- ${ayahs} آية في ${duration}`,
+    sessionNotFoundShort: (id) => `الجلسة #${id} غير موجودة.`,
+    deletionCancelled: "تم إلغاء الحذف.",
+  },
+
+  import: {
+    noData: "لا توجد بيانات للاستيراد",
+    lineError: (lineNum, error) => `السطر ${lineNum}: ${error}`,
+    success: (count) => `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}.`,
+    successWithErrors: (count, errorCount, errors) =>
+      `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}، ${errorCount} ${errorCount === 1 ? "خطأ" : "أخطاء"}:\n${errors}`,
+    allFailed: (errorCount, errors) =>
+      `لم يتم استيراد أي جلسة. ${errorCount} ${errorCount === 1 ? "خطأ" : "أخطاء"}:\n${errors}`,
+  },
+
+  prayer: {
+    title: (city, country) => `أوقات الصلاة - ${city}، ${country}`,
+    date: "التاريخ",
+    cacheRefreshed: "تم تحديث الذاكرة المؤقتة.",
+    fetchError: (error) => `تعذر جلب أوقات الصلاة: ${error}`,
+  },
+
+  debug: {
+    configSection: "-- الإعدادات --",
+    prayerCacheSection: "-- ذاكرة الصلاة المؤقتة --",
+    prayerCacheDateSection: (date) => `-- ذاكرة الصلاة المؤقتة (${date}) --`,
+    lastSessionSection: "-- آخر جلسة --",
+    cronSection: "-- Cron --",
+    dbStatsSection: "-- إحصائيات قاعدة البيانات --",
+    systemSection: "-- النظام --",
+    sent: "مرسل",
+    pending: "قيد الانتظار",
+    noCache: "لا توجد ذاكرة مؤقتة",
+    noSession: "لا توجد جلسة",
+    statsError: "خطأ في الإحصائيات",
+  },
+
+  validation: {
+    surahNotFound: (num) => `السورة ${num} غير موجودة (1-114)`,
+    ayahOutOfRange: (surahNum, ayahCount, requested) =>
+      `السورة ${surahNum} تحتوي على ${ayahCount} آية فقط (الآية ${requested} مطلوبة)`,
+    endBeforeStart: (endSurah, endAyah, startSurah, startAyah) =>
+      `النهاية (${endSurah}:${endAyah}) قبل البداية (${startSurah}:${startAyah})`,
+  },
+
+  prayerApi: {
+    invalidResponse: "استجابة Aladhan غير صالحة",
+    missingField: (field) => `حقل مفقود في استجابة Aladhan: ${field}`,
+    httpError: (status) => `Aladhan API HTTP ${status}`,
+    apiError: (message) => `خطأ Aladhan API: ${message}`,
+  },
+
+  nativeName: "العربية",
+};

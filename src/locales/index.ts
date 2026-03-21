@@ -1,19 +1,21 @@
 import type { Locale } from "./types";
 import { fr } from "./fr";
 import { en } from "./en";
+import { ar } from "./ar";
 
 export type { Locale } from "./types";
 export { fr } from "./fr";
 export { en } from "./en";
+export { ar } from "./ar";
 
-export type Language = "en" | "fr";
+export type Language = "en" | "fr" | "ar";
 
-export const LANGUAGES: Language[] = ["en", "fr"];
+export const LANGUAGES: Language[] = ["en", "fr", "ar"];
 
 export const CALLBACK_LANG_SET = "lang_set";
 export const CALLBACK_LANG_SET_RE = /^lang_set:(.+)$/;
 
-const locales: Record<Language, Locale> = { en, fr };
+const locales: Record<Language, Locale> = { en, fr, ar };
 
 export function getLocale(lang: string | null): Locale {
   if (lang && Object.prototype.hasOwnProperty.call(locales, lang)) {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { en } from "../src/locales/en";
 import { fr } from "../src/locales/fr";
+import { ar } from "../src/locales/ar";
 import { getLocale, buildWelcome, getBotCommands, LANGUAGES } from "../src/locales";
 import type { Locale } from "../src/locales";
 import {
@@ -19,7 +20,7 @@ import {
   formatHistoryLine,
 } from "../src/services/format";
 
-const locales: [string, Locale][] = [["en", en], ["fr", fr]];
+const locales: [string, Locale][] = [["en", en], ["fr", fr], ["ar", ar]];
 
 function walkKeys(obj: Record<string, unknown>, prefix = ""): string[] {
   return Object.entries(obj).flatMap(([key, val]) => {
@@ -35,7 +36,9 @@ describe("locale key exhaustiveness", () => {
   it("all locales have identical key structures", () => {
     const enKeys = walkKeys(en as unknown as Record<string, unknown>).sort();
     const frKeys = walkKeys(fr as unknown as Record<string, unknown>).sort();
+    const arKeys = walkKeys(ar as unknown as Record<string, unknown>).sort();
     expect(frKeys).toEqual(enKeys);
+    expect(arKeys).toEqual(enKeys);
   });
 
   it("no locale has empty string values", () => {
