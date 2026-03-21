@@ -21,6 +21,61 @@ import {
 
 const locales: [string, Locale][] = [["en", en], ["fr", fr]];
 
+function walkKeys(obj: Record<string, unknown>, prefix = ""): string[] {
+  return Object.entries(obj).flatMap(([key, val]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      return walkKeys(val as Record<string, unknown>, path);
+    }
+    return [path];
+  });
+}
+
+describe("locale key exhaustiveness", () => {
+  it("all locales have identical key structures", () => {
+    const enKeys = walkKeys(en as unknown as Record<string, unknown>).sort();
+    const frKeys = walkKeys(fr as unknown as Record<string, unknown>).sort();
+    expect(frKeys).toEqual(enKeys);
+  });
+
+  it("no locale has empty string values", () => {
+    for (const [name, locale] of locales) {
+      const keys = walkKeys(locale as unknown as Record<string, unknown>);
+      for (const keyPath of keys) {
+        const parts = keyPath.split(".");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let val: any = locale;
+        for (const part of parts) {
+          val = val[part];
+        }
+        if (typeof val === "string") {
+          expect(val, `${name}: key "${keyPath}" must not be empty`).not.toBe("");
+        }
+      }
+    }
+  });
+
+  it("no template function returns empty string", () => {
+    for (const [name, locale] of locales) {
+      const keys = walkKeys(locale as unknown as Record<string, unknown>);
+      for (const keyPath of keys) {
+        const parts = keyPath.split(".");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let val: any = locale;
+        for (const part of parts) {
+          val = val[part];
+        }
+        if (typeof val === "function") {
+          const args = Array.from({ length: val.length }, (_, i) => i % 2 === 0 ? "test" : 1);
+          const result = val(...args);
+          expect(typeof result, `${name}: key "${keyPath}" must return a string`).toBe("string");
+          expect(result, `${name}: key "${keyPath}" must return a non-empty string`).not.toBe("");
+        }
+      }
+    }
+  });
+});
+
 describe("locale completeness", () => {
   it.each(locales)("%s: all template functions return non-empty strings", (_, t) => {
     // Config templates
@@ -141,6 +196,12 @@ describe("getLocale", () => {
 
   it("returns en for 'en'", () => {
     expect(getLocale("en")).toBe(en);
+  });
+
+  it("returns en for prototype pollution attempts", () => {
+    expect(getLocale("__proto__")).toBe(en);
+    expect(getLocale("constructor")).toBe(en);
+    expect(getLocale("toString")).toBe(en);
   });
 });
 
