@@ -181,6 +181,63 @@ describe("locale completeness", () => {
   });
 });
 
+describe("format functions match snapshots", () => {
+  it.each(locales)("%s: format snapshots", (_, t) => {
+    expect(formatSessionConfirmation({
+      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83,
+      ayahCount: 7, durationSeconds: 533,
+    }, t)).toMatchSnapshot();
+
+    expect(formatHistoryLine({
+      id: 1, startedAt: "2026-03-13 14:00:00", durationSeconds: 533,
+      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83, ayahCount: 7,
+    }, t)).toMatchSnapshot();
+
+    expect(formatStats({
+      totalAyahs: 300, totalSeconds: 5000, currentStreak: 5, bestStreak: 10,
+      weekAyahs: 50, weekSeconds: 1000, monthAyahs: 200, monthSeconds: 4000,
+    }, t)).toMatchSnapshot();
+
+    expect(formatProgress({
+      totalAyahsRead: 300, totalAyahs: 6236, lastSurah: 2, lastAyah: 100,
+    }, t)).toMatchSnapshot();
+
+    expect(formatReminder({
+      lastSessionDate: "2026-03-13 14:00:00", lastSurahNum: 2, lastAyah: 83,
+      weekSessions: 5, weekAyahs: 50, streak: 3,
+    }, t)).toMatchSnapshot();
+
+    expect(formatReadConfirmation({
+      pageStart: 10, pageEnd: 10, durationSeconds: 300,
+      totalPagesRead: 10, totalPages: 604,
+    }, t)).toMatchSnapshot();
+
+    expect(formatKahfReminder({}, t)).toMatchSnapshot();
+    expect(formatKahfReminder({ lastDate: "2026-03-07 10:00:00", lastDuration: 600 }, t)).toMatchSnapshot();
+
+    expect(formatEstimation(2.5, 500, "2026-03-13", t)).toMatchSnapshot();
+    expect(formatKhatmaMessage(1, t)).toMatchSnapshot();
+    expect(formatKhatmaMessage(3, t)).toMatchSnapshot();
+    expect(formatSurahsComplete([{ number: 1, name: "Al-Fatiha" }], t)).toMatchSnapshot();
+
+    expect(formatError("test error", t)).toMatchSnapshot();
+    expect(formatError("test error", t, "/example")).toMatchSnapshot();
+
+    expect(formatSpeedReport({
+      averages: { global: 150, last7Days: 160, last30Days: 140 },
+      bestSession: null, longestSession: null, byType: [],
+    }, t)).toMatchSnapshot();
+
+    expect(formatWeeklyRecap({
+      thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+      lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+      thisWeekPages: 12, lastWeekPages: 10,
+      streak: { currentStreak: 8, bestStreak: 15 },
+      completedSurahs: [],
+    }, t)).toMatchSnapshot();
+  });
+});
+
 describe("getLocale", () => {
   it("returns en for null", () => {
     expect(getLocale(null)).toBe(en);

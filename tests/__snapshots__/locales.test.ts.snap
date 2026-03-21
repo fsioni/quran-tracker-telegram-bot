@@ -1,0 +1,161 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`format functions match snapshots > en: format snapshots 1`] = `"Session recorded: surah Al-Baqara v.77 to v.83 -- 7 verses in 8m53 (47 verses/h)"`;
+
+exports[`format functions match snapshots > en: format snapshots 2`] = `"[N] #1 | 13/03 14:00 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)"`;
+
+exports[`format functions match snapshots > en: format snapshots 3`] = `
+"-- Overall stats --
+Verses read : 300
+Total duration : 1h23m20
+Average speed : 216 verses/hour
+Current streak: 5 days
+Best streak: 10 days
+
+-- This week --
+Verses : 50 | Duration : 16m40 | Speed : 180 verses/h
+
+-- This month --
+Verses : 200 | Duration : 1h6m40 | Speed : 180 verses/h"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 4`] = `
+"Progress: 300 / 6236 verses (4.8%)
+[#-------------------] 4.8%
+Last position: surah Al-Baqara (2), verse 100"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 5`] = `
+"Quran reading reminder
+
+Last session: 13/03 - surah Al-Baqara v.83
+This week: 5 sessions, 50 verses
+Streak: 3 consecutive days
+
+Keep it up!"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 6`] = `
+"Page 10 read in 5m -- 12.0 pages/h (10/604)
+Next page: 11"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 7`] = `"Reminder: it's Friday! Remember to read surah Al-Kahf."`;
+
+exports[`format functions match snapshots > en: format snapshots 8`] = `
+"Reminder: it's Friday! Remember to read surah Al-Kahf.
+
+Last reading: 07/03 in 10m"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 9`] = `"At this pace (~2.5 pages/day), you'll finish around September 29, 2026"`;
+
+exports[`format functions match snapshots > en: format snapshots 10`] = `"Khatma! You have completed your first full reading of the Quran. Alhamdulillah!"`;
+
+exports[`format functions match snapshots > en: format snapshots 11`] = `"Khatma! You have completed your 3rd full reading of the Quran. Alhamdulillah!"`;
+
+exports[`format functions match snapshots > en: format snapshots 12`] = `"Surah Al-Fatiha (1) complete!"`;
+
+exports[`format functions match snapshots > en: format snapshots 13`] = `"Error : test error"`;
+
+exports[`format functions match snapshots > en: format snapshots 14`] = `
+"Error : test error
+Example : /example"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 15`] = `
+"-- Reading speed --
+
+Overall average: 150 verses/h
+Last 7 days average: 160 verses/h
+Last 30 days average: 140 verses/h"
+`;
+
+exports[`format functions match snapshots > en: format snapshots 16`] = `
+"-- Weekly recap --
+
+Pages read : 12 (+20%)
+Duration : 50m (+20%)
+Sessions : 5 (+25%)
+Streak: 8 consecutive days"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 1`] = `"Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 8m53 (47 versets/h)"`;
+
+exports[`format functions match snapshots > fr: format snapshots 2`] = `"[N] #1 | 13/03 14h00 | 8m53 | Al-Baqara 2:77-83 (7v, 47v/h)"`;
+
+exports[`format functions match snapshots > fr: format snapshots 3`] = `
+"-- Stats globales --
+Versets lus : 300
+Durée totale : 1h23m20
+Vitesse moyenne : 216 versets/heure
+Streak actuel : 5 jours
+Meilleur streak : 10 jours
+
+-- Cette semaine --
+Versets : 50 | Durée : 16m40 | Vitesse : 180 versets/h
+
+-- Ce mois --
+Versets : 200 | Durée : 1h6m40 | Vitesse : 180 versets/h"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 4`] = `
+"Progression : 300 / 6236 versets (4.8%)
+[#-------------------] 4.8%
+Dernier point : sourate Al-Baqara (2), verset 100"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 5`] = `
+"Rappel lecture du Coran
+
+Dernière session : 13/03 - sourate Al-Baqara v.83
+Cette semaine : 5 sessions, 50 versets
+Série : 3 jours consécutifs
+
+Continue comme ça !"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 6`] = `
+"Page 10 lue en 5m -- 12.0 pages/h (10/604)
+Prochaine page : 11"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 7`] = `"Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf."`;
+
+exports[`format functions match snapshots > fr: format snapshots 8`] = `
+"Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.
+
+Dernière lecture : 07/03 en 10m"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 9`] = `"À ce rythme (~2.5 pages/jour), tu finiras vers le 29 septembre 2026"`;
+
+exports[`format functions match snapshots > fr: format snapshots 10`] = `"Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !"`;
+
+exports[`format functions match snapshots > fr: format snapshots 11`] = `"Khatma ! Tu as terminé ta 3e lecture complète du Coran. Alhamdulillah !"`;
+
+exports[`format functions match snapshots > fr: format snapshots 12`] = `"Sourate Al-Fatiha (1) terminée !"`;
+
+exports[`format functions match snapshots > fr: format snapshots 13`] = `"Erreur : test error"`;
+
+exports[`format functions match snapshots > fr: format snapshots 14`] = `
+"Erreur : test error
+Exemple : /example"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 15`] = `
+"-- Vitesse de lecture --
+
+Moyenne globale : 150 versets/h
+Moyenne 7 derniers jours : 160 versets/h
+Moyenne 30 derniers jours : 140 versets/h"
+`;
+
+exports[`format functions match snapshots > fr: format snapshots 16`] = `
+"-- Récap hebdomadaire --
+
+Pages lues : 12 (+20%)
+Durée : 50m (+20%)
+Sessions : 5 (+25%)
+Streak : 8 jours consécutifs"
+`;
