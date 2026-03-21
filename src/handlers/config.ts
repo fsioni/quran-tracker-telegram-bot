@@ -4,7 +4,7 @@ import { invalidateLocaleCache } from "../services/localeCache";
 import { getConfig, setConfig, clearPrayerCache } from "../services/db";
 import { formatError } from "../services/format";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
-import { LANGUAGES, CALLBACK_LANG_SET, getLocale, getBotCommands, buildWelcome } from "../locales";
+import { LANGUAGES, CALLBACK_LANG_SET, getLocale, getBotCommands, buildWelcome, type Locale } from "../locales";
 
 export async function startHandler(ctx: CustomContext): Promise<void> {
   await setConfig(ctx.db, "chat_id", String(ctx.chat!.id));
