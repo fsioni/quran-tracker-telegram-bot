@@ -1,47 +1,60 @@
+import { Bot, webhookCallback } from "grammy";
 import { createBot } from "./bot";
-import { Bot } from "grammy";
-import { webhookCallback } from "grammy";
+import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "./config";
+import { CALLBACK_TIMER_GO } from "./handlers/timer";
+import { getBotCommands, getLocale } from "./locales";
+import type { PrayerCacheRow } from "./services/db";
 import {
+  calculateStreak,
+  cleanOldCache,
   getConfig,
-  getPrayerCache,
-  setPrayerCache,
-  markPrayerSent,
+  getKahfStats,
   getLastSession,
   getPeriodStats,
-  calculateStreak,
+  getPrayerCache,
   getTodayInTimezone,
-  cleanOldCache,
-  getKahfStats,
+  markPrayerSent,
   setConfig,
+  setPrayerCache,
 } from "./services/db";
-import type { PrayerCacheRow } from "./services/db";
-import { fetchPrayerTimes, getDueReminders, getNowInTimezone, isReminderDue } from "./services/prayer";
-import { formatReminder, formatKahfReminder, formatWeeklyRecap } from "./services/format";
+import {
+  formatKahfReminder,
+  formatReminder,
+  formatWeeklyRecap,
+} from "./services/format";
+import {
+  fetchPrayerTimes,
+  getDueReminders,
+  getNowInTimezone,
+  isReminderDue,
+} from "./services/prayer";
 import { buildWeeklyRecap } from "./services/weeklyRecap";
-import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "./config";
-import { CALLBACK_TIMER_GO } from "./handlers/timer";
-import { getLocale, getBotCommands } from "./locales";
 
 export interface Env {
-  DB: D1Database;
-  BOT_TOKEN: string;
   ALLOWED_USER_ID: string;
+  BOT_TOKEN: string;
+  DB: D1Database;
 }
 
 async function sendTelegramMessage(
   botToken: string,
   chatId: string,
   text: string,
-  replyMarkup?: unknown,
+  replyMarkup?: unknown
 ): Promise<boolean> {
   try {
     const body: Record<string, unknown> = { chat_id: chatId, text };
-    if (replyMarkup) body.reply_markup = replyMarkup;
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    if (replyMarkup) {
+      body.reply_markup = replyMarkup;
+    }
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
     if (!response.ok) {
       console.error(`Telegram sendMessage HTTP ${response.status}`);
       return false;
@@ -53,9 +66,14 @@ async function sendTelegramMessage(
   }
 }
 
-export async function handleScheduled(db: D1Database, botToken: string): Promise<void> {
+export async function handleScheduled(
+  db: D1Database,
+  botToken: string
+): Promise<void> {
   const chatId = await getConfig(db, "chat_id");
-  if (!chatId) return;
+  if (!chatId) {
+    return;
+  }
 
   const [tzRaw, cityRaw, countryRaw, langRaw] = await Promise.all([
     getConfig(db, "timezone"),
@@ -117,22 +135,32 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
     let message: string;
     if (lastSession) {
-      message = formatReminder({
-        lastSessionDate: lastSession.startedAt,
-        lastSurahNum: lastSession.surahEnd,
-        lastAyah: lastSession.ayahEnd,
-        weekSessions: weekStats.sessions,
-        weekAyahs: weekStats.ayahs,
-        streak: streak.currentStreak,
-      }, t);
+      message = formatReminder(
+        {
+          lastSessionDate: lastSession.startedAt,
+          lastSurahNum: lastSession.surahEnd,
+          lastAyah: lastSession.ayahEnd,
+          weekSessions: weekStats.sessions,
+          weekAyahs: weekStats.ayahs,
+          streak: streak.currentStreak,
+        },
+        t
+      );
     } else {
       message = t.reminder.noSession;
     }
 
     const goKeyboard = {
-      inline_keyboard: [[{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }]],
+      inline_keyboard: [
+        [{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }],
+      ],
     };
-    const sent = await sendTelegramMessage(botToken, chatId, message, goKeyboard);
+    const sent = await sendTelegramMessage(
+      botToken,
+      chatId,
+      message,
+      goKeyboard
+    );
     if (sent) {
       for (const prayer of duePrayers) {
         await markPrayerSent(db, today, prayer);
@@ -142,22 +170,26 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
 
   // Al-Kahf Friday reminder
   const nowDate = new Date();
-  const formatter = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" });
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "long",
+  });
   const dayOfWeek = formatter.format(nowDate);
 
   if (dayOfWeek === "Friday") {
     const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
-    if (kahfReminderLast !== today) {
-      if (isReminderDue(nowHHMM, cache.fajr)) {
-        const kahfStats = await getKahfStats(db);
-        const kahfMsg = formatKahfReminder({
+    if (kahfReminderLast !== today && isReminderDue(nowHHMM, cache.fajr)) {
+      const kahfStats = await getKahfStats(db);
+      const kahfMsg = formatKahfReminder(
+        {
           lastDate: kahfStats.lastDate ?? undefined,
           lastDuration: kahfStats.lastDuration ?? undefined,
-        }, t);
-        const kahfSent = await sendTelegramMessage(botToken, chatId, kahfMsg);
-        if (kahfSent) {
-          await setConfig(db, "kahf_reminder_last", today);
-        }
+        },
+        t
+      );
+      const kahfSent = await sendTelegramMessage(botToken, chatId, kahfMsg);
+      if (kahfSent) {
+        await setConfig(db, "kahf_reminder_last", today);
       }
     }
   }
@@ -168,14 +200,18 @@ export async function handleScheduled(db: D1Database, botToken: string): Promise
     if (recapLast !== today && nowHHMM >= "21:00") {
       try {
         const recapResult = await buildWeeklyRecap(db, tz);
-        if (!recapResult.ok) {
-          console.error("buildWeeklyRecap failed:", recapResult.error);
-        } else {
+        if (recapResult.ok) {
           const recapMsg = formatWeeklyRecap(recapResult.value, t);
-          const recapSent = await sendTelegramMessage(botToken, chatId, recapMsg);
+          const recapSent = await sendTelegramMessage(
+            botToken,
+            chatId,
+            recapMsg
+          );
           if (recapSent) {
             await setConfig(db, "weekly_recap_last", today);
           }
+        } else {
+          console.error("buildWeeklyRecap failed:", recapResult.error);
         }
       } catch (e) {
         console.error("Weekly recap failed:", (e as Error).message);
@@ -212,7 +248,7 @@ export default {
   async scheduled(
     event: ScheduledEvent,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<void> {
     ctx.waitUntil(handleScheduled(env.DB, env.BOT_TOKEN));
   },

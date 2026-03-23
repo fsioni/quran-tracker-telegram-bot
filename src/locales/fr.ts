@@ -42,28 +42,40 @@ export const fr: Locale = {
     languageLabel: "Langue",
     defaultSuffix: " (défaut)",
     missingValue: "valeur manquante",
-    cityUpdated: (city) => `Ville mise à jour : ${city}\nCache des prières réinitialisé.`,
+    cityUpdated: (city) =>
+      `Ville mise à jour : ${city}\nCache des prières réinitialisé.`,
     countryCodeInvalid: "le code pays doit faire 2 lettres (ISO)",
-    countryUpdated: (country) => `Pays mis à jour : ${country}\nCache des prières réinitialisé.`,
+    countryUpdated: (country) =>
+      `Pays mis à jour : ${country}\nCache des prières réinitialisé.`,
     timezoneInvalid: "fuseau horaire invalide",
     timezoneUpdated: (tz) => `Fuseau horaire mis à jour : ${tz}`,
     unknownParam: (param) => `paramètre inconnu '${param}'`,
     languageUpdated: (lang) => `Langue mise à jour : ${lang}`,
-    languageInvalid: (available) => `langue invalide. Langues disponibles : ${available}`,
+    languageInvalid: (available) =>
+      `langue invalide. Langues disponibles : ${available}`,
   },
 
   parse: {
-    invalidVerseFormat: (input) => `format de verset invalide '${input}'. Utilise 2:77`,
-    invalidDurationFormat: (input) => `format de durée invalide '${input}'. Utilise 8m ou 8m53`,
-    invalidRangeFormat: (input) => `format de plage invalide '${input}'. Utilise 2:77-83 ou 2:280-3:10`,
-    invalidImportLineFormat: (line) => `format de ligne invalide '${line}'. Utilise JJ/MM, HHhMM - DURÉE - RANGE`,
+    invalidVerseFormat: (input) =>
+      `format de verset invalide '${input}'. Utilise 2:77`,
+    invalidDurationFormat: (input) =>
+      `format de durée invalide '${input}'. Utilise 8m ou 8m53`,
+    invalidRangeFormat: (input) =>
+      `format de plage invalide '${input}'. Utilise 2:77-83 ou 2:280-3:10`,
+    invalidImportLineFormat: (line) =>
+      `format de ligne invalide '${line}'. Utilise JJ/MM, HHhMM - DURÉE - RANGE`,
     invalidMonth: (month) => `mois invalide '${month}' (1-12)`,
-    invalidDay: (day, month, max) => `jour invalide '${day}' pour le mois ${month} (1-${max})`,
-    invalidPage: (page, max) => `page invalide '${page}'. Les pages vont de 1 à ${max}`,
-    pageStartAfterEnd: (start, end) => `page de début (${start}) doit être inférieure ou égale à la page de fin (${end})`,
-    invalidPageFormat: (input) => `format de page invalide '${input}'. Utilise 300 ou 300-304`,
+    invalidDay: (day, month, max) =>
+      `jour invalide '${day}' pour le mois ${month} (1-${max})`,
+    invalidPage: (page, max) =>
+      `page invalide '${page}'. Les pages vont de 1 à ${max}`,
+    pageStartAfterEnd: (start, end) =>
+      `page de début (${start}) doit être inférieure ou égale à la page de fin (${end})`,
+    invalidPageFormat: (input) =>
+      `format de page invalide '${input}'. Utilise 300 ou 300-304`,
     invalidFormat: (example) => `format invalide. Utilise ${example}`,
-    invalidPageCount: (example) => `nombre de pages invalide. Utilise ${example}`,
+    invalidPageCount: (example) =>
+      `nombre de pages invalide. Utilise ${example}`,
   },
 
   examples: {
@@ -95,8 +107,10 @@ export const fr: Locale = {
     versesPerHour: "versets/heure",
     versesPerHourShort: "versets/h",
     pagesPerHourShort: "pages/h",
-    currentStreak: (days) => `Streak actuel : ${days} ${days <= 1 ? "jour" : "jours"}`,
-    bestStreak: (days) => `Meilleur streak : ${days} ${days <= 1 ? "jour" : "jours"}`,
+    currentStreak: (days) =>
+      `Streak actuel : ${days} ${days <= 1 ? "jour" : "jours"}`,
+    bestStreak: (days) =>
+      `Meilleur streak : ${days} ${days <= 1 ? "jour" : "jours"}`,
     thisWeek: "-- Cette semaine --",
     thisMonth: "-- Ce mois --",
     versesLabel: "Versets",
@@ -107,59 +121,89 @@ export const fr: Locale = {
   },
 
   progress: {
-    label: (read, total, pct) => `Progression : ${read} / ${total} versets (${pct}%)`,
-    lastPosition: (surahName, surahNum, ayah) => `Dernier point : sourate ${surahName} (${surahNum}), verset ${ayah}`,
+    label: (read, total, pct) =>
+      `Progression : ${read} / ${total} versets (${pct}%)`,
+    lastPosition: (surahName, surahNum, ayah) =>
+      `Dernier point : sourate ${surahName} (${surahNum}), verset ${ayah}`,
     khatmas: (count) => `Khatmas : ${count}`,
     page: "Page",
   },
 
   reminder: {
     title: "Rappel lecture du Coran",
-    lastSession: (date, surahName, ayah) => `Dernière session : ${date} - sourate ${surahName} v.${ayah}`,
-    thisWeek: (sessions, ayahs) => `Cette semaine : ${sessions} ${sessions <= 1 ? "session" : "sessions"}, ${ayahs} versets`,
-    streak: (days) => `Série : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
+    lastSession: (date, surahName, ayah) =>
+      `Dernière session : ${date} - sourate ${surahName} v.${ayah}`,
+    thisWeek: (sessions, ayahs) =>
+      `Cette semaine : ${sessions} ${sessions <= 1 ? "session" : "sessions"}, ${ayahs} versets`,
+    streak: (days) =>
+      `Série : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
     keepItUp: "Continue comme ça !",
     timeToResume: "C'est le moment de reprendre !",
-    noSession: "Rappel lecture du Coran\n\nAucune session enregistrée. Commence avec /session !",
+    noSession:
+      "Rappel lecture du Coran\n\nAucune session enregistrée. Commence avec /session !",
   },
 
   read: {
     pageSingularRead: (page, duration) => `Page ${page} lue en ${duration}`,
-    pagePluralRead: (start, end, duration) => `Pages ${start}-${end} lues en ${duration}`,
+    pagePluralRead: (start, end, duration) =>
+      `Pages ${start}-${end} lues en ${duration}`,
     quranComplete: "Coran terminé ! Alhamdulillah !",
     nextPage: (page) => `Prochaine page : ${page}`,
-    remainingPages: (count, start, end) => `il ne reste que ${count} page(s) (page ${start} à ${end})`,
+    remainingPages: (count, start, end) =>
+      `il ne reste que ${count} page(s) (page ${start} à ${end})`,
     pagesInvalid: "pages invalides",
     formatInvalid: "format invalide",
   },
 
   kahf: {
-    pageRead: (page, total, duration) => `Al-Kahf page ${page}/${total} lue en ${duration}`,
-    thisWeek: (pages, total, duration) => `Cette semaine : ${pages}/${total} pages, ${duration} au total`,
-    complete: (page, total, duration) => `Al-Kahf terminée ! ${page}/${total} pages en ${duration}`,
+    pageRead: (page, total, duration) =>
+      `Al-Kahf page ${page}/${total} lue en ${duration}`,
+    thisWeek: (pages, total, duration) =>
+      `Cette semaine : ${pages}/${total} pages, ${duration} au total`,
+    complete: (page, total, duration) =>
+      `Al-Kahf terminée ! ${page}/${total} pages en ${duration}`,
     lastWeek: (duration) => `Semaine dernière : ${duration}`,
-    lastWeekFaster: (duration, diff) => `Semaine dernière : ${duration} (-${diff}, bravo !)`,
-    lastWeekSlower: (duration, diff) => `Semaine dernière : ${duration} (+${diff})`,
+    lastWeekFaster: (duration, diff) =>
+      `Semaine dernière : ${duration} (-${diff}, bravo !)`,
+    lastWeekSlower: (duration, diff) =>
+      `Semaine dernière : ${duration} (+${diff})`,
     reminderBase: "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.",
-    reminderLast: (date, duration) => `Dernière lecture : ${date} en ${duration}`,
+    reminderLast: (date, duration) =>
+      `Dernière lecture : ${date} en ${duration}`,
     alreadyComplete: "Al-Kahf déjà terminée cette semaine !",
-    remainingPages: (count, start, end) => `il ne reste que ${count} page(s) d'Al-Kahf cette semaine (page ${start} à ${end})`,
+    remainingPages: (count, start, end) =>
+      `il ne reste que ${count} page(s) d'Al-Kahf cette semaine (page ${start} à ${end})`,
   },
 
   months: [
-    "janvier", "février", "mars", "avril", "mai", "juin",
-    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
   ],
 
   estimation: {
-    notEnoughData: "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)",
-    monthsRemaining: (pace, months) => `À ton rythme actuel (~${pace} pages/jour), il te reste environ ${months} mois`,
-    dateEstimate: (pace, day, month, year) => `À ce rythme (~${pace} pages/jour), tu finiras vers le ${day} ${month} ${year}`,
+    notEnoughData:
+      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)",
+    monthsRemaining: (pace, months) =>
+      `À ton rythme actuel (~${pace} pages/jour), il te reste environ ${months} mois`,
+    dateEstimate: (pace, day, month, year) =>
+      `À ce rythme (~${pace} pages/jour), tu finiras vers le ${day} ${month} ${year}`,
   },
 
   khatma: {
-    first: "Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !",
-    nth: (n) => `Khatma ! Tu as terminé ta ${n === 1 ? "1re" : `${n}e`} lecture complète du Coran. Alhamdulillah !`,
+    first:
+      "Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !",
+    nth: (n) =>
+      `Khatma ! Tu as terminé ta ${n === 1 ? "1re" : `${n}e`} lecture complète du Coran. Alhamdulillah !`,
   },
 
   surahComplete: {
@@ -172,8 +216,10 @@ export const fr: Locale = {
     globalAverage: (speed) => `Moyenne globale : ${speed} versets/h`,
     last7Days: (speed) => `Moyenne 7 derniers jours : ${speed} versets/h`,
     last30Days: (speed) => `Moyenne 30 derniers jours : ${speed} versets/h`,
-    bestSession: (id, speed, date) => `Meilleure session : #${id} (${speed} versets/h) - ${date}`,
-    longestSession: (id, duration, date) => `Plus longue session : #${id} (${duration}) - ${date}`,
+    bestSession: (id, speed, date) =>
+      `Meilleure session : #${id} (${speed} versets/h) - ${date}`,
+    longestSession: (id, duration, date) =>
+      `Plus longue session : #${id} (${duration}) - ${date}`,
     byType: "Par type :",
     typeNormal: "Normal",
     typeExtra: "Extra",
@@ -187,33 +233,45 @@ export const fr: Locale = {
     pagesRead: "Pages lues",
     duration: "Durée",
     sessions: "Sessions",
-    streak: (days) => `Streak : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
+    streak: (days) =>
+      `Streak : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
   },
 
   timer: {
     startedNormalPage: "Timer démarré ! Lecture normale (pages).",
     startedNormalVerse: (input) => `Timer démarré ! Lecture depuis ${input}.`,
     startedExtraPage: (page) => `Timer démarré ! Lecture extra page ${page}.`,
-    startedExtraVerse: (input) => `Timer démarré ! Lecture extra depuis ${input}.`,
+    startedExtraVerse: (input) =>
+      `Timer démarré ! Lecture extra depuis ${input}.`,
     startedKahf: "Timer démarré ! Lecture d'Al-Kahf.",
-    alreadyActive: (duration) => `un timer est déjà actif depuis ${duration}. Utilise /stop pour l'arrêter`,
+    alreadyActive: (duration) =>
+      `un timer est déjà actif depuis ${duration}. Utilise /stop pour l'arrêter`,
     noActiveTimer: "Aucun timer actif.",
     cancelled: "Timer annulé.",
-    confirmLongTimer: (duration) => `Le timer tourne depuis ${duration} (plus de 4h). Confirmer l'arrêt ?`,
-    questionPages: (duration) => `Session arrêtée (${duration})\nCombien de pages as-tu lues ?`,
-    questionVerses: (duration) => `Session arrêtée (${duration})\nJusqu'où as-tu lu ? (ex: 2:83 ou 3:10)`,
-    questionKahfPages: (duration) => `Session arrêtée (${duration})\nCombien de pages d'Al-Kahf as-tu lues ?`,
+    confirmLongTimer: (duration) =>
+      `Le timer tourne depuis ${duration} (plus de 4h). Confirmer l'arrêt ?`,
+    questionPages: (duration) =>
+      `Session arrêtée (${duration})\nCombien de pages as-tu lues ?`,
+    questionVerses: (duration) =>
+      `Session arrêtée (${duration})\nJusqu'où as-tu lu ? (ex: 2:83 ou 3:10)`,
+    questionKahfPages: (duration) =>
+      `Session arrêtée (${duration})\nCombien de pages d'Al-Kahf as-tu lues ?`,
     notFound: "Timer introuvable.",
     yes: "Oui",
     no: "Non",
     stop: "Stop",
     go: "Go",
     quranFinished: "Tu as terminé le Coran ! Alhamdulillah !",
-    invalidPageCount: "nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler",
-    invalidVerseFormat: "format de verset invalide. Envoie ex: 2:83 ou /stop cancel pour annuler",
-    invalidGoFormat: "format invalide\nExemple : /go ou /go 2:77 ou /go extra 300 ou /go kahf",
-    invalidGoExtraFormat: "format invalide\nExemple : /go extra 300 ou /go extra 2:77",
-    overflowPages: (start, end, max) => `dépassement: pages ${start}-${end} (max ${max})`,
+    invalidPageCount:
+      "nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler",
+    invalidVerseFormat:
+      "format de verset invalide. Envoie ex: 2:83 ou /stop cancel pour annuler",
+    invalidGoFormat:
+      "format invalide\nExemple : /go ou /go 2:77 ou /go extra 300 ou /go kahf",
+    invalidGoExtraFormat:
+      "format invalide\nExemple : /go extra 300 ou /go extra 2:77",
+    overflowPages: (start, end, max) =>
+      `dépassement: pages ${start}-${end} (max ${max})`,
     internalError: "erreur interne lors du traitement de la réponse",
   },
 
@@ -225,7 +283,8 @@ export const fr: Locale = {
     missingId: "ID manquant",
     invalidId: (input) => `ID invalide '${input}'`,
     sessionNotFound: (id) => `la session #${id} n'existe pas`,
-    sessionDeleted: (id, range, ayahs, duration) => `Session #${id} supprimée.\n${range} -- ${ayahs} versets en ${duration}`,
+    sessionDeleted: (id, range, ayahs, duration) =>
+      `Session #${id} supprimée.\n${range} -- ${ayahs} versets en ${duration}`,
     sessionNotFoundShort: (id) => `Session #${id} introuvable.`,
     deletionCancelled: "Suppression annulée.",
   },
@@ -233,7 +292,8 @@ export const fr: Locale = {
   import: {
     noData: "aucune donnée à importer",
     lineError: (lineNum, error) => `Ligne ${lineNum} : ${error}`,
-    success: (count) => `${count} session${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""}.`,
+    success: (count) =>
+      `${count} session${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""}.`,
     successWithErrors: (count, errorCount, errors) =>
       `${count} session${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""}, ${errorCount} erreur${errorCount > 1 ? "s" : ""} :\n${errors}`,
     allFailed: (errorCount, errors) =>

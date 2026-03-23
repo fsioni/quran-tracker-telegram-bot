@@ -44,24 +44,33 @@ export const en: Locale = {
     missingValue: "missing value",
     cityUpdated: (city) => `City updated: ${city}\nPrayer cache cleared.`,
     countryCodeInvalid: "country code must be 2 letters (ISO)",
-    countryUpdated: (country) => `Country updated: ${country}\nPrayer cache cleared.`,
+    countryUpdated: (country) =>
+      `Country updated: ${country}\nPrayer cache cleared.`,
     timezoneInvalid: "invalid timezone",
     timezoneUpdated: (tz) => `Timezone updated: ${tz}`,
     unknownParam: (param) => `unknown parameter '${param}'`,
     languageUpdated: (lang) => `Language updated: ${lang}`,
-    languageInvalid: (available) => `invalid language. Available languages: ${available}`,
+    languageInvalid: (available) =>
+      `invalid language. Available languages: ${available}`,
   },
 
   parse: {
     invalidVerseFormat: (input) => `invalid verse format '${input}'. Use 2:77`,
-    invalidDurationFormat: (input) => `invalid duration format '${input}'. Use 8m or 8m53`,
-    invalidRangeFormat: (input) => `invalid range format '${input}'. Use 2:77-83 or 2:280-3:10`,
-    invalidImportLineFormat: (line) => `invalid line format '${line}'. Use DD/MM, HHhMM - DURATION - RANGE`,
+    invalidDurationFormat: (input) =>
+      `invalid duration format '${input}'. Use 8m or 8m53`,
+    invalidRangeFormat: (input) =>
+      `invalid range format '${input}'. Use 2:77-83 or 2:280-3:10`,
+    invalidImportLineFormat: (line) =>
+      `invalid line format '${line}'. Use DD/MM, HHhMM - DURATION - RANGE`,
     invalidMonth: (month) => `invalid month '${month}' (1-12)`,
-    invalidDay: (day, month, max) => `invalid day '${day}' for month ${month} (1-${max})`,
-    invalidPage: (page, max) => `invalid page '${page}'. Pages range from 1 to ${max}`,
-    pageStartAfterEnd: (start, end) => `start page (${start}) must be less than or equal to end page (${end})`,
-    invalidPageFormat: (input) => `invalid page format '${input}'. Use 300 or 300-304`,
+    invalidDay: (day, month, max) =>
+      `invalid day '${day}' for month ${month} (1-${max})`,
+    invalidPage: (page, max) =>
+      `invalid page '${page}'. Pages range from 1 to ${max}`,
+    pageStartAfterEnd: (start, end) =>
+      `start page (${start}) must be less than or equal to end page (${end})`,
+    invalidPageFormat: (input) =>
+      `invalid page format '${input}'. Use 300 or 300-304`,
     invalidFormat: (example) => `invalid format. Use ${example}`,
     invalidPageCount: (example) => `invalid page count. Use ${example}`,
   },
@@ -95,7 +104,8 @@ export const en: Locale = {
     versesPerHour: "verses/hour",
     versesPerHourShort: "verses/h",
     pagesPerHourShort: "pages/h",
-    currentStreak: (days) => `Current streak: ${days} ${days === 1 ? "day" : "days"}`,
+    currentStreak: (days) =>
+      `Current streak: ${days} ${days === 1 ? "day" : "days"}`,
     bestStreak: (days) => `Best streak: ${days} ${days === 1 ? "day" : "days"}`,
     thisWeek: "-- This week --",
     thisMonth: "-- This month --",
@@ -107,58 +117,85 @@ export const en: Locale = {
   },
 
   progress: {
-    label: (read, total, pct) => `Progress: ${read} / ${total} verses (${pct}%)`,
-    lastPosition: (surahName, surahNum, ayah) => `Last position: surah ${surahName} (${surahNum}), verse ${ayah}`,
+    label: (read, total, pct) =>
+      `Progress: ${read} / ${total} verses (${pct}%)`,
+    lastPosition: (surahName, surahNum, ayah) =>
+      `Last position: surah ${surahName} (${surahNum}), verse ${ayah}`,
     khatmas: (count) => `Khatmas: ${count}`,
     page: "Page",
   },
 
   reminder: {
     title: "Quran reading reminder",
-    lastSession: (date, surahName, ayah) => `Last session: ${date} - surah ${surahName} v.${ayah}`,
-    thisWeek: (sessions, ayahs) => `This week: ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} verses`,
-    streak: (days) => `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
+    lastSession: (date, surahName, ayah) =>
+      `Last session: ${date} - surah ${surahName} v.${ayah}`,
+    thisWeek: (sessions, ayahs) =>
+      `This week: ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} verses`,
+    streak: (days) =>
+      `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
     keepItUp: "Keep it up!",
     timeToResume: "Time to get back to it!",
-    noSession: "Quran reading reminder\n\nNo session recorded. Start with /session!",
+    noSession:
+      "Quran reading reminder\n\nNo session recorded. Start with /session!",
   },
 
   read: {
     pageSingularRead: (page, duration) => `Page ${page} read in ${duration}`,
-    pagePluralRead: (start, end, duration) => `Pages ${start}-${end} read in ${duration}`,
+    pagePluralRead: (start, end, duration) =>
+      `Pages ${start}-${end} read in ${duration}`,
     quranComplete: "Quran complete! Alhamdulillah!",
     nextPage: (page) => `Next page: ${page}`,
-    remainingPages: (count, start, end) => `only ${count} page(s) remaining (page ${start} to ${end})`,
+    remainingPages: (count, start, end) =>
+      `only ${count} page(s) remaining (page ${start} to ${end})`,
     pagesInvalid: "invalid pages",
     formatInvalid: "invalid format",
   },
 
   kahf: {
-    pageRead: (page, total, duration) => `Al-Kahf page ${page}/${total} read in ${duration}`,
-    thisWeek: (pages, total, duration) => `This week: ${pages}/${total} pages, ${duration} total`,
-    complete: (page, total, duration) => `Al-Kahf complete! ${page}/${total} pages in ${duration}`,
+    pageRead: (page, total, duration) =>
+      `Al-Kahf page ${page}/${total} read in ${duration}`,
+    thisWeek: (pages, total, duration) =>
+      `This week: ${pages}/${total} pages, ${duration} total`,
+    complete: (page, total, duration) =>
+      `Al-Kahf complete! ${page}/${total} pages in ${duration}`,
     lastWeek: (duration) => `Last week: ${duration}`,
-    lastWeekFaster: (duration, diff) => `Last week: ${duration} (-${diff}, well done!)`,
+    lastWeekFaster: (duration, diff) =>
+      `Last week: ${duration} (-${diff}, well done!)`,
     lastWeekSlower: (duration, diff) => `Last week: ${duration} (+${diff})`,
     reminderBase: "Reminder: it's Friday! Remember to read surah Al-Kahf.",
     reminderLast: (date, duration) => `Last reading: ${date} in ${duration}`,
     alreadyComplete: "Al-Kahf already completed this week!",
-    remainingPages: (count, start, end) => `only ${count} Al-Kahf page(s) remaining this week (page ${start} to ${end})`,
+    remainingPages: (count, start, end) =>
+      `only ${count} Al-Kahf page(s) remaining this week (page ${start} to ${end})`,
   },
 
   months: [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ],
 
   estimation: {
-    notEnoughData: "Not enough recent data to estimate (read regularly to see a projection)",
-    monthsRemaining: (pace, months) => `At your current pace (~${pace} pages/day), about ${months} months remaining`,
-    dateEstimate: (pace, day, month, year) => `At this pace (~${pace} pages/day), you'll finish around ${month} ${day}, ${year}`,
+    notEnoughData:
+      "Not enough recent data to estimate (read regularly to see a projection)",
+    monthsRemaining: (pace, months) =>
+      `At your current pace (~${pace} pages/day), about ${months} months remaining`,
+    dateEstimate: (pace, day, month, year) =>
+      `At this pace (~${pace} pages/day), you'll finish around ${month} ${day}, ${year}`,
   },
 
   khatma: {
-    first: "Khatma! You have completed your first full reading of the Quran. Alhamdulillah!",
+    first:
+      "Khatma! You have completed your first full reading of the Quran. Alhamdulillah!",
     nth: (n) => {
       const s = ["th", "st", "nd", "rd"];
       const v = n % 100;
@@ -177,13 +214,16 @@ export const en: Locale = {
     globalAverage: (speed) => `Overall average: ${speed} verses/h`,
     last7Days: (speed) => `Last 7 days average: ${speed} verses/h`,
     last30Days: (speed) => `Last 30 days average: ${speed} verses/h`,
-    bestSession: (id, speed, date) => `Best session: #${id} (${speed} verses/h) - ${date}`,
-    longestSession: (id, duration, date) => `Longest session: #${id} (${duration}) - ${date}`,
+    bestSession: (id, speed, date) =>
+      `Best session: #${id} (${speed} verses/h) - ${date}`,
+    longestSession: (id, duration, date) =>
+      `Longest session: #${id} (${duration}) - ${date}`,
     byType: "By type:",
     typeNormal: "Normal",
     typeExtra: "Extra",
     typeKahf: "Kahf",
-    sessionsCount: (count) => `${count} ${count === 1 ? "session" : "sessions"}`,
+    sessionsCount: (count) =>
+      `${count} ${count === 1 ? "session" : "sessions"}`,
   },
 
   recap: {
@@ -192,7 +232,8 @@ export const en: Locale = {
     pagesRead: "Pages read",
     duration: "Duration",
     sessions: "Sessions",
-    streak: (days) => `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
+    streak: (days) =>
+      `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
   },
 
   timer: {
@@ -201,24 +242,34 @@ export const en: Locale = {
     startedExtraPage: (page) => `Timer started! Extra reading page ${page}.`,
     startedExtraVerse: (input) => `Timer started! Extra reading from ${input}.`,
     startedKahf: "Timer started! Reading Al-Kahf.",
-    alreadyActive: (duration) => `a timer is already active for ${duration}. Use /stop to stop it`,
+    alreadyActive: (duration) =>
+      `a timer is already active for ${duration}. Use /stop to stop it`,
     noActiveTimer: "No active timer.",
     cancelled: "Timer cancelled.",
-    confirmLongTimer: (duration) => `Timer has been running for ${duration} (over 4h). Confirm stop?`,
-    questionPages: (duration) => `Session stopped (${duration})\nHow many pages did you read?`,
-    questionVerses: (duration) => `Session stopped (${duration})\nWhere did you stop? (e.g. 2:83 or 3:10)`,
-    questionKahfPages: (duration) => `Session stopped (${duration})\nHow many Al-Kahf pages did you read?`,
+    confirmLongTimer: (duration) =>
+      `Timer has been running for ${duration} (over 4h). Confirm stop?`,
+    questionPages: (duration) =>
+      `Session stopped (${duration})\nHow many pages did you read?`,
+    questionVerses: (duration) =>
+      `Session stopped (${duration})\nWhere did you stop? (e.g. 2:83 or 3:10)`,
+    questionKahfPages: (duration) =>
+      `Session stopped (${duration})\nHow many Al-Kahf pages did you read?`,
     notFound: "Timer not found.",
     yes: "Yes",
     no: "No",
     stop: "Stop",
     go: "Go",
     quranFinished: "You have finished the Quran! Alhamdulillah!",
-    invalidPageCount: "invalid page count. Send a number (e.g. 3) or /stop cancel to cancel",
-    invalidVerseFormat: "invalid verse format. Send e.g. 2:83 or /stop cancel to cancel",
-    invalidGoFormat: "invalid format\nExample: /go or /go 2:77 or /go extra 300 or /go kahf",
-    invalidGoExtraFormat: "invalid format\nExample: /go extra 300 or /go extra 2:77",
-    overflowPages: (start, end, max) => `overflow: pages ${start}-${end} (max ${max})`,
+    invalidPageCount:
+      "invalid page count. Send a number (e.g. 3) or /stop cancel to cancel",
+    invalidVerseFormat:
+      "invalid verse format. Send e.g. 2:83 or /stop cancel to cancel",
+    invalidGoFormat:
+      "invalid format\nExample: /go or /go 2:77 or /go extra 300 or /go kahf",
+    invalidGoExtraFormat:
+      "invalid format\nExample: /go extra 300 or /go extra 2:77",
+    overflowPages: (start, end, max) =>
+      `overflow: pages ${start}-${end} (max ${max})`,
     internalError: "internal error while processing response",
   },
 
@@ -230,7 +281,8 @@ export const en: Locale = {
     missingId: "missing ID",
     invalidId: (input) => `invalid ID '${input}'`,
     sessionNotFound: (id) => `session #${id} does not exist`,
-    sessionDeleted: (id, range, ayahs, duration) => `Session #${id} deleted.\n${range} -- ${ayahs} verses in ${duration}`,
+    sessionDeleted: (id, range, ayahs, duration) =>
+      `Session #${id} deleted.\n${range} -- ${ayahs} verses in ${duration}`,
     sessionNotFoundShort: (id) => `Session #${id} not found.`,
     deletionCancelled: "Deletion cancelled.",
   },

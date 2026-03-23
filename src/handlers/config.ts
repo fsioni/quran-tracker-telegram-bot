@@ -1,10 +1,17 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
-import { invalidateLocaleCache } from "../services/localeCache";
-import { getConfig, setConfig, clearPrayerCache } from "../services/db";
-import { formatError } from "../services/format";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
-import { LANGUAGES, CALLBACK_LANG_SET, getLocale, getBotCommands, buildWelcome, type Locale } from "../locales";
+import {
+  buildWelcome,
+  CALLBACK_LANG_SET,
+  getBotCommands,
+  getLocale,
+  LANGUAGES,
+  type Locale,
+} from "../locales";
+import { clearPrayerCache, getConfig, setConfig } from "../services/db";
+import { formatError } from "../services/format";
+import { invalidateLocaleCache } from "../services/localeCache";
 
 export async function startHandler(ctx: CustomContext): Promise<void> {
   await setConfig(ctx.db, "chat_id", String(ctx.chat!.id));
@@ -39,7 +46,7 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
         `${t.config.countryLabel} : ${country}${suffix(countryRaw)}`,
         `${t.config.timezoneLabel} : ${timezone}${suffix(timezoneRaw)}`,
         `${t.config.languageLabel} : ${lang}${suffix(langRaw)}`,
-      ].join("\n"),
+      ].join("\n")
     );
     return;
   }
@@ -58,7 +65,9 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
 
   const spaceIdx = input.indexOf(" ");
   if (spaceIdx === -1) {
-    await ctx.reply(formatError(t.config.missingValue, t, "/config city Playa del Carmen"));
+    await ctx.reply(
+      formatError(t.config.missingValue, t, "/config city Playa del Carmen")
+    );
     return;
   }
 
@@ -66,21 +75,31 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
   const value = input.substring(spaceIdx + 1).trim();
 
   if (!value) {
-    await ctx.reply(formatError(t.config.missingValue, t, "/config city Playa del Carmen"));
+    await ctx.reply(
+      formatError(t.config.missingValue, t, "/config city Playa del Carmen")
+    );
     return;
   }
 
   switch (subCommand) {
     case "city":
-      await Promise.all([setConfig(ctx.db, "city", value), clearPrayerCache(ctx.db)]);
+      await Promise.all([
+        setConfig(ctx.db, "city", value),
+        clearPrayerCache(ctx.db),
+      ]);
       await ctx.reply(t.config.cityUpdated(value));
       break;
     case "country":
       if (!/^[A-Za-z]{2}$/.test(value)) {
-        await ctx.reply(formatError(t.config.countryCodeInvalid, t, "/config country MX"));
+        await ctx.reply(
+          formatError(t.config.countryCodeInvalid, t, "/config country MX")
+        );
         return;
       }
-      await Promise.all([setConfig(ctx.db, "country", value.toUpperCase()), clearPrayerCache(ctx.db)]);
+      await Promise.all([
+        setConfig(ctx.db, "country", value.toUpperCase()),
+        clearPrayerCache(ctx.db),
+      ]);
       await ctx.reply(t.config.countryUpdated(value.toUpperCase()));
       break;
     case "timezone":
@@ -88,7 +107,13 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       try {
         Intl.DateTimeFormat(undefined, { timeZone: value });
       } catch {
-        await ctx.reply(formatError(t.config.timezoneInvalid, t, "/config timezone America/Cancun"));
+        await ctx.reply(
+          formatError(
+            t.config.timezoneInvalid,
+            t,
+            "/config timezone America/Cancun"
+          )
+        );
         return;
       }
       await setConfig(ctx.db, "timezone", value);
@@ -97,8 +122,10 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
     case "language":
     case "lang": {
       const lang = value.toLowerCase();
-      if (!LANGUAGES.includes(lang as typeof LANGUAGES[number])) {
-        await ctx.reply(formatError(t.config.languageInvalid(LANGUAGES.join(", ")), t));
+      if (!LANGUAGES.includes(lang as (typeof LANGUAGES)[number])) {
+        await ctx.reply(
+          formatError(t.config.languageInvalid(LANGUAGES.join(", ")), t)
+        );
         return;
       }
       const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
@@ -106,11 +133,21 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       break;
     }
     default:
-      await ctx.reply(formatError(t.config.unknownParam(subCommand), t, "/config city Playa del Carmen"));
+      await ctx.reply(
+        formatError(
+          t.config.unknownParam(subCommand),
+          t,
+          "/config city Playa del Carmen"
+        )
+      );
   }
 }
 
-async function applyLanguageChange(db: D1Database, lang: string, api: CustomContext["api"]): Promise<Locale> {
+async function applyLanguageChange(
+  db: D1Database,
+  lang: string,
+  api: CustomContext["api"]
+): Promise<Locale> {
   await setConfig(db, "language", lang);
   invalidateLocaleCache();
   const newT = getLocale(lang);
@@ -120,7 +157,9 @@ async function applyLanguageChange(db: D1Database, lang: string, api: CustomCont
 
 export async function langSetCallback(ctx: CustomContext): Promise<void> {
   const lang = (ctx.match as string[] | undefined)?.[1];
-  if (!lang || !LANGUAGES.includes(lang as typeof LANGUAGES[number])) return;
+  if (!(lang && LANGUAGES.includes(lang as (typeof LANGUAGES)[number]))) {
+    return;
+  }
 
   const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
   await Promise.all([

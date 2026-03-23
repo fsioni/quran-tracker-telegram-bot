@@ -1,14 +1,14 @@
 // src/handlers/session.ts
 import type { CustomContext } from "../bot";
+import { getNowTimestamp, getTimezone, insertSession } from "../services/db";
 import {
-  parseRange,
-  parseDuration,
-  formatSessionConfirmation,
   appendCompletedSurahs,
   formatError,
+  formatSessionConfirmation,
+  parseDuration,
+  parseRange,
 } from "../services/format";
-import { validateRange, calculateAyahCount } from "../services/quran";
-import { insertSession, getTimezone, getNowTimestamp } from "../services/db";
+import { calculateAyahCount, validateRange } from "../services/quran";
 
 export async function sessionHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -30,7 +30,13 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
 
   const { surahStart, ayahStart, surahEnd, ayahEnd } = rangeResult.value;
 
-  const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd, t);
+  const validResult = validateRange(
+    surahStart,
+    ayahStart,
+    surahEnd,
+    ayahEnd,
+    t
+  );
   if (!validResult.ok) {
     await ctx.reply(formatError(validResult.error, t));
     return;
@@ -42,7 +48,12 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
+  const ayahCount = calculateAyahCount(
+    surahStart,
+    ayahStart,
+    surahEnd,
+    ayahEnd
+  );
   const tz = await getTimezone(ctx.db);
   const now = getNowTimestamp(tz);
 
@@ -54,7 +65,7 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
     surahEnd,
     ayahEnd,
     ayahCount,
-    type: 'normal',
+    type: "normal",
   });
   if (!result.ok) {
     await ctx.reply(formatError(result.error, t));

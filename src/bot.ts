@@ -1,43 +1,57 @@
-import { Bot, Context } from "grammy";
-import { startHandler, helpHandler, configHandler, langSetCallback } from "./handlers/config";
-import { sessionHandler } from "./handlers/session";
-import { importHandler } from "./handlers/import";
-import { historyHandler, statsHandler, progressHandler, speedHandler } from "./handlers/stats";
-import { readHandler } from "./handlers/read";
+import { Bot, type Context } from "grammy";
+import {
+  configHandler,
+  helpHandler,
+  langSetCallback,
+  startHandler,
+} from "./handlers/config";
+import { debugHandler } from "./handlers/debug";
 import { extraHandler } from "./handlers/extra";
+import { importHandler } from "./handlers/import";
 import { kahfHandler } from "./handlers/kahf";
 import {
-  undoHandler,
-  deleteHandler,
-  confirmDeleteCallback,
-  cancelDeleteCallback,
-  CALLBACK_CONFIRM_RE,
   CALLBACK_CANCEL_RE,
+  CALLBACK_CONFIRM_RE,
+  cancelDeleteCallback,
+  confirmDeleteCallback,
+  deleteHandler,
+  undoHandler,
 } from "./handlers/manage";
-import {
-  goHandler,
-  stopHandler,
-  timerResponseHandler,
-  confirmTimerStopCallback,
-  cancelTimerStopCallback,
-  stopTimerCallback,
-  goTimerCallback,
-  CALLBACK_TIMER_CONFIRM_RE,
-  CALLBACK_TIMER_CANCEL_RE,
-  CALLBACK_TIMER_STOP_RE,
-  CALLBACK_TIMER_GO_RE,
-} from "./handlers/timer";
-import { debugHandler } from "./handlers/debug";
 import { prayerHandler } from "./handlers/prayer";
-import { resolveLocale } from "./services/localeCache";
+import { readHandler } from "./handlers/read";
+import { sessionHandler } from "./handlers/session";
+import {
+  historyHandler,
+  progressHandler,
+  speedHandler,
+  statsHandler,
+} from "./handlers/stats";
+import {
+  CALLBACK_TIMER_CANCEL_RE,
+  CALLBACK_TIMER_CONFIRM_RE,
+  CALLBACK_TIMER_GO_RE,
+  CALLBACK_TIMER_STOP_RE,
+  cancelTimerStopCallback,
+  confirmTimerStopCallback,
+  goHandler,
+  goTimerCallback,
+  stopHandler,
+  stopTimerCallback,
+  timerResponseHandler,
+} from "./handlers/timer";
 import { CALLBACK_LANG_SET_RE, type Locale } from "./locales";
+import { resolveLocale } from "./services/localeCache";
 
 export interface CustomContext extends Context {
   db: D1Database;
   locale: Locale;
 }
 
-export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
+export function createBot(
+  token: string,
+  db: D1Database,
+  allowedUserId: string
+): Bot<CustomContext> {
   const bot = new Bot<CustomContext>(token);
 
   // Auth middleware — restrict to allowed user
@@ -46,7 +60,9 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
     throw new Error("ALLOWED_USER_ID is not a valid integer");
   }
   bot.use((ctx, next) => {
-    if (ctx.from?.id !== parsedUserId) return;
+    if (ctx.from?.id !== parsedUserId) {
+      return;
+    }
     return next();
   });
 

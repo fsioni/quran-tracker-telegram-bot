@@ -1,9 +1,9 @@
 // tests/handlers/speed.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { speedHandler } from "../../src/handlers/stats";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import type { Session } from "../../src/services/db";
+import { speedHandler } from "../../src/handlers/stats";
 import { fr } from "../../src/locales/fr";
+import type { Session } from "../../src/services/db";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -18,11 +18,11 @@ vi.mock("../../src/services/db", async (importOriginal) => {
 });
 
 import {
-  getTimezone,
-  getSpeedAverages,
   getBestSpeedSession,
   getLongestSession,
+  getSpeedAverages,
   getSpeedByType,
+  getTimezone,
 } from "../../src/services/db";
 
 function makeCtx(): CustomContext {
@@ -81,7 +81,8 @@ describe("speedHandler", () => {
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("-- Vitesse de lecture --");
     expect(msg).toContain("Moyenne globale : 155 versets/h");
     expect(msg).toContain("Moyenne 7 derniers jours : 162 versets/h");
@@ -125,7 +126,8 @@ describe("speedHandler", () => {
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Moyenne globale : 140 versets/h");
     expect(msg).not.toContain("Moyenne 7 derniers jours");
     expect(msg).toContain("Moyenne 30 derniers jours : 140 versets/h");
@@ -149,14 +151,19 @@ describe("speedHandler", () => {
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Moyenne globale : 200 versets/h");
     expect(msg).not.toContain("Meilleure session");
     expect(msg).toContain("Plus longue session");
   });
 
   it("appelle les fonctions DB en parallele", async () => {
-    vi.mocked(getSpeedAverages).mockResolvedValue({ global: null, last7Days: null, last30Days: null });
+    vi.mocked(getSpeedAverages).mockResolvedValue({
+      global: null,
+      last7Days: null,
+      last30Days: null,
+    });
     vi.mocked(getBestSpeedSession).mockResolvedValue(null);
     vi.mocked(getLongestSession).mockResolvedValue(null);
     vi.mocked(getSpeedByType).mockResolvedValue([]);

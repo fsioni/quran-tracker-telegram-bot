@@ -1,9 +1,14 @@
 import type { CustomContext } from "../bot";
+import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
 import type { PrayerName } from "../services/db";
-import { getConfig, getTodayInTimezone, deletePrayerCacheForDate, setPrayerCache } from "../services/db";
-import { fetchPrayerTimes } from "../services/prayer";
+import {
+  deletePrayerCacheForDate,
+  getConfig,
+  getTodayInTimezone,
+  setPrayerCache,
+} from "../services/db";
 import { formatError } from "../services/format";
-import { DEFAULT_TZ, DEFAULT_CITY, DEFAULT_COUNTRY } from "../config";
+import { fetchPrayerTimes } from "../services/prayer";
 
 const PRAYER_LABELS: Record<PrayerName, string> = {
   fajr: "Fajr",
@@ -48,7 +53,7 @@ export async function prayerHandler(ctx: CustomContext): Promise<void> {
     `${t.prayer.date} : ${today}`,
     "",
     ...(Object.entries(PRAYER_LABELS) as [PrayerName, string][]).map(
-      ([key, label]) => `${label} : ${times[key]}`,
+      ([key, label]) => `${label} : ${times[key]}`
     ),
     "",
     t.prayer.cacheRefreshed,

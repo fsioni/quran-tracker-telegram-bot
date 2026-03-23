@@ -42,26 +42,36 @@ export const ar: Locale = {
     languageLabel: "اللغة",
     defaultSuffix: " (افتراضي)",
     missingValue: "قيمة مفقودة",
-    cityUpdated: (city) => `تم تحديث المدينة: ${city}\nتم مسح ذاكرة الصلاة المؤقتة.`,
+    cityUpdated: (city) =>
+      `تم تحديث المدينة: ${city}\nتم مسح ذاكرة الصلاة المؤقتة.`,
     countryCodeInvalid: "رمز البلد يجب أن يكون حرفين (ISO)",
-    countryUpdated: (country) => `تم تحديث البلد: ${country}\nتم مسح ذاكرة الصلاة المؤقتة.`,
+    countryUpdated: (country) =>
+      `تم تحديث البلد: ${country}\nتم مسح ذاكرة الصلاة المؤقتة.`,
     timezoneInvalid: "منطقة زمنية غير صالحة",
     timezoneUpdated: (tz) => `تم تحديث المنطقة الزمنية: ${tz}`,
     unknownParam: (param) => `معامل غير معروف '${param}'`,
     languageUpdated: (lang) => `تم تحديث اللغة: ${lang}`,
-    languageInvalid: (available) => `لغة غير صالحة. اللغات المتاحة: ${available}`,
+    languageInvalid: (available) =>
+      `لغة غير صالحة. اللغات المتاحة: ${available}`,
   },
 
   parse: {
     invalidVerseFormat: (input) => `صيغة آية غير صالحة '${input}'. استخدم 2:77`,
-    invalidDurationFormat: (input) => `صيغة مدة غير صالحة '${input}'. استخدم 8m أو 8m53`,
-    invalidRangeFormat: (input) => `صيغة نطاق غير صالحة '${input}'. استخدم 2:77-83 أو 2:280-3:10`,
-    invalidImportLineFormat: (line) => `صيغة سطر غير صالحة '${line}'. استخدم DD/MM, HHhMM - DURATION - RANGE`,
+    invalidDurationFormat: (input) =>
+      `صيغة مدة غير صالحة '${input}'. استخدم 8m أو 8m53`,
+    invalidRangeFormat: (input) =>
+      `صيغة نطاق غير صالحة '${input}'. استخدم 2:77-83 أو 2:280-3:10`,
+    invalidImportLineFormat: (line) =>
+      `صيغة سطر غير صالحة '${line}'. استخدم DD/MM, HHhMM - DURATION - RANGE`,
     invalidMonth: (month) => `شهر غير صالح '${month}' (1-12)`,
-    invalidDay: (day, month, max) => `يوم غير صالح '${day}' للشهر ${month} (1-${max})`,
-    invalidPage: (page, max) => `صفحة غير صالحة '${page}'. الصفحات من 1 إلى ${max}`,
-    pageStartAfterEnd: (start, end) => `صفحة البداية (${start}) يجب أن تكون أقل من أو تساوي صفحة النهاية (${end})`,
-    invalidPageFormat: (input) => `صيغة صفحة غير صالحة '${input}'. استخدم 300 أو 300-304`,
+    invalidDay: (day, month, max) =>
+      `يوم غير صالح '${day}' للشهر ${month} (1-${max})`,
+    invalidPage: (page, max) =>
+      `صفحة غير صالحة '${page}'. الصفحات من 1 إلى ${max}`,
+    pageStartAfterEnd: (start, end) =>
+      `صفحة البداية (${start}) يجب أن تكون أقل من أو تساوي صفحة النهاية (${end})`,
+    invalidPageFormat: (input) =>
+      `صيغة صفحة غير صالحة '${input}'. استخدم 300 أو 300-304`,
     invalidFormat: (example) => `صيغة غير صالحة. استخدم ${example}`,
     invalidPageCount: (example) => `عدد صفحات غير صالح. استخدم ${example}`,
   },
@@ -95,7 +105,8 @@ export const ar: Locale = {
     versesPerHour: "آية/ساعة",
     versesPerHourShort: "آية/س",
     pagesPerHourShort: "صفحة/س",
-    currentStreak: (days) => `السلسلة الحالية: ${days} ${days === 1 ? "يوم" : "أيام"}`,
+    currentStreak: (days) =>
+      `السلسلة الحالية: ${days} ${days === 1 ? "يوم" : "أيام"}`,
     bestStreak: (days) => `أفضل سلسلة: ${days} ${days === 1 ? "يوم" : "أيام"}`,
     thisWeek: "-- هذا الأسبوع --",
     thisMonth: "-- هذا الشهر --",
@@ -108,53 +119,78 @@ export const ar: Locale = {
 
   progress: {
     label: (read, total, pct) => `التقدم: ${read} / ${total} آية (${pct}%)`,
-    lastPosition: (surahName, surahNum, ayah) => `آخر موضع: سورة ${surahName} (${surahNum})، الآية ${ayah}`,
+    lastPosition: (surahName, surahNum, ayah) =>
+      `آخر موضع: سورة ${surahName} (${surahNum})، الآية ${ayah}`,
     khatmas: (count) => `الختمات: ${count}`,
     page: "صفحة",
   },
 
   reminder: {
     title: "تذكير بقراءة القرآن",
-    lastSession: (date, surahName, ayah) => `آخر جلسة: ${date} - سورة ${surahName} آ.${ayah}`,
-    thisWeek: (sessions, ayahs) => `هذا الأسبوع: ${sessions} ${sessions === 1 ? "جلسة" : "جلسات"}، ${ayahs} آية`,
-    streak: (days) => `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+    lastSession: (date, surahName, ayah) =>
+      `آخر جلسة: ${date} - سورة ${surahName} آ.${ayah}`,
+    thisWeek: (sessions, ayahs) =>
+      `هذا الأسبوع: ${sessions} ${sessions === 1 ? "جلسة" : "جلسات"}، ${ayahs} آية`,
+    streak: (days) =>
+      `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
     keepItUp: "استمر على هذا!",
     timeToResume: "حان وقت العودة للقراءة!",
     noSession: "تذكير بقراءة القرآن\n\nلا توجد جلسات مسجلة. ابدأ بـ /session!",
   },
 
   read: {
-    pageSingularRead: (page, duration) => `تمت قراءة الصفحة ${page} في ${duration}`,
-    pagePluralRead: (start, end, duration) => `تمت قراءة الصفحات ${start}-${end} في ${duration}`,
+    pageSingularRead: (page, duration) =>
+      `تمت قراءة الصفحة ${page} في ${duration}`,
+    pagePluralRead: (start, end, duration) =>
+      `تمت قراءة الصفحات ${start}-${end} في ${duration}`,
     quranComplete: "اكتمل القرآن! الحمد لله!",
     nextPage: (page) => `الصفحة التالية: ${page}`,
-    remainingPages: (count, start, end) => `لم يتبق سوى ${count} صفحة (الصفحة ${start} إلى ${end})`,
+    remainingPages: (count, start, end) =>
+      `لم يتبق سوى ${count} صفحة (الصفحة ${start} إلى ${end})`,
     pagesInvalid: "صفحات غير صالحة",
     formatInvalid: "صيغة غير صالحة",
   },
 
   kahf: {
-    pageRead: (page, total, duration) => `تمت قراءة صفحة الكهف ${page}/${total} في ${duration}`,
-    thisWeek: (pages, total, duration) => `هذا الأسبوع: ${pages}/${total} صفحة، ${duration} إجمالي`,
-    complete: (page, total, duration) => `اكتملت سورة الكهف! ${page}/${total} صفحة في ${duration}`,
+    pageRead: (page, total, duration) =>
+      `تمت قراءة صفحة الكهف ${page}/${total} في ${duration}`,
+    thisWeek: (pages, total, duration) =>
+      `هذا الأسبوع: ${pages}/${total} صفحة، ${duration} إجمالي`,
+    complete: (page, total, duration) =>
+      `اكتملت سورة الكهف! ${page}/${total} صفحة في ${duration}`,
     lastWeek: (duration) => `الأسبوع الماضي: ${duration}`,
-    lastWeekFaster: (duration, diff) => `الأسبوع الماضي: ${duration} (-${diff}، أحسنت!)`,
-    lastWeekSlower: (duration, diff) => `الأسبوع الماضي: ${duration} (+${diff})`,
+    lastWeekFaster: (duration, diff) =>
+      `الأسبوع الماضي: ${duration} (-${diff}، أحسنت!)`,
+    lastWeekSlower: (duration, diff) =>
+      `الأسبوع الماضي: ${duration} (+${diff})`,
     reminderBase: "تذكير: اليوم الجمعة! لا تنس قراءة سورة الكهف.",
     reminderLast: (date, duration) => `آخر قراءة: ${date} في ${duration}`,
     alreadyComplete: "سورة الكهف مكتملة هذا الأسبوع!",
-    remainingPages: (count, start, end) => `لم يتبق سوى ${count} صفحة من الكهف هذا الأسبوع (الصفحة ${start} إلى ${end})`,
+    remainingPages: (count, start, end) =>
+      `لم يتبق سوى ${count} صفحة من الكهف هذا الأسبوع (الصفحة ${start} إلى ${end})`,
   },
 
   months: [
-    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+    "يناير",
+    "فبراير",
+    "مارس",
+    "أبريل",
+    "مايو",
+    "يونيو",
+    "يوليو",
+    "أغسطس",
+    "سبتمبر",
+    "أكتوبر",
+    "نوفمبر",
+    "ديسمبر",
   ],
 
   estimation: {
     notEnoughData: "لا توجد بيانات كافية للتقدير (اقرأ بانتظام لرؤية التوقعات)",
-    monthsRemaining: (pace, months) => `بوتيرتك الحالية (~${pace} صفحة/يوم)، يتبقى حوالي ${months} شهر`,
-    dateEstimate: (pace, day, month, year) => `بهذه الوتيرة (~${pace} صفحة/يوم)، ستنتهي حوالي ${day} ${month} ${year}`,
+    monthsRemaining: (pace, months) =>
+      `بوتيرتك الحالية (~${pace} صفحة/يوم)، يتبقى حوالي ${months} شهر`,
+    dateEstimate: (pace, day, month, year) =>
+      `بهذه الوتيرة (~${pace} صفحة/يوم)، ستنتهي حوالي ${day} ${month} ${year}`,
   },
 
   khatma: {
@@ -172,8 +208,10 @@ export const ar: Locale = {
     globalAverage: (speed) => `المتوسط العام: ${speed} آية/س`,
     last7Days: (speed) => `متوسط آخر 7 أيام: ${speed} آية/س`,
     last30Days: (speed) => `متوسط آخر 30 يوم: ${speed} آية/س`,
-    bestSession: (id, speed, date) => `أفضل جلسة: #${id} (${speed} آية/س) - ${date}`,
-    longestSession: (id, duration, date) => `أطول جلسة: #${id} (${duration}) - ${date}`,
+    bestSession: (id, speed, date) =>
+      `أفضل جلسة: #${id} (${speed} آية/س) - ${date}`,
+    longestSession: (id, duration, date) =>
+      `أطول جلسة: #${id} (${duration}) - ${date}`,
     byType: "حسب النوع:",
     typeNormal: "عادي",
     typeExtra: "إضافي",
@@ -187,7 +225,8 @@ export const ar: Locale = {
     pagesRead: "الصفحات المقروءة",
     duration: "المدة",
     sessions: "الجلسات",
-    streak: (days) => `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+    streak: (days) =>
+      `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
   },
 
   timer: {
@@ -196,24 +235,33 @@ export const ar: Locale = {
     startedExtraPage: (page) => `بدأ المؤقت! قراءة إضافية صفحة ${page}.`,
     startedExtraVerse: (input) => `بدأ المؤقت! قراءة إضافية من ${input}.`,
     startedKahf: "بدأ المؤقت! قراءة سورة الكهف.",
-    alreadyActive: (duration) => `يوجد مؤقت نشط منذ ${duration}. استخدم /stop لإيقافه`,
+    alreadyActive: (duration) =>
+      `يوجد مؤقت نشط منذ ${duration}. استخدم /stop لإيقافه`,
     noActiveTimer: "لا يوجد مؤقت نشط.",
     cancelled: "تم إلغاء المؤقت.",
-    confirmLongTimer: (duration) => `المؤقت يعمل منذ ${duration} (أكثر من 4 ساعات). تأكيد الإيقاف؟`,
+    confirmLongTimer: (duration) =>
+      `المؤقت يعمل منذ ${duration} (أكثر من 4 ساعات). تأكيد الإيقاف؟`,
     questionPages: (duration) => `توقفت الجلسة (${duration})\nكم صفحة قرأت؟`,
-    questionVerses: (duration) => `توقفت الجلسة (${duration})\nأين توقفت؟ (مثال: 2:83 أو 3:10)`,
-    questionKahfPages: (duration) => `توقفت الجلسة (${duration})\nكم صفحة من الكهف قرأت؟`,
+    questionVerses: (duration) =>
+      `توقفت الجلسة (${duration})\nأين توقفت؟ (مثال: 2:83 أو 3:10)`,
+    questionKahfPages: (duration) =>
+      `توقفت الجلسة (${duration})\nكم صفحة من الكهف قرأت؟`,
     notFound: "المؤقت غير موجود.",
     yes: "نعم",
     no: "لا",
     stop: "إيقاف",
     go: "ابدأ",
     quranFinished: "أتممت القرآن الكريم! الحمد لله!",
-    invalidPageCount: "عدد صفحات غير صالح. أرسل رقما (مثال: 3) أو /stop cancel للإلغاء",
-    invalidVerseFormat: "صيغة آية غير صالحة. أرسل مثلا 2:83 أو /stop cancel للإلغاء",
-    invalidGoFormat: "صيغة غير صالحة\nمثال: /go أو /go 2:77 أو /go extra 300 أو /go kahf",
-    invalidGoExtraFormat: "صيغة غير صالحة\nمثال: /go extra 300 أو /go extra 2:77",
-    overflowPages: (start, end, max) => `تجاوز: الصفحات ${start}-${end} (الحد الأقصى ${max})`,
+    invalidPageCount:
+      "عدد صفحات غير صالح. أرسل رقما (مثال: 3) أو /stop cancel للإلغاء",
+    invalidVerseFormat:
+      "صيغة آية غير صالحة. أرسل مثلا 2:83 أو /stop cancel للإلغاء",
+    invalidGoFormat:
+      "صيغة غير صالحة\nمثال: /go أو /go 2:77 أو /go extra 300 أو /go kahf",
+    invalidGoExtraFormat:
+      "صيغة غير صالحة\nمثال: /go extra 300 أو /go extra 2:77",
+    overflowPages: (start, end, max) =>
+      `تجاوز: الصفحات ${start}-${end} (الحد الأقصى ${max})`,
     internalError: "خطأ داخلي أثناء معالجة الاستجابة",
   },
 
@@ -225,7 +273,8 @@ export const ar: Locale = {
     missingId: "المعرف مفقود",
     invalidId: (input) => `معرف غير صالح '${input}'`,
     sessionNotFound: (id) => `الجلسة #${id} غير موجودة`,
-    sessionDeleted: (id, range, ayahs, duration) => `تم حذف الجلسة #${id}.\n${range} -- ${ayahs} آية في ${duration}`,
+    sessionDeleted: (id, range, ayahs, duration) =>
+      `تم حذف الجلسة #${id}.\n${range} -- ${ayahs} آية في ${duration}`,
     sessionNotFoundShort: (id) => `الجلسة #${id} غير موجودة.`,
     deletionCancelled: "تم إلغاء الحذف.",
   },
@@ -233,7 +282,8 @@ export const ar: Locale = {
   import: {
     noData: "لا توجد بيانات للاستيراد",
     lineError: (lineNum, error) => `السطر ${lineNum}: ${error}`,
-    success: (count) => `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}.`,
+    success: (count) =>
+      `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}.`,
     successWithErrors: (count, errorCount, errors) =>
       `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}، ${errorCount} ${errorCount === 1 ? "خطأ" : "أخطاء"}:\n${errors}`,
     allFailed: (errorCount, errors) =>

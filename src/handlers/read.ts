@@ -1,8 +1,21 @@
 // src/handlers/read.ts
 import type { CustomContext } from "../bot";
-import { parsePageCountAndDuration, formatReadConfirmation, formatError, formatKhatmaMessage, appendCompletedSurahs } from "../services/format";
 import { getPageRange, TOTAL_PAGES } from "../data/pages";
-import { insertSession, getLastSession, getTimezone, getNowTimestamp, insertKhatma, getKhatmaCount } from "../services/db";
+import {
+  getKhatmaCount,
+  getLastSession,
+  getNowTimestamp,
+  getTimezone,
+  insertKhatma,
+  insertSession,
+} from "../services/db";
+import {
+  appendCompletedSurahs,
+  formatError,
+  formatKhatmaMessage,
+  formatReadConfirmation,
+  parsePageCountAndDuration,
+} from "../services/format";
 
 export async function readHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -35,9 +48,13 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   if (pageEnd > TOTAL_PAGES) {
     await ctx.reply(
       formatError(
-        t.read.remainingPages(TOTAL_PAGES - pageStart + 1, pageStart, TOTAL_PAGES),
-        t,
-      ),
+        t.read.remainingPages(
+          TOTAL_PAGES - pageStart + 1,
+          pageStart,
+          TOTAL_PAGES
+        ),
+        t
+      )
     );
     return;
   }
@@ -80,18 +97,28 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     parts.push(formatKhatmaMessage(khatmaCount, t));
   } else {
     parts.push(
-      formatReadConfirmation({
-        pageStart: session.pageStart!,
-        pageEnd: session.pageEnd!,
-        durationSeconds: session.durationSeconds,
-        totalPagesRead: session.pageEnd!,
-        totalPages: TOTAL_PAGES,
-      }, t),
+      formatReadConfirmation(
+        {
+          pageStart: session.pageStart!,
+          pageEnd: session.pageEnd!,
+          durationSeconds: session.durationSeconds,
+          totalPagesRead: session.pageEnd!,
+          totalPages: TOTAL_PAGES,
+        },
+        t
+      )
     );
   }
 
   // Check for completed surahs
-  appendCompletedSurahs(parts, rangeData.surahStart, rangeData.ayahStart, rangeData.surahEnd, rangeData.ayahEnd, t);
+  appendCompletedSurahs(
+    parts,
+    rangeData.surahStart,
+    rangeData.ayahStart,
+    rangeData.surahEnd,
+    rangeData.ayahEnd,
+    t
+  );
 
   await ctx.reply(parts.join("\n"));
 }

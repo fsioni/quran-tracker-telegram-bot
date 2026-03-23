@@ -164,7 +164,12 @@ export type Locale = {
   estimation: {
     notEnoughData: string;
     monthsRemaining: (pace: string, months: number) => string;
-    dateEstimate: (pace: string, day: number, month: string, year: number) => string;
+    dateEstimate: (
+      pace: string,
+      day: number,
+      month: string,
+      year: number
+    ) => string;
   };
 
   // Khatma
@@ -241,7 +246,12 @@ export type Locale = {
     missingId: string;
     invalidId: (input: string) => string;
     sessionNotFound: (id: number) => string;
-    sessionDeleted: (id: number, range: string, ayahs: number, duration: string) => string;
+    sessionDeleted: (
+      id: number,
+      range: string,
+      ayahs: number,
+      duration: string
+    ) => string;
     sessionNotFoundShort: (id: number) => string;
     deletionCancelled: string;
   };
@@ -251,7 +261,11 @@ export type Locale = {
     noData: string;
     lineError: (lineNum: number, error: string) => string;
     success: (count: number) => string;
-    successWithErrors: (count: number, errorCount: number, errors: string) => string;
+    successWithErrors: (
+      count: number,
+      errorCount: number,
+      errors: string
+    ) => string;
     allFailed: (errorCount: number, errors: string) => string;
   };
 
@@ -282,8 +296,17 @@ export type Locale = {
   // Validation (quran.ts)
   validation: {
     surahNotFound: (num: number) => string;
-    ayahOutOfRange: (surahNum: number, ayahCount: number, requested: number) => string;
-    endBeforeStart: (endSurah: number, endAyah: number, startSurah: number, startAyah: number) => string;
+    ayahOutOfRange: (
+      surahNum: number,
+      ayahCount: number,
+      requested: number
+    ) => string;
+    endBeforeStart: (
+      endSurah: number,
+      endAyah: number,
+      startSurah: number,
+      startAyah: number
+    ) => string;
   };
 
   // Prayer service (prayer.ts)

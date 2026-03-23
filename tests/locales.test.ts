@@ -1,26 +1,35 @@
-import { describe, it, expect } from "vitest";
-import { en } from "../src/locales/en";
-import { fr } from "../src/locales/fr";
-import { ar } from "../src/locales/ar";
-import { getLocale, buildWelcome, getBotCommands, LANGUAGES } from "../src/locales";
+import { describe, expect, it } from "vitest";
 import type { Locale } from "../src/locales";
 import {
-  formatSessionConfirmation,
-  formatStats,
-  formatProgress,
-  formatReminder,
-  formatReadConfirmation,
-  formatKahfReminder,
-  formatEstimation,
-  formatKhatmaMessage,
-  formatSurahsComplete,
+  buildWelcome,
+  getBotCommands,
+  getLocale,
+  LANGUAGES,
+} from "../src/locales";
+import { ar } from "../src/locales/ar";
+import { en } from "../src/locales/en";
+import { fr } from "../src/locales/fr";
+import {
   formatError,
-  formatSpeedReport,
-  formatWeeklyRecap,
+  formatEstimation,
   formatHistoryLine,
+  formatKahfReminder,
+  formatKhatmaMessage,
+  formatProgress,
+  formatReadConfirmation,
+  formatReminder,
+  formatSessionConfirmation,
+  formatSpeedReport,
+  formatStats,
+  formatSurahsComplete,
+  formatWeeklyRecap,
 } from "../src/services/format";
 
-const locales: [string, Locale][] = [["en", en], ["fr", fr], ["ar", ar]];
+const locales: [string, Locale][] = [
+  ["en", en],
+  ["fr", fr],
+  ["ar", ar],
+];
 
 function walkKeys(obj: Record<string, unknown>, prefix = ""): string[] {
   return Object.entries(obj).flatMap(([key, val]) => {
@@ -52,7 +61,9 @@ describe("locale key exhaustiveness", () => {
           val = val[part];
         }
         if (typeof val === "string") {
-          expect(val, `${name}: key "${keyPath}" must not be empty`).not.toBe("");
+          expect(val, `${name}: key "${keyPath}" must not be empty`).not.toBe(
+            ""
+          );
         }
       }
     }
@@ -69,10 +80,18 @@ describe("locale key exhaustiveness", () => {
           val = val[part];
         }
         if (typeof val === "function") {
-          const args = Array.from({ length: val.length }, (_, i) => i % 2 === 0 ? "test" : 1);
+          const args = Array.from({ length: val.length }, (_, i) =>
+            i % 2 === 0 ? "test" : 1
+          );
           const result = val(...args);
-          expect(typeof result, `${name}: key "${keyPath}" must return a string`).toBe("string");
-          expect(result, `${name}: key "${keyPath}" must return a non-empty string`).not.toBe("");
+          expect(
+            typeof result,
+            `${name}: key "${keyPath}" must return a string`
+          ).toBe("string");
+          expect(
+            result,
+            `${name}: key "${keyPath}" must return a non-empty string`
+          ).not.toBe("");
         }
       }
     }
@@ -80,7 +99,9 @@ describe("locale key exhaustiveness", () => {
 });
 
 describe("locale completeness", () => {
-  it.each(locales)("%s: all template functions return non-empty strings", (_, t) => {
+  it.each(
+    locales
+  )("%s: all template functions return non-empty strings", (_, t) => {
     // Config templates
     expect(t.config.cityUpdated("Mecca")).toBeTruthy();
     expect(t.config.countryUpdated("SA")).toBeTruthy();
@@ -129,115 +150,267 @@ describe("locale completeness", () => {
   });
 
   it.each(locales)("%s: format functions produce non-empty output", (_, t) => {
-    expect(formatSessionConfirmation({
-      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83,
-      ayahCount: 7, durationSeconds: 533,
-    }, t)).toBeTruthy();
+    expect(
+      formatSessionConfirmation(
+        {
+          surahStart: 2,
+          ayahStart: 77,
+          surahEnd: 2,
+          ayahEnd: 83,
+          ayahCount: 7,
+          durationSeconds: 533,
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatHistoryLine({
-      id: 1, startedAt: "2026-03-13 14:00:00", durationSeconds: 533,
-      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83, ayahCount: 7,
-    }, t)).toBeTruthy();
+    expect(
+      formatHistoryLine(
+        {
+          id: 1,
+          startedAt: "2026-03-13 14:00:00",
+          durationSeconds: 533,
+          surahStart: 2,
+          ayahStart: 77,
+          surahEnd: 2,
+          ayahEnd: 83,
+          ayahCount: 7,
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatStats({
-      totalAyahs: 300, totalSeconds: 5000, currentStreak: 5, bestStreak: 10,
-      weekAyahs: 50, weekSeconds: 1000, monthAyahs: 200, monthSeconds: 4000,
-    }, t)).toBeTruthy();
+    expect(
+      formatStats(
+        {
+          totalAyahs: 300,
+          totalSeconds: 5000,
+          currentStreak: 5,
+          bestStreak: 10,
+          weekAyahs: 50,
+          weekSeconds: 1000,
+          monthAyahs: 200,
+          monthSeconds: 4000,
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatProgress({
-      totalAyahsRead: 300, totalAyahs: 6236, lastSurah: 2, lastAyah: 100,
-    }, t)).toBeTruthy();
+    expect(
+      formatProgress(
+        {
+          totalAyahsRead: 300,
+          totalAyahs: 6236,
+          lastSurah: 2,
+          lastAyah: 100,
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatReminder({
-      lastSessionDate: "2026-03-13 14:00:00", lastSurahNum: 2, lastAyah: 83,
-      weekSessions: 5, weekAyahs: 50, streak: 3,
-    }, t)).toBeTruthy();
+    expect(
+      formatReminder(
+        {
+          lastSessionDate: "2026-03-13 14:00:00",
+          lastSurahNum: 2,
+          lastAyah: 83,
+          weekSessions: 5,
+          weekAyahs: 50,
+          streak: 3,
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatReadConfirmation({
-      pageStart: 10, pageEnd: 10, durationSeconds: 300,
-      totalPagesRead: 10, totalPages: 604,
-    }, t)).toBeTruthy();
+    expect(
+      formatReadConfirmation(
+        {
+          pageStart: 10,
+          pageEnd: 10,
+          durationSeconds: 300,
+          totalPagesRead: 10,
+          totalPages: 604,
+        },
+        t
+      )
+    ).toBeTruthy();
 
     expect(formatKahfReminder({}, t)).toBeTruthy();
-    expect(formatKahfReminder({ lastDate: "2026-03-07 10:00:00", lastDuration: 600 }, t)).toBeTruthy();
+    expect(
+      formatKahfReminder(
+        { lastDate: "2026-03-07 10:00:00", lastDuration: 600 },
+        t
+      )
+    ).toBeTruthy();
 
     expect(formatEstimation(2.5, 500, "2026-03-13", t)).toBeTruthy();
     expect(formatKhatmaMessage(1, t)).toBeTruthy();
     expect(formatKhatmaMessage(3, t)).toBeTruthy();
-    expect(formatSurahsComplete([{ number: 1, name: "Al-Fatiha" }], t)).toBeTruthy();
+    expect(
+      formatSurahsComplete([{ number: 1, name: "Al-Fatiha" }], t)
+    ).toBeTruthy();
 
     expect(formatError("test error", t)).toBeTruthy();
     expect(formatError("test error", t, "/example")).toBeTruthy();
 
-    expect(formatSpeedReport({
-      averages: { global: 150, last7Days: 160, last30Days: 140 },
-      bestSession: null, longestSession: null, byType: [],
-    }, t)).toBeTruthy();
+    expect(
+      formatSpeedReport(
+        {
+          averages: { global: 150, last7Days: 160, last30Days: 140 },
+          bestSession: null,
+          longestSession: null,
+          byType: [],
+        },
+        t
+      )
+    ).toBeTruthy();
 
-    expect(formatWeeklyRecap({
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
-      thisWeekPages: 12, lastWeekPages: 10,
-      streak: { currentStreak: 8, bestStreak: 15 },
-      completedSurahs: [],
-    }, t)).toBeTruthy();
+    expect(
+      formatWeeklyRecap(
+        {
+          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeekPages: 12,
+          lastWeekPages: 10,
+          streak: { currentStreak: 8, bestStreak: 15 },
+          completedSurahs: [],
+        },
+        t
+      )
+    ).toBeTruthy();
   });
 });
 
 describe("format functions match snapshots", () => {
   it.each(locales)("%s: format snapshots", (_, t) => {
-    expect(formatSessionConfirmation({
-      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83,
-      ayahCount: 7, durationSeconds: 533,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatSessionConfirmation(
+        {
+          surahStart: 2,
+          ayahStart: 77,
+          surahEnd: 2,
+          ayahEnd: 83,
+          ayahCount: 7,
+          durationSeconds: 533,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatHistoryLine({
-      id: 1, startedAt: "2026-03-13 14:00:00", durationSeconds: 533,
-      surahStart: 2, ayahStart: 77, surahEnd: 2, ayahEnd: 83, ayahCount: 7,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatHistoryLine(
+        {
+          id: 1,
+          startedAt: "2026-03-13 14:00:00",
+          durationSeconds: 533,
+          surahStart: 2,
+          ayahStart: 77,
+          surahEnd: 2,
+          ayahEnd: 83,
+          ayahCount: 7,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatStats({
-      totalAyahs: 300, totalSeconds: 5000, currentStreak: 5, bestStreak: 10,
-      weekAyahs: 50, weekSeconds: 1000, monthAyahs: 200, monthSeconds: 4000,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatStats(
+        {
+          totalAyahs: 300,
+          totalSeconds: 5000,
+          currentStreak: 5,
+          bestStreak: 10,
+          weekAyahs: 50,
+          weekSeconds: 1000,
+          monthAyahs: 200,
+          monthSeconds: 4000,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatProgress({
-      totalAyahsRead: 300, totalAyahs: 6236, lastSurah: 2, lastAyah: 100,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatProgress(
+        {
+          totalAyahsRead: 300,
+          totalAyahs: 6236,
+          lastSurah: 2,
+          lastAyah: 100,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatReminder({
-      lastSessionDate: "2026-03-13 14:00:00", lastSurahNum: 2, lastAyah: 83,
-      weekSessions: 5, weekAyahs: 50, streak: 3,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatReminder(
+        {
+          lastSessionDate: "2026-03-13 14:00:00",
+          lastSurahNum: 2,
+          lastAyah: 83,
+          weekSessions: 5,
+          weekAyahs: 50,
+          streak: 3,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatReadConfirmation({
-      pageStart: 10, pageEnd: 10, durationSeconds: 300,
-      totalPagesRead: 10, totalPages: 604,
-    }, t)).toMatchSnapshot();
+    expect(
+      formatReadConfirmation(
+        {
+          pageStart: 10,
+          pageEnd: 10,
+          durationSeconds: 300,
+          totalPagesRead: 10,
+          totalPages: 604,
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
     expect(formatKahfReminder({}, t)).toMatchSnapshot();
-    expect(formatKahfReminder({ lastDate: "2026-03-07 10:00:00", lastDuration: 600 }, t)).toMatchSnapshot();
+    expect(
+      formatKahfReminder(
+        { lastDate: "2026-03-07 10:00:00", lastDuration: 600 },
+        t
+      )
+    ).toMatchSnapshot();
 
     expect(formatEstimation(2.5, 500, "2026-03-13", t)).toMatchSnapshot();
     expect(formatKhatmaMessage(1, t)).toMatchSnapshot();
     expect(formatKhatmaMessage(3, t)).toMatchSnapshot();
-    expect(formatSurahsComplete([{ number: 1, name: "Al-Fatiha" }], t)).toMatchSnapshot();
+    expect(
+      formatSurahsComplete([{ number: 1, name: "Al-Fatiha" }], t)
+    ).toMatchSnapshot();
 
     expect(formatError("test error", t)).toMatchSnapshot();
     expect(formatError("test error", t, "/example")).toMatchSnapshot();
 
-    expect(formatSpeedReport({
-      averages: { global: 150, last7Days: 160, last30Days: 140 },
-      bestSession: null, longestSession: null, byType: [],
-    }, t)).toMatchSnapshot();
+    expect(
+      formatSpeedReport(
+        {
+          averages: { global: 150, last7Days: 160, last30Days: 140 },
+          bestSession: null,
+          longestSession: null,
+          byType: [],
+        },
+        t
+      )
+    ).toMatchSnapshot();
 
-    expect(formatWeeklyRecap({
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
-      thisWeekPages: 12, lastWeekPages: 10,
-      streak: { currentStreak: 8, bestStreak: 15 },
-      completedSurahs: [],
-    }, t)).toMatchSnapshot();
+    expect(
+      formatWeeklyRecap(
+        {
+          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeekPages: 12,
+          lastWeekPages: 10,
+          streak: { currentStreak: 8, bestStreak: 15 },
+          completedSurahs: [],
+        },
+        t
+      )
+    ).toMatchSnapshot();
   });
 });
 
@@ -266,7 +439,9 @@ describe("getLocale", () => {
 });
 
 describe("getBotCommands", () => {
-  it.each(locales)("%s: returns all commands with non-empty descriptions", (_, t) => {
+  it.each(
+    locales
+  )("%s: returns all commands with non-empty descriptions", (_, t) => {
     const commands = getBotCommands(t);
     expect(commands.length).toBeGreaterThan(0);
     for (const cmd of commands) {

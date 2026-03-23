@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createBot } from "../src/bot";
 import type { Bot } from "grammy";
-import type { CustomContext } from "../src/bot";
 import type { Update } from "grammy/types";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CustomContext } from "../src/bot";
+import { createBot } from "../src/bot";
 
-const ALLOWED_ID = 123456;
-const STRANGER_ID = 999999;
+const ALLOWED_ID = 123_456;
+const STRANGER_ID = 999_999;
 
 function makeUpdate(userId: number): Update {
   return {
@@ -23,14 +23,20 @@ function makeUpdate(userId: number): Update {
 function makeMockDb(): D1Database {
   return {
     prepare: () => ({
-      bind: () => ({ first: async () => null, run: async () => ({ success: true }) }),
+      bind: () => ({
+        first: async () => null,
+        run: async () => ({ success: true }),
+      }),
       first: async () => null,
       run: async () => ({ success: true }),
     }),
   } as unknown as D1Database;
 }
 
-function setupBot(): { bot: Bot<CustomContext>; handlerCalled: ReturnType<typeof vi.fn> } {
+function setupBot(): {
+  bot: Bot<CustomContext>;
+  handlerCalled: ReturnType<typeof vi.fn>;
+} {
   const bot = createBot("fake-token", makeMockDb(), String(ALLOWED_ID));
   bot.api.config.use(() => ({ ok: true, result: true }) as never);
   const handlerCalled = vi.fn();
@@ -58,14 +64,14 @@ describe("auth middleware", () => {
   });
 
   it("rejects invalid ALLOWED_USER_ID", () => {
-    expect(() => createBot("fake-token", {} as D1Database, "not-a-number")).toThrow(
-      "ALLOWED_USER_ID is not a valid integer",
-    );
+    expect(() =>
+      createBot("fake-token", {} as D1Database, "not-a-number")
+    ).toThrow("ALLOWED_USER_ID is not a valid integer");
   });
 
   it("rejects empty ALLOWED_USER_ID", () => {
     expect(() => createBot("fake-token", {} as D1Database, "")).toThrow(
-      "ALLOWED_USER_ID is not a valid integer",
+      "ALLOWED_USER_ID is not a valid integer"
     );
   });
 });

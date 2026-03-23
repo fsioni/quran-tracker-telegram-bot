@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSetMyCommands = vi.fn().mockResolvedValue(true);
 
@@ -7,9 +7,7 @@ vi.mock("grammy", () => {
     Bot: class MockBot {
       api = { setMyCommands: mockSetMyCommands };
     },
-    webhookCallback: vi.fn().mockReturnValue(
-      () => new Response("ok"),
-    ),
+    webhookCallback: vi.fn().mockReturnValue(() => new Response("ok")),
   };
 });
 
@@ -19,7 +17,9 @@ vi.mock("../src/bot", () => ({
 
 vi.mock("../src/locales", () => ({
   getLocale: vi.fn().mockReturnValue({}),
-  getBotCommands: vi.fn().mockReturnValue([{ command: "start", description: "test" }]),
+  getBotCommands: vi
+    .fn()
+    .mockReturnValue([{ command: "start", description: "test" }]),
 }));
 
 vi.mock("../src/services/db", () => ({
@@ -38,7 +38,11 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer TOKEN" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const res = await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(mockSetMyCommands).toHaveBeenCalledOnce();
     expect(res.status).toBe(200);
@@ -46,8 +50,14 @@ describe("fetch handler", () => {
   });
 
   it("POST /setup sans token retourne 401", async () => {
-    const req = new Request("https://bot.example.com/setup", { method: "POST" });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const req = new Request("https://bot.example.com/setup", {
+      method: "POST",
+    });
+    const res = await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(401);
@@ -58,7 +68,11 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer WRONG" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const res = await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(401);
@@ -66,7 +80,11 @@ describe("fetch handler", () => {
 
   it("GET /setup retourne 405", async () => {
     const req = new Request("https://bot.example.com/setup", { method: "GET" });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const res = await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(res.status).toBe(405);
@@ -78,15 +96,25 @@ describe("fetch handler", () => {
       method: "POST",
       headers: { Authorization: "Bearer TOKEN" },
     });
-    const res = await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const res = await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(res.status).toBe(502);
   });
 
   it("requete normale delegue a webhookCallback", async () => {
     const { webhookCallback } = await import("grammy");
-    const req = new Request("https://bot.example.com/webhook", { method: "POST" });
-    await handler.fetch(req, { BOT_TOKEN: "TOKEN", DB: {} as D1Database, ALLOWED_USER_ID: "123" });
+    const req = new Request("https://bot.example.com/webhook", {
+      method: "POST",
+    });
+    await handler.fetch(req, {
+      BOT_TOKEN: "TOKEN",
+      DB: {} as D1Database,
+      ALLOWED_USER_ID: "123",
+    });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
     expect(webhookCallback).toHaveBeenCalled();

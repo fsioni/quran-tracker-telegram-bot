@@ -1,15 +1,15 @@
 // tests/prayer.test.ts
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fr } from "../src/locales/fr";
+import type { PrayerCacheRow } from "../src/services/db";
 import {
-  parsePrayerResponse,
   buildAladhanUrl,
   fetchPrayerTimes,
-  isReminderDue,
   getDueReminders,
   getNowInTimezone,
+  isReminderDue,
+  parsePrayerResponse,
 } from "../src/services/prayer";
-import type { PrayerCacheRow } from "../src/services/db";
-import { fr } from "../src/locales/fr";
 
 describe("parsePrayerResponse", () => {
   it("parse une reponse Aladhan valide", () => {
@@ -17,9 +17,13 @@ describe("parsePrayerResponse", () => {
       code: 200,
       data: {
         timings: {
-          Fajr: "05:30", Dhuhr: "12:15", Asr: "15:45",
-          Maghrib: "18:30", Isha: "20:00",
-          Sunrise: "06:45", Sunset: "18:28",
+          Fajr: "05:30",
+          Dhuhr: "12:15",
+          Asr: "15:45",
+          Maghrib: "18:30",
+          Isha: "20:00",
+          Sunrise: "06:45",
+          Sunset: "18:28",
         },
       },
     };
@@ -28,8 +32,11 @@ describe("parsePrayerResponse", () => {
     if (result.ok) {
       expect(result.value).toEqual({
         date: "2026-03-14",
-        fajr: "05:30", dhuhr: "12:15", asr: "15:45",
-        maghrib: "18:30", isha: "20:00",
+        fajr: "05:30",
+        dhuhr: "12:15",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
       });
     }
   });
@@ -39,9 +46,13 @@ describe("parsePrayerResponse", () => {
       code: 200,
       data: {
         timings: {
-          Fajr: "05:30 (EST)", Dhuhr: "12:15 (EST)", Asr: "15:45 (EST)",
-          Maghrib: "18:30 (EST)", Isha: "20:00 (EST)",
-          Sunrise: "06:45", Sunset: "18:28",
+          Fajr: "05:30 (EST)",
+          Dhuhr: "12:15 (EST)",
+          Asr: "15:45 (EST)",
+          Maghrib: "18:30 (EST)",
+          Isha: "20:00 (EST)",
+          Sunrise: "06:45",
+          Sunset: "18:28",
         },
       },
     };
@@ -69,7 +80,9 @@ describe("parsePrayerResponse", () => {
       code: 200,
       data: {
         timings: {
-          Fajr: "05:30", Dhuhr: "12:15", Asr: "15:45",
+          Fajr: "05:30",
+          Dhuhr: "12:15",
+          Asr: "15:45",
           Maghrib: "18:30",
           // Isha missing
         },
@@ -77,7 +90,9 @@ describe("parsePrayerResponse", () => {
     };
     const result = parsePrayerResponse(body as any, "2026-03-14", fr);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("Isha");
+    if (!result.ok) {
+      expect(result.error).toContain("Isha");
+    }
   });
 });
 
@@ -85,43 +100,73 @@ describe("buildAladhanUrl", () => {
   it("convertit YYYY-MM-DD en DD-MM-YYYY pour Aladhan", () => {
     const url = buildAladhanUrl("2026-03-14", "Playa del Carmen", "MX");
     expect(url).toBe(
-      "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=99&methodSettings=18,0,17",
+      "https://api.aladhan.com/v1/timingsByCity/14-03-2026?city=Playa%20del%20Carmen&country=MX&method=99&methodSettings=18,0,17"
     );
   });
 });
 
 describe("fetchPrayerTimes", () => {
-  afterEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("retourne les horaires en cas de succes", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        code: 200,
-        data: {
-          timings: {
-            Fajr: "05:30", Dhuhr: "12:15", Asr: "15:45",
-            Maghrib: "18:30", Isha: "20:00",
-            Sunrise: "06:45", Sunset: "18:28",
-          },
-        },
-      }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            code: 200,
+            data: {
+              timings: {
+                Fajr: "05:30",
+                Dhuhr: "12:15",
+                Asr: "15:45",
+                Maghrib: "18:30",
+                Isha: "20:00",
+                Sunrise: "06:45",
+                Sunset: "18:28",
+              },
+            },
+          }),
+      })
+    );
 
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
+    const result = await fetchPrayerTimes(
+      "2026-03-14",
+      "Playa del Carmen",
+      "MX",
+      fr
+    );
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.fajr).toBe("05:30");
+    if (result.ok) {
+      expect(result.value.fajr).toBe("05:30");
+    }
   });
 
   it("retourne erreur si HTTP echoue", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500 })
+    );
+    const result = await fetchPrayerTimes(
+      "2026-03-14",
+      "Playa del Carmen",
+      "MX",
+      fr
+    );
     expect(result.ok).toBe(false);
   });
 
   it("retourne erreur si fetch throw", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    const result = await fetchPrayerTimes("2026-03-14", "Playa del Carmen", "MX", fr);
+    const result = await fetchPrayerTimes(
+      "2026-03-14",
+      "Playa del Carmen",
+      "MX",
+      fr
+    );
     expect(result.ok).toBe(false);
   });
 });
@@ -144,10 +189,20 @@ describe("isReminderDue", () => {
   });
 });
 
-const makeCache = (overrides: Partial<PrayerCacheRow> = {}): PrayerCacheRow => ({
+const makeCache = (
+  overrides: Partial<PrayerCacheRow> = {}
+): PrayerCacheRow => ({
   date: "2026-03-14",
-  fajr: "05:30", dhuhr: "12:00", asr: "15:45", maghrib: "18:30", isha: "20:00",
-  fajr_sent: 0, dhuhr_sent: 0, asr_sent: 0, maghrib_sent: 0, isha_sent: 0,
+  fajr: "05:30",
+  dhuhr: "12:00",
+  asr: "15:45",
+  maghrib: "18:30",
+  isha: "20:00",
+  fajr_sent: 0,
+  dhuhr_sent: 0,
+  asr_sent: 0,
+  maghrib_sent: 0,
+  isha_sent: 0,
   fetched_at: "2026-03-14 00:00:00",
   ...overrides,
 });
@@ -158,11 +213,15 @@ describe("getDueReminders", () => {
   });
 
   it("retourne la priere meme avec un tick tres retarde", () => {
-    expect(getDueReminders(makeCache({ fajr_sent: 1 }), "12:30")).toEqual(["dhuhr"]);
+    expect(getDueReminders(makeCache({ fajr_sent: 1 }), "12:30")).toEqual([
+      "dhuhr",
+    ]);
   });
 
   it("retourne [] si deja envoyee", () => {
-    expect(getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "12:30")).toEqual([]);
+    expect(
+      getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "12:30")
+    ).toEqual([]);
   });
 
   it("retourne [] si aucune priere n'est encore passee", () => {
@@ -170,11 +229,19 @@ describe("getDueReminders", () => {
   });
 
   it("retourne plusieurs prieres si tick retarde couvre plusieurs", () => {
-    expect(getDueReminders(makeCache(), "20:00")).toEqual(["fajr", "dhuhr", "asr", "maghrib", "isha"]);
+    expect(getDueReminders(makeCache(), "20:00")).toEqual([
+      "fajr",
+      "dhuhr",
+      "asr",
+      "maghrib",
+      "isha",
+    ]);
   });
 
   it("exclut les prieres deja envoyees parmi plusieurs dues", () => {
-    expect(getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "20:00")).toEqual(["asr", "maghrib", "isha"]);
+    expect(
+      getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "20:00")
+    ).toEqual(["asr", "maghrib", "isha"]);
   });
 });
 

@@ -1,16 +1,16 @@
 // src/handlers/extra.ts
 import type { CustomContext } from "../bot";
+import { getPageRange } from "../data/pages";
+import { getNowTimestamp, getTimezone, insertSession } from "../services/db";
 import {
+  appendCompletedSurahs,
+  formatError,
+  formatSessionConfirmation,
   parseDuration,
   parsePage,
   parseRange,
-  formatSessionConfirmation,
-  appendCompletedSurahs,
-  formatError,
 } from "../services/format";
-import { getPageRange } from "../data/pages";
-import { validateRange, calculateAyahCount } from "../services/quran";
-import { insertSession, getTimezone, getNowTimestamp } from "../services/db";
+import { calculateAyahCount, validateRange } from "../services/quran";
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -18,9 +18,7 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   const parts = input.split(/\s+/);
 
   if (parts.length < 2 || !parts[0]) {
-    await ctx.reply(
-      formatError(t.read.formatInvalid, t, t.examples.extra),
-    );
+    await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.extra));
     return;
   }
 
@@ -65,13 +63,7 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   } else {
     const rangeResult = parseRange(targetStr, t);
     if (!rangeResult.ok) {
-      await ctx.reply(
-        formatError(
-          t.read.formatInvalid,
-          t,
-          t.examples.extra,
-        ),
-      );
+      await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.extra));
       return;
     }
 
@@ -80,7 +72,13 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     surahEnd = rangeResult.value.surahEnd;
     ayahEnd = rangeResult.value.ayahEnd;
 
-    const validResult = validateRange(surahStart, ayahStart, surahEnd, ayahEnd, t);
+    const validResult = validateRange(
+      surahStart,
+      ayahStart,
+      surahEnd,
+      ayahEnd,
+      t
+    );
     if (!validResult.ok) {
       await ctx.reply(formatError(validResult.error, t));
       return;

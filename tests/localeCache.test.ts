@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { en } from "../src/locales/en";
 import { fr } from "../src/locales/fr";
 
@@ -8,7 +8,10 @@ vi.mock("../src/services/db", () => ({
   getConfig: (...args: unknown[]) => mockGetConfig(...args),
 }));
 
-import { resolveLocale, invalidateLocaleCache } from "../src/services/localeCache";
+import {
+  invalidateLocaleCache,
+  resolveLocale,
+} from "../src/services/localeCache";
 
 const fakeDb = {} as D1Database;
 

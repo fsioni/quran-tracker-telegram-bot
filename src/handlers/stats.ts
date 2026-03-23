@@ -1,56 +1,76 @@
 // src/handlers/stats.ts
 import type { CustomContext } from "../bot";
+import { TOTAL_PAGES } from "../data/pages";
+import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import {
-  getHistory,
-  getGlobalStats,
-  getLastSession,
-  getPeriodStats,
   calculateStreak,
-  getTimezone,
-  getRecentPace,
-  getTodayInTimezone,
-  getKhatmaCount,
-  getPreviousWeekStats,
-  getSpeedAverages,
   getBestSpeedSession,
+  getGlobalStats,
+  getHistory,
+  getKhatmaCount,
+  getLastSession,
   getLongestSession,
+  getPeriodStats,
+  getPreviousWeekStats,
+  getRecentPace,
+  getSpeedAverages,
   getSpeedByType,
+  getTimezone,
+  getTodayInTimezone,
   type SessionType,
 } from "../services/db";
-import { formatHistoryLine, formatStats, formatProgress, formatEstimation, formatError, formatSpeedReport } from "../services/format";
-import { TOTAL_AYAH_COUNT } from "../data/surahs";
-import { TOTAL_PAGES } from "../data/pages";
+import {
+  formatError,
+  formatEstimation,
+  formatHistoryLine,
+  formatProgress,
+  formatSpeedReport,
+  formatStats,
+} from "../services/format";
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const tz = await getTimezone(ctx.db);
 
-  const [globalResult, weekResult, monthResult, streak, prevWeekResult] = await Promise.all([
-    getGlobalStats(ctx.db),
-    getPeriodStats(ctx.db, "week", tz),
-    getPeriodStats(ctx.db, "month", tz),
-    calculateStreak(ctx.db, tz),
-    getPreviousWeekStats(ctx.db, tz),
-  ]);
+  const [globalResult, weekResult, monthResult, streak, prevWeekResult] =
+    await Promise.all([
+      getGlobalStats(ctx.db),
+      getPeriodStats(ctx.db, "week", tz),
+      getPeriodStats(ctx.db, "month", tz),
+      calculateStreak(ctx.db, tz),
+      getPreviousWeekStats(ctx.db, tz),
+    ]);
 
-  if (!globalResult.ok) { await ctx.reply(formatError(globalResult.error, t)); return; }
-  if (!weekResult.ok) { await ctx.reply(formatError(weekResult.error, t)); return; }
-  if (!monthResult.ok) { await ctx.reply(formatError(monthResult.error, t)); return; }
+  if (!globalResult.ok) {
+    await ctx.reply(formatError(globalResult.error, t));
+    return;
+  }
+  if (!weekResult.ok) {
+    await ctx.reply(formatError(weekResult.error, t));
+    return;
+  }
+  if (!monthResult.ok) {
+    await ctx.reply(formatError(monthResult.error, t));
+    return;
+  }
 
-  const msg = formatStats({
-    totalAyahs: globalResult.value.totalAyahs,
-    totalSeconds: globalResult.value.totalSeconds,
-    currentStreak: streak.currentStreak,
-    bestStreak: streak.bestStreak,
-    weekAyahs: weekResult.value.ayahs,
-    weekSeconds: weekResult.value.seconds,
-    monthAyahs: monthResult.value.ayahs,
-    monthSeconds: monthResult.value.seconds,
-    ...(prevWeekResult.ok && {
-      prevWeekAyahs: prevWeekResult.value.ayahs,
-      prevWeekSeconds: prevWeekResult.value.seconds,
-    }),
-  }, t);
+  const msg = formatStats(
+    {
+      totalAyahs: globalResult.value.totalAyahs,
+      totalSeconds: globalResult.value.totalSeconds,
+      currentStreak: streak.currentStreak,
+      bestStreak: streak.bestStreak,
+      weekAyahs: weekResult.value.ayahs,
+      weekSeconds: weekResult.value.seconds,
+      monthAyahs: monthResult.value.ayahs,
+      monthSeconds: monthResult.value.seconds,
+      ...(prevWeekResult.ok && {
+        prevWeekAyahs: prevWeekResult.value.ayahs,
+        prevWeekSeconds: prevWeekResult.value.seconds,
+      }),
+    },
+    t
+  );
 
   await ctx.reply(msg);
 }
@@ -59,7 +79,7 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
     getGlobalStats(ctx.db),
-    getLastSession(ctx.db, 'normal'),
+    getLastSession(ctx.db, "normal"),
     getTimezone(ctx.db),
     getKhatmaCount(ctx.db),
   ]);
@@ -74,13 +94,16 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  let msg = formatProgress({
-    totalAyahsRead: globalResult.value.totalAyahs,
-    totalAyahs: TOTAL_AYAH_COUNT,
-    lastSurah: lastSession.surahEnd,
-    lastAyah: lastSession.ayahEnd,
-    khatmaCount,
-  }, t);
+  let msg = formatProgress(
+    {
+      totalAyahsRead: globalResult.value.totalAyahs,
+      totalAyahs: TOTAL_AYAH_COUNT,
+      lastSurah: lastSession.surahEnd,
+      lastAyah: lastSession.ayahEnd,
+      khatmaCount,
+    },
+    t
+  );
 
   if (lastSession.pageEnd != null) {
     msg += `\n${t.progress.page} : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
@@ -111,13 +134,19 @@ export async function speedHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  await ctx.reply(formatSpeedReport({ averages, bestSession, longestSession, byType }, t));
+  await ctx.reply(
+    formatSpeedReport({ averages, bestSession, longestSession, byType }, t)
+  );
 }
 
 export async function historyHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim().toLowerCase();
-  const validTypes: Record<string, SessionType> = { normal: 'normal', extra: 'extra', kahf: 'kahf' };
+  const validTypes: Record<string, SessionType> = {
+    normal: "normal",
+    extra: "extra",
+    kahf: "kahf",
+  };
   const typeFilter = validTypes[input];
 
   const sessions = await getHistory(ctx.db, 10, typeFilter);

@@ -1,9 +1,9 @@
 // tests/handlers/extra.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { extraHandler } from "../../src/handlers/extra";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import type { Session } from "../../src/services/db";
+import { extraHandler } from "../../src/handlers/extra";
 import { fr } from "../../src/locales/fr";
+import type { Session } from "../../src/services/db";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -16,7 +16,12 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   };
 });
 
-import { insertSession, getConfig, getTimezone, getNowTimestamp } from "../../src/services/db";
+import {
+  getConfig,
+  getNowTimestamp,
+  getTimezone,
+  insertSession,
+} from "../../src/services/db";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
 const mockGetConfig = getConfig as ReturnType<typeof vi.fn>;
@@ -43,7 +48,7 @@ function createMockContext(match = ""): CustomContext {
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
-    chat: { id: 12345 },
+    chat: { id: 12_345 },
     db: {} as D1Database,
     locale: fr,
   } as unknown as CustomContext;
@@ -76,7 +81,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
@@ -86,7 +92,7 @@ describe("extraHandler", () => {
         pageStart: 300,
         pageEnd: 300,
         durationSeconds: 300,
-      }),
+      })
     );
   });
 
@@ -109,7 +115,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
@@ -119,7 +126,7 @@ describe("extraHandler", () => {
         pageStart: 300,
         pageEnd: 304,
         durationSeconds: 900,
-      }),
+      })
     );
   });
 
@@ -140,7 +147,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session extra enregistrée");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
@@ -153,7 +161,7 @@ describe("extraHandler", () => {
         ayahEnd: 83,
         ayahCount: 7,
         durationSeconds: 900,
-      }),
+      })
     );
   });
 
@@ -162,7 +170,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("page invalide");
     expect(mockInsertSession).not.toHaveBeenCalled();
@@ -173,7 +182,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("page invalide");
     expect(mockInsertSession).not.toHaveBeenCalled();
@@ -184,7 +194,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format invalide");
     expect(mockInsertSession).not.toHaveBeenCalled();
@@ -195,7 +206,8 @@ describe("extraHandler", () => {
     await extraHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format invalide");
     expect(mockInsertSession).not.toHaveBeenCalled();
@@ -210,7 +222,7 @@ describe("extraHandler", () => {
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ type: "extra" }),
+      expect.objectContaining({ type: "extra" })
     );
   });
 
@@ -228,7 +240,8 @@ describe("extraHandler", () => {
     const ctx = createMockContext("1:1-7 5m");
     await extraHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session extra enregistrée");
     expect(msg).toContain("Sourate Al-Fatiha (1) terminée");
   });
@@ -247,7 +260,8 @@ describe("extraHandler", () => {
     const ctx = createMockContext("2:100-150 8m");
     await extraHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).not.toContain("terminée");
   });
 });

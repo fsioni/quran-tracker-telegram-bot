@@ -1,11 +1,10 @@
 import {
-  PAGES,
-  TOTAL_PAGES,
-  KAHF_PAGE_START,
-  KAHF_PAGE_END,
-  KAHF_TOTAL_PAGES,
   getPageBoundary,
   getPageRange,
+  KAHF_PAGE_END,
+  KAHF_PAGE_START,
+  KAHF_TOTAL_PAGES,
+  PAGES,
 } from "../../src/data/pages";
 import { getSurah } from "../../src/data/surahs";
 

@@ -1,9 +1,9 @@
 // tests/handlers/kahf.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { kahfHandler } from "../../src/handlers/kahf";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import type { Session } from "../../src/services/db";
+import { kahfHandler } from "../../src/handlers/kahf";
 import { fr } from "../../src/locales/fr";
+import type { Session } from "../../src/services/db";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -19,17 +19,20 @@ vi.mock("../../src/services/db", async (importOriginal) => {
 });
 
 import {
-  insertSession,
-  getConfig,
-  getTimezone,
-  getNowTimestamp,
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
+  getNowTimestamp,
+  getTimezone,
+  insertSession,
 } from "../../src/services/db";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
-const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<typeof vi.fn>;
-const mockGetLastWeekKahfTotal = getLastWeekKahfTotal as ReturnType<typeof vi.fn>;
+const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<
+  typeof vi.fn
+>;
+const mockGetLastWeekKahfTotal = getLastWeekKahfTotal as ReturnType<
+  typeof vi.fn
+>;
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -53,7 +56,7 @@ function createMockContext(match = ""): CustomContext {
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
-    chat: { id: 12345 },
+    chat: { id: 12_345 },
     db: {} as D1Database,
     locale: fr,
   } as unknown as CustomContext;
@@ -81,7 +84,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("1/12");
     expect(msg).toContain("5m");
 
@@ -91,7 +95,7 @@ describe("kahfHandler", () => {
         type: "kahf",
         pageStart: 293,
         pageEnd: 293,
-      }),
+      })
     );
   });
 
@@ -111,7 +115,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("3/12");
 
     expect(mockInsertSession).toHaveBeenCalledWith(
@@ -119,7 +124,7 @@ describe("kahfHandler", () => {
       expect.objectContaining({
         pageStart: 295,
         pageEnd: 295,
-      }),
+      })
     );
   });
 
@@ -136,7 +141,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("3/12");
     expect(msg).toContain("15m");
 
@@ -147,7 +153,7 @@ describe("kahfHandler", () => {
         pageEnd: 295,
         durationSeconds: 900,
         type: "kahf",
-      }),
+      })
     );
   });
 
@@ -161,7 +167,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Al-Kahf déjà terminée cette semaine");
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
@@ -176,7 +183,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("1 page(s)");
     expect(mockInsertSession).not.toHaveBeenCalled();
@@ -201,7 +209,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("terminée");
     expect(msg).toContain("12/12");
     expect(msg).toContain("Semaine dernière");
@@ -212,7 +221,8 @@ describe("kahfHandler", () => {
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format invalide");
   });
@@ -226,7 +236,7 @@ describe("kahfHandler", () => {
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ type: "kahf" }),
+      expect.objectContaining({ type: "kahf" })
     );
   });
 });

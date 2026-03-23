@@ -132,6 +132,6 @@ export function getSurah(num: number): Surah | undefined {
 const sum = SURAHS.reduce((acc, s) => acc + s.ayahCount, 0);
 if (sum !== TOTAL_AYAH_COUNT) {
   throw new Error(
-    `Surah ayah count integrity check failed: expected ${TOTAL_AYAH_COUNT}, got ${sum}`,
+    `Surah ayah count integrity check failed: expected ${TOTAL_AYAH_COUNT}, got ${sum}`
   );
 }

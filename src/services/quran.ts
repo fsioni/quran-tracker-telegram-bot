@@ -1,6 +1,6 @@
-import { Result, ok, err } from "../types";
-import { getSurah, SURAHS, Surah } from "../data/surahs";
+import { getSurah, SURAHS, type Surah } from "../data/surahs";
 import type { Locale } from "../locales";
+import { err, ok, type Result } from "../types";
 
 export function validateSurah(surahNum: number, t: Locale): Result<Surah> {
   if (!Number.isInteger(surahNum) || surahNum < 1 || surahNum > 114) {
@@ -13,7 +13,11 @@ export function validateSurah(surahNum: number, t: Locale): Result<Surah> {
   return ok(surah);
 }
 
-export function validateAyah(surahNum: number, ayah: number, t: Locale): Result<true> {
+export function validateAyah(
+  surahNum: number,
+  ayah: number,
+  t: Locale
+): Result<true> {
   const surahResult = validateSurah(surahNum, t);
   if (!surahResult.ok) {
     return surahResult;
@@ -30,7 +34,7 @@ export function validateRange(
   ayahStart: number,
   surahEnd: number,
   ayahEnd: number,
-  t: Locale,
+  t: Locale
 ): Result<true> {
   const startSurahResult = validateAyah(surahStart, ayahStart, t);
   if (!startSurahResult.ok) {
@@ -43,11 +47,15 @@ export function validateRange(
   }
 
   if (surahStart === surahEnd && ayahStart > ayahEnd) {
-    return err(t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart));
+    return err(
+      t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart)
+    );
   }
 
   if (surahStart > surahEnd) {
-    return err(t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart));
+    return err(
+      t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart)
+    );
   }
 
   return ok(true);
@@ -57,7 +65,7 @@ export function getCompletedSurahs(
   surahStart: number,
   ayahStart: number,
   surahEnd: number,
-  ayahEnd: number,
+  ayahEnd: number
 ): Surah[] {
   const completed: Surah[] = [];
 
@@ -78,7 +86,7 @@ export function calculateAyahCount(
   surahStart: number,
   ayahStart: number,
   surahEnd: number,
-  ayahEnd: number,
+  ayahEnd: number
 ): number {
   if (surahStart === surahEnd) {
     return ayahEnd - ayahStart + 1;

@@ -1,7 +1,7 @@
 // tests/handlers/session.test.ts
-import { describe, it, expect, vi } from "vitest";
-import { sessionHandler } from "../../src/handlers/session";
+import { describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { sessionHandler } from "../../src/handlers/session";
 import { fr } from "../../src/locales/fr";
 
 function createMockContext(match = ""): CustomContext {
@@ -16,13 +16,20 @@ function createMockContext(match = ""): CustomContext {
     ayah_count: 7,
     created_at: "2026-03-13 14:00:00",
   });
-  const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+  const bindFn = vi
+    .fn()
+    .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+  const prepareFn = vi.fn().mockReturnValue({
+    bind: bindFn,
+    run: vi.fn(),
+    first: firstFn,
+    all: vi.fn(),
+  });
 
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
-    chat: { id: 12345 },
+    chat: { id: 12_345 },
     db: {
       prepare: prepareFn,
       batch: vi.fn(),
@@ -38,7 +45,8 @@ describe("sessionHandler", () => {
     const ctx = createMockContext("2:77-83 8m53");
     await sessionHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session enregistrée");
     expect(msg).toContain("Al-Baqara");
     expect(msg).toContain("7 versets");
@@ -48,7 +56,8 @@ describe("sessionHandler", () => {
     const ctx = createMockContext("");
     await sessionHandler(ctx);
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("/session 2:77-83 8m53");
   });
@@ -56,14 +65,16 @@ describe("sessionHandler", () => {
   it("repond erreur si duree manquante", async () => {
     const ctx = createMockContext("2:77-83");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
   });
 
   it("repond erreur pour format de plage invalide", async () => {
     const ctx = createMockContext("invalid 8m53");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format de plage invalide");
   });
@@ -71,7 +82,8 @@ describe("sessionHandler", () => {
   it("repond erreur pour format de duree invalide", async () => {
     const ctx = createMockContext("2:77-83 8min");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format de durée invalide");
   });
@@ -79,7 +91,8 @@ describe("sessionHandler", () => {
   it("repond erreur pour sourate hors bornes", async () => {
     const ctx = createMockContext("115:1-5 8m");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("n'existe pas");
   });
@@ -87,7 +100,8 @@ describe("sessionHandler", () => {
   it("repond erreur pour verset hors bornes", async () => {
     const ctx = createMockContext("1:1-99 8m");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("n'a que");
   });
@@ -95,7 +109,8 @@ describe("sessionHandler", () => {
   it("repond erreur pour plage inversee", async () => {
     const ctx = createMockContext("2:83-77 8m");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("précède le début");
   });
@@ -114,11 +129,19 @@ describe("sessionHandler", () => {
       ayah_count: 17,
       created_at: "2026-03-13 14:00:00",
     });
-    const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+    const bindFn = vi
+      .fn()
+      .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({
+      bind: bindFn,
+      run: vi.fn(),
+      first: firstFn,
+      all: vi.fn(),
+    });
 
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session enregistrée");
     expect(msg).toContain("Al-Baqara");
     expect(msg).toContain("Al-Imran");
@@ -150,11 +173,19 @@ describe("sessionHandler", () => {
       ayah_count: 7,
       created_at: "2026-03-15 14:00:00",
     });
-    const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+    const bindFn = vi
+      .fn()
+      .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({
+      bind: bindFn,
+      run: vi.fn(),
+      first: firstFn,
+      all: vi.fn(),
+    });
 
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session enregistrée");
     expect(msg).toContain("Sourate Al-Fatiha (1) terminée");
   });
@@ -162,7 +193,8 @@ describe("sessionHandler", () => {
   it("session en milieu de sourate -> pas de message de fin", async () => {
     const ctx = createMockContext("2:100-150 8m");
     await sessionHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Session enregistrée");
     expect(msg).not.toContain("terminée");
   });

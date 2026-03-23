@@ -1,6 +1,6 @@
-import type { PrayerTimes, PrayerCacheRow, PrayerName } from "./db";
-import { Result, ok, err } from "../types";
 import type { Locale } from "../locales";
+import { err, ok, type Result } from "../types";
+import type { PrayerCacheRow, PrayerName, PrayerTimes } from "./db";
 
 type AladhanTimings = {
   Fajr: string;
@@ -24,7 +24,11 @@ function stripTimezone(time: string): string {
 
 const REQUIRED_TIMINGS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
-export function parsePrayerResponse(body: AladhanResponse, date: string, t: Locale): Result<PrayerTimes> {
+export function parsePrayerResponse(
+  body: AladhanResponse,
+  date: string,
+  t: Locale
+): Result<PrayerTimes> {
   if (body.code !== 200 || !body.data?.timings) {
     return err(t.prayerApi.invalidResponse);
   }
@@ -44,7 +48,11 @@ export function parsePrayerResponse(body: AladhanResponse, date: string, t: Loca
   });
 }
 
-export function buildAladhanUrl(date: string, city: string, country: string): string {
+export function buildAladhanUrl(
+  date: string,
+  city: string,
+  country: string
+): string {
   const [y, m, d] = date.split("-");
   return `https://api.aladhan.com/v1/timingsByCity/${d}-${m}-${y}?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=99&methodSettings=18,0,17`;
 }
@@ -53,7 +61,7 @@ export async function fetchPrayerTimes(
   date: string,
   city: string,
   country: string,
-  t: Locale,
+  t: Locale
 ): Promise<Result<PrayerTimes>> {
   try {
     const url = buildAladhanUrl(date, city, country);
@@ -78,9 +86,18 @@ export function isReminderDue(nowHHMM: string, prayerHHMM: string): boolean {
   return diff >= 0;
 }
 
-const PRAYER_NAMES: readonly PrayerName[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+const PRAYER_NAMES: readonly PrayerName[] = [
+  "fajr",
+  "dhuhr",
+  "asr",
+  "maghrib",
+  "isha",
+];
 
-export function getDueReminders(cache: PrayerCacheRow, nowHHMM: string): PrayerName[] {
+export function getDueReminders(
+  cache: PrayerCacheRow,
+  nowHHMM: string
+): PrayerName[] {
   return PRAYER_NAMES.filter((name) => {
     const prayerTime = cache[name];
     const sentFlag = cache[`${name}_sent` as keyof PrayerCacheRow] as number;

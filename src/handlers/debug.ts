@@ -1,12 +1,12 @@
 import type { CustomContext } from "../bot";
 import {
   getConfig,
-  getPrayerCache,
-  getLastSession,
   getGlobalStats,
+  getLastSession,
+  getNowTimestamp,
+  getPrayerCache,
   getTimezone,
   getTodayInTimezone,
-  getNowTimestamp,
 } from "../services/db";
 import { formatRange } from "../services/format";
 
@@ -21,16 +21,23 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   const nowLocal = getNowTimestamp(tz);
 
   // Collect all data in parallel
-  const [city, country, chatId, prayerCache, lastSession, globalStats, kahfLast] =
-    await Promise.all([
-      getConfig(db, "city"),
-      getConfig(db, "country"),
-      getConfig(db, "chat_id"),
-      getPrayerCache(db, today),
-      getLastSession(db),
-      getGlobalStats(db),
-      getConfig(db, "kahf_reminder_last"),
-    ]);
+  const [
+    city,
+    country,
+    chatId,
+    prayerCache,
+    lastSession,
+    globalStats,
+    kahfLast,
+  ] = await Promise.all([
+    getConfig(db, "city"),
+    getConfig(db, "country"),
+    getConfig(db, "chat_id"),
+    getPrayerCache(db, today),
+    getLastSession(db),
+    getGlobalStats(db),
+    getConfig(db, "kahf_reminder_last"),
+  ]);
 
   const lines: string[] = [];
 
@@ -46,11 +53,21 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   if (prayerCache) {
     lines.push(t.debug.prayerCacheDateSection(today));
     const status = (sent: number) => (sent ? t.debug.sent : t.debug.pending);
-    lines.push(`fajr       : ${prayerCache.fajr} [${status(prayerCache.fajr_sent)}]`);
-    lines.push(`dhuhr      : ${prayerCache.dhuhr} [${status(prayerCache.dhuhr_sent)}]`);
-    lines.push(`asr        : ${prayerCache.asr} [${status(prayerCache.asr_sent)}]`);
-    lines.push(`maghrib    : ${prayerCache.maghrib} [${status(prayerCache.maghrib_sent)}]`);
-    lines.push(`isha       : ${prayerCache.isha} [${status(prayerCache.isha_sent)}]`);
+    lines.push(
+      `fajr       : ${prayerCache.fajr} [${status(prayerCache.fajr_sent)}]`
+    );
+    lines.push(
+      `dhuhr      : ${prayerCache.dhuhr} [${status(prayerCache.dhuhr_sent)}]`
+    );
+    lines.push(
+      `asr        : ${prayerCache.asr} [${status(prayerCache.asr_sent)}]`
+    );
+    lines.push(
+      `maghrib    : ${prayerCache.maghrib} [${status(prayerCache.maghrib_sent)}]`
+    );
+    lines.push(
+      `isha       : ${prayerCache.isha} [${status(prayerCache.isha_sent)}]`
+    );
     lines.push(`fetched_at : ${prayerCache.fetched_at}`);
   } else {
     lines.push(t.debug.prayerCacheSection);
@@ -71,10 +88,12 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
       lastSession.ayahStart,
       lastSession.surahEnd,
       lastSession.ayahEnd,
-      t,
+      t
     );
     lines.push(`id         : ${lastSession.id}`);
-    lines.push(`date       : ${t.fmt.dateShort(day, month)} ${t.fmt.timeShort(hour, minute)}`);
+    lines.push(
+      `date       : ${t.fmt.dateShort(day, month)} ${t.fmt.timeShort(hour, minute)}`
+    );
     lines.push(`type       : ${lastSession.type}`);
     lines.push(`range      : ${range}`);
   } else {

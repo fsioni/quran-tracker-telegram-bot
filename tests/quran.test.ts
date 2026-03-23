@@ -1,11 +1,11 @@
+import { fr } from "../src/locales/fr";
 import {
-  validateSurah,
-  validateAyah,
-  validateRange,
   calculateAyahCount,
   getCompletedSurahs,
+  validateAyah,
+  validateRange,
+  validateSurah,
 } from "../src/services/quran";
-import { fr } from "../src/locales/fr";
 
 describe("validateSurah", () => {
   it("accepts surah 1 (Al-Fatiha)", () => {
@@ -88,7 +88,7 @@ describe("validateAyah", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
-        "la sourate 1 n'a que 7 versets (verset 0 demandé)",
+        "la sourate 1 n'a que 7 versets (verset 0 demandé)"
       );
     }
   });
@@ -98,7 +98,7 @@ describe("validateAyah", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe(
-        "la sourate 1 n'a que 7 versets (verset 8 demandé)",
+        "la sourate 1 n'a que 7 versets (verset 8 demandé)"
       );
     }
   });
