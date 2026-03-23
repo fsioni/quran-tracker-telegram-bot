@@ -168,15 +168,20 @@ export async function handleScheduled(
     }
   }
 
-  // Al-Kahf Friday reminder
+  // Al-Kahf Friday reminder — use numeric day check (locale-independent)
   const nowDate = new Date();
-  const formatter = new Intl.DateTimeFormat("en-US", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
-    weekday: "long",
-  });
-  const dayOfWeek = formatter.format(nowDate);
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(nowDate);
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const d = Number(parts.find((p) => p.type === "day")?.value);
+  const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=Sun, 5=Fri
 
-  if (dayOfWeek === "Friday") {
+  if (dayOfWeek === 5) {
     const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
     if (kahfReminderLast !== today && isReminderDue(nowHHMM, cache.fajr)) {
       const kahfStats = await getKahfStats(db);
@@ -195,7 +200,7 @@ export async function handleScheduled(
   }
 
   // Weekly recap - Sunday evening
-  if (dayOfWeek === "Sunday") {
+  if (dayOfWeek === 0) {
     const recapLast = await getConfig(db, "weekly_recap_last");
     if (recapLast !== today && nowHHMM >= "21:00") {
       try {
