@@ -275,6 +275,11 @@ export type Locale = {
     date: string;
     cacheRefreshed: string;
     fetchError: (error: string) => string;
+    fajr: string;
+    dhuhr: string;
+    asr: string;
+    maghrib: string;
+    isha: string;
   };
 
   // Debug

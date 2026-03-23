@@ -302,6 +302,11 @@ export const en: Locale = {
     date: "Date",
     cacheRefreshed: "Cache refreshed.",
     fetchError: (error) => `unable to fetch prayer times: ${error}`,
+    fajr: "Fajr",
+    dhuhr: "Dhuhr",
+    asr: "Asr",
+    maghrib: "Maghrib",
+    isha: "Isha",
   },
 
   debug: {

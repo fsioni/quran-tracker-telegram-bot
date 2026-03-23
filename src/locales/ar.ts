@@ -295,6 +295,11 @@ export const ar: Locale = {
     date: "التاريخ",
     cacheRefreshed: "تم تحديث الذاكرة المؤقتة.",
     fetchError: (error) => `تعذر جلب أوقات الصلاة: ${error}`,
+    fajr: "الفجر",
+    dhuhr: "الظهر",
+    asr: "العصر",
+    maghrib: "المغرب",
+    isha: "العشاء",
   },
 
   debug: {

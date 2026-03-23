@@ -306,6 +306,11 @@ export const fr: Locale = {
     date: "Date",
     cacheRefreshed: "Cache rafraîchi.",
     fetchError: (error) => `impossible de récupérer les horaires : ${error}`,
+    fajr: "Fajr",
+    dhuhr: "Dhouhr",
+    asr: "Asr",
+    maghrib: "Maghreb",
+    isha: "Isha",
   },
 
   debug: {

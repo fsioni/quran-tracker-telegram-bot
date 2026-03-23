@@ -10,13 +10,17 @@ import {
 import { formatError } from "../services/format";
 import { fetchPrayerTimes } from "../services/prayer";
 
-const PRAYER_LABELS: Record<PrayerName, string> = {
-  fajr: "Fajr",
-  dhuhr: "Dhuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-};
+function getPrayerLabels(
+  t: CustomContext["locale"]
+): Record<PrayerName, string> {
+  return {
+    fajr: t.prayer.fajr,
+    dhuhr: t.prayer.dhuhr,
+    asr: t.prayer.asr,
+    maghrib: t.prayer.maghrib,
+    isha: t.prayer.isha,
+  };
+}
 
 export async function prayerHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -48,11 +52,12 @@ export async function prayerHandler(ctx: CustomContext): Promise<void> {
   await setPrayerCache(ctx.db, result.value);
 
   const times = result.value;
+  const labels = getPrayerLabels(t);
   const lines = [
     t.prayer.title(city, country),
     `${t.prayer.date} : ${today}`,
     "",
-    ...(Object.entries(PRAYER_LABELS) as [PrayerName, string][]).map(
+    ...(Object.entries(labels) as [PrayerName, string][]).map(
       ([key, label]) => `${label} : ${times[key]}`
     ),
     "",

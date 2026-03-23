@@ -70,9 +70,9 @@ describe("prayerHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("Fajr : 05:30");
-    expect(msg).toContain("Dhuhr : 12:15");
+    expect(msg).toContain("Dhouhr : 12:15");
     expect(msg).toContain("Asr : 15:45");
-    expect(msg).toContain("Maghrib : 18:30");
+    expect(msg).toContain("Maghreb : 18:30");
     expect(msg).toContain("Isha : 20:00");
     expect(msg).toContain("rafraîchi");
   });
