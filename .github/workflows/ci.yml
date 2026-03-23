@@ -35,6 +35,7 @@ jobs:
         # Requires BOT_TOKEN and ALLOWED_USER_ID to be set as Cloudflare secrets
         # (via wrangler secret put) before first deploy
         run: |
+          sed -i 's/<YOUR_D1_DATABASE_ID>/${{ secrets.D1_DATABASE_ID }}/' wrangler.toml
           DEPLOY_OUTPUT=$(npx wrangler deploy 2>&1)
           echo "$DEPLOY_OUTPUT"
           WORKER_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+workers\.dev')

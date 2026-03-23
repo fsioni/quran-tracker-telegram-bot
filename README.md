@@ -112,6 +112,19 @@ This registers the command menu in Telegram. Run it once after deploying, or aga
 
 The cron trigger (`*/5 * * * *`) handles prayer time reminders automatically.
 
+### CI/CD
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs tests on every PR and deploys to Cloudflare on push to `main`.
+
+Required GitHub repository secrets:
+
+| Secret | Description |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+| `D1_DATABASE_ID` | The D1 database UUID (from `wrangler d1 create`) |
+| `BOT_TOKEN` | Telegram bot token (used to register commands post-deploy) |
+
 ## Configuration
 
 Use `/config` to set your location for prayer time reminders:
