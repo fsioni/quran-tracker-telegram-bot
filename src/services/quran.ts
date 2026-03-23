@@ -1,27 +1,30 @@
-import { Result, ok, err } from "../types";
-import { getSurah, SURAHS, Surah } from "../data/surahs";
+import { getSurah, SURAHS, type Surah } from "../data/surahs";
+import type { Locale } from "../locales/types";
+import { err, ok, type Result } from "../types";
 
-export function validateSurah(surahNum: number): Result<Surah> {
+export function validateSurah(surahNum: number, t: Locale): Result<Surah> {
   if (!Number.isInteger(surahNum) || surahNum < 1 || surahNum > 114) {
-    return err(`la sourate ${surahNum} n'existe pas (1-114)`);
+    return err(t.validation.surahNotFound(surahNum));
   }
   const surah = getSurah(surahNum);
   if (!surah) {
-    return err(`la sourate ${surahNum} n'existe pas (1-114)`);
+    return err(t.validation.surahNotFound(surahNum));
   }
   return ok(surah);
 }
 
-export function validateAyah(surahNum: number, ayah: number): Result<true> {
-  const surahResult = validateSurah(surahNum);
+export function validateAyah(
+  surahNum: number,
+  ayah: number,
+  t: Locale
+): Result<true> {
+  const surahResult = validateSurah(surahNum, t);
   if (!surahResult.ok) {
     return surahResult;
   }
   const surah = surahResult.value;
   if (!Number.isInteger(ayah) || ayah < 1 || ayah > surah.ayahCount) {
-    return err(
-      `la sourate ${surahNum} n'a que ${surah.ayahCount} versets (verset ${ayah} demande)`,
-    );
+    return err(t.validation.ayahOutOfRange(surahNum, surah.ayahCount, ayah));
   }
   return ok(true);
 }
@@ -31,26 +34,27 @@ export function validateRange(
   ayahStart: number,
   surahEnd: number,
   ayahEnd: number,
+  t: Locale
 ): Result<true> {
-  const startSurahResult = validateAyah(surahStart, ayahStart);
+  const startSurahResult = validateAyah(surahStart, ayahStart, t);
   if (!startSurahResult.ok) {
     return startSurahResult;
   }
 
-  const endSurahResult = validateAyah(surahEnd, ayahEnd);
+  const endSurahResult = validateAyah(surahEnd, ayahEnd, t);
   if (!endSurahResult.ok) {
     return endSurahResult;
   }
 
   if (surahStart === surahEnd && ayahStart > ayahEnd) {
     return err(
-      `la fin (${surahEnd}:${ayahEnd}) precede le debut (${surahStart}:${ayahStart})`,
+      t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart)
     );
   }
 
   if (surahStart > surahEnd) {
     return err(
-      `la fin (${surahEnd}:${ayahEnd}) precede le debut (${surahStart}:${ayahStart})`,
+      t.validation.endBeforeStart(surahEnd, ayahEnd, surahStart, ayahStart)
     );
   }
 
@@ -61,7 +65,7 @@ export function getCompletedSurahs(
   surahStart: number,
   ayahStart: number,
   surahEnd: number,
-  ayahEnd: number,
+  ayahEnd: number
 ): Surah[] {
   const completed: Surah[] = [];
 
@@ -82,13 +86,16 @@ export function calculateAyahCount(
   surahStart: number,
   ayahStart: number,
   surahEnd: number,
-  ayahEnd: number,
+  ayahEnd: number
 ): number {
   if (surahStart === surahEnd) {
     return ayahEnd - ayahStart + 1;
   }
 
-  const startSurah = getSurah(surahStart)!;
+  const startSurah = getSurah(surahStart);
+  if (!startSurah) {
+    return 0;
+  }
   const remainingInStart = startSurah.ayahCount - ayahStart + 1;
 
   let middleAyahs = 0;

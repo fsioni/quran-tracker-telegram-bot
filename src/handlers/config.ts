@@ -1,99 +1,209 @@
+import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
-import { getConfig, setConfig, clearPrayerCache } from "../services/db";
-import { formatError } from "../services/format";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
+import {
+  buildWelcome,
+  CALLBACK_LANG_SET,
+  getBotCommands,
+  getLocale,
+  LANGUAGES,
+} from "../locales";
+import type { Locale } from "../locales/types";
+import { clearPrayerCache, getConfig, setConfig } from "../services/db";
+import { formatError } from "../services/format";
+import { invalidateLocaleCache } from "../services/locale-cache";
 
-export const WELCOME_MESSAGE = `Bienvenue sur le Quran Reading Tracker !
-
-Commandes disponibles :
-/go - Demarrer un timer de lecture
-/stop - Arreter le timer
-/read - Lire la prochaine page
-/session - Enregistrer une session de lecture
-/extra - Enregistrer une lecture extra
-/kahf - Lire sourate Al-Kahf (vendredi)
-/import - Importer des sessions
-/history - Historique des sessions
-/stats - Statistiques de lecture
-/progress - Progression dans le Coran
-/config - Configurer ville, pays, fuseau horaire
-/undo - Annuler la derniere session
-/delete - Supprimer une session
-/help - Afficher l'aide`;
+const COUNTRY_CODE_RE = /^[A-Za-z]{2}$/;
 
 export async function startHandler(ctx: CustomContext): Promise<void> {
-  await setConfig(ctx.db, "chat_id", String(ctx.chat!.id));
-  await ctx.reply(WELCOME_MESSAGE);
+  await setConfig(ctx.db, "chat_id", String(ctx.chat?.id));
+  await ctx.reply(buildWelcome(ctx.locale));
 }
 
 export async function helpHandler(ctx: CustomContext): Promise<void> {
-  await ctx.reply(WELCOME_MESSAGE);
+  await ctx.reply(buildWelcome(ctx.locale));
 }
 
-export async function configHandler(ctx: CustomContext): Promise<void> {
-  const input = ((ctx.match as string) || "").trim();
+async function showCurrentConfig(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
+  const [cityRaw, countryRaw, timezoneRaw, langRaw] = await Promise.all([
+    getConfig(ctx.db, "city"),
+    getConfig(ctx.db, "country"),
+    getConfig(ctx.db, "timezone"),
+    getConfig(ctx.db, "language"),
+  ]);
+  const city = cityRaw ?? DEFAULT_CITY;
+  const country = countryRaw ?? DEFAULT_COUNTRY;
+  const timezone = timezoneRaw ?? DEFAULT_TZ;
+  const lang = langRaw ?? "en";
+  const suffix = (raw: string | null) => (raw ? "" : t.config.defaultSuffix);
 
-  if (!input) {
-    const [cityRaw, countryRaw, timezoneRaw] = await Promise.all([
-      getConfig(ctx.db, "city"),
-      getConfig(ctx.db, "country"),
-      getConfig(ctx.db, "timezone"),
-    ]);
-    const city = cityRaw ?? DEFAULT_CITY;
-    const country = countryRaw ?? DEFAULT_COUNTRY;
-    const timezone = timezoneRaw ?? DEFAULT_TZ;
-    const suffix = (raw: string | null) => (raw ? "" : " (defaut)");
+  await ctx.reply(
+    [
+      t.config.title,
+      `${t.config.cityLabel} : ${city}${suffix(cityRaw)}`,
+      `${t.config.countryLabel} : ${country}${suffix(countryRaw)}`,
+      `${t.config.timezoneLabel} : ${timezone}${suffix(timezoneRaw)}`,
+      `${t.config.languageLabel} : ${langRaw ? getLocale(langRaw).nativeName : lang}${suffix(langRaw)}`,
+    ].join("\n")
+  );
+}
 
-    await ctx.reply(
-      [
-        "-- Configuration --",
-        `Ville : ${city}${suffix(cityRaw)}`,
-        `Pays : ${country}${suffix(countryRaw)}`,
-        `Fuseau horaire : ${timezone}${suffix(timezoneRaw)}`,
-      ].join("\n"),
-    );
-    return;
+async function showLanguageKeyboard(ctx: CustomContext): Promise<void> {
+  const keyboard = new InlineKeyboard();
+  for (const lang of LANGUAGES) {
+    const locale = getLocale(lang);
+    keyboard.text(locale.nativeName, `${CALLBACK_LANG_SET}:${lang}`);
   }
+  await ctx.reply(ctx.locale.config.languageLabel, { reply_markup: keyboard });
+}
 
-  const spaceIdx = input.indexOf(" ");
-  if (spaceIdx === -1) {
-    await ctx.reply(formatError("valeur manquante", "/config city Playa del Carmen"));
-    return;
-  }
-
-  const subCommand = input.substring(0, spaceIdx).toLowerCase();
-  const value = input.substring(spaceIdx + 1).trim();
-
-  if (!value) {
-    await ctx.reply(formatError("valeur manquante", "/config city Playa del Carmen"));
-    return;
-  }
-
+async function handleConfigUpdate(
+  ctx: CustomContext,
+  subCommand: string,
+  value: string
+): Promise<void> {
+  const t = ctx.locale;
   switch (subCommand) {
     case "city":
-      await Promise.all([setConfig(ctx.db, "city", value), clearPrayerCache(ctx.db)]);
-      await ctx.reply(`Ville mise a jour : ${value}\nCache des prieres reinitialise.`);
+      await Promise.all([
+        setConfig(ctx.db, "city", value),
+        clearPrayerCache(ctx.db),
+      ]);
+      await ctx.reply(t.config.cityUpdated(value));
       break;
     case "country":
-      if (!/^[A-Za-z]{2}$/.test(value)) {
-        await ctx.reply(formatError("le code pays doit faire 2 lettres (ISO)", "/config country MX"));
+      if (!COUNTRY_CODE_RE.test(value)) {
+        await ctx.reply(
+          formatError(t.config.countryCodeInvalid, t, "/config country MX")
+        );
         return;
       }
-      await Promise.all([setConfig(ctx.db, "country", value.toUpperCase()), clearPrayerCache(ctx.db)]);
-      await ctx.reply(`Pays mis a jour : ${value.toUpperCase()}\nCache des prieres reinitialise.`);
+      await Promise.all([
+        setConfig(ctx.db, "country", value.toUpperCase()),
+        clearPrayerCache(ctx.db),
+      ]);
+      await ctx.reply(t.config.countryUpdated(value.toUpperCase()));
       break;
     case "timezone":
     case "tz":
       try {
         Intl.DateTimeFormat(undefined, { timeZone: value });
       } catch {
-        await ctx.reply(formatError("fuseau horaire invalide", "/config timezone America/Cancun"));
+        await ctx.reply(
+          formatError(
+            t.config.timezoneInvalid,
+            t,
+            "/config timezone America/Cancun"
+          )
+        );
         return;
       }
       await setConfig(ctx.db, "timezone", value);
-      await ctx.reply(`Fuseau horaire mis a jour : ${value}`);
+      await ctx.reply(t.config.timezoneUpdated(value));
       break;
+    case "language":
+    case "lang": {
+      const lang = value.toLowerCase();
+      if (!LANGUAGES.includes(lang as (typeof LANGUAGES)[number])) {
+        await ctx.reply(
+          formatError(t.config.languageInvalid(LANGUAGES.join(", ")), t)
+        );
+        return;
+      }
+      try {
+        const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
+        await ctx.reply(newT.config.languageUpdated(lang));
+      } catch (e) {
+        console.error("applyLanguageChange failed:", (e as Error).message);
+        await ctx.reply(formatError(t.config.languageError, t));
+      }
+      break;
+    }
     default:
-      await ctx.reply(formatError(`parametre inconnu '${subCommand}'`, "/config city Playa del Carmen"));
+      await ctx.reply(
+        formatError(
+          t.config.unknownParam(subCommand),
+          t,
+          "/config city Playa del Carmen"
+        )
+      );
+  }
+}
+
+export async function configHandler(ctx: CustomContext): Promise<void> {
+  const input = ((ctx.match as string) || "").trim();
+
+  if (!input) {
+    return showCurrentConfig(ctx);
+  }
+
+  const inputLower = input.toLowerCase();
+  if (inputLower === "language" || inputLower === "lang") {
+    return showLanguageKeyboard(ctx);
+  }
+
+  const spaceIdx = input.indexOf(" ");
+  if (spaceIdx === -1) {
+    await ctx.reply(
+      formatError(
+        ctx.locale.config.missingValue,
+        ctx.locale,
+        "/config city Playa del Carmen"
+      )
+    );
+    return;
+  }
+
+  const subCommand = input.slice(0, spaceIdx).toLowerCase();
+  const value = input.slice(spaceIdx + 1).trim();
+
+  if (!value) {
+    await ctx.reply(
+      formatError(
+        ctx.locale.config.missingValue,
+        ctx.locale,
+        "/config city Playa del Carmen"
+      )
+    );
+    return;
+  }
+
+  return handleConfigUpdate(ctx, subCommand, value);
+}
+
+async function applyLanguageChange(
+  db: D1Database,
+  lang: string,
+  api: CustomContext["api"]
+): Promise<Locale> {
+  await setConfig(db, "language", lang);
+  invalidateLocaleCache();
+  const newT = getLocale(lang);
+  await api.setMyCommands(getBotCommands(newT));
+  return newT;
+}
+
+export async function langSetCallback(ctx: CustomContext): Promise<void> {
+  const lang = (ctx.match as string[] | undefined)?.[1];
+  if (!(lang && LANGUAGES.includes(lang as (typeof LANGUAGES)[number]))) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  try {
+    const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
+    await Promise.all([
+      ctx.answerCallbackQuery(),
+      ctx.editMessageText(newT.config.languageUpdated(lang)),
+    ]);
+  } catch (e) {
+    console.error("applyLanguageChange failed:", (e as Error).message);
+    await Promise.all([
+      ctx.answerCallbackQuery(),
+      ctx.editMessageText(
+        formatError(ctx.locale.config.languageError, ctx.locale)
+      ),
+    ]);
   }
 }

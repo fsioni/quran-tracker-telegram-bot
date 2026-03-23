@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -16,14 +17,20 @@ vi.mock("../../src/services/prayer", () => ({
   fetchPrayerTimes: vi.fn(),
 }));
 
-import { getConfig, getTodayInTimezone, deletePrayerCacheForDate, setPrayerCache } from "../../src/services/db";
-import { fetchPrayerTimes } from "../../src/services/prayer";
 import { prayerHandler } from "../../src/handlers/prayer";
+import {
+  deletePrayerCacheForDate,
+  getConfig,
+  getTodayInTimezone,
+  setPrayerCache,
+} from "../../src/services/db";
+import { fetchPrayerTimes } from "../../src/services/prayer";
 
 function makeCtx(): CustomContext {
   return {
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -43,26 +50,38 @@ describe("prayerHandler", () => {
   });
 
   it("deletes cache, fetches, stores, and replies with times on success", async () => {
-    vi.mocked(fetchPrayerTimes).mockResolvedValue({ ok: true, value: MOCK_TIMES });
+    vi.mocked(fetchPrayerTimes).mockResolvedValue({
+      ok: true,
+      value: MOCK_TIMES,
+    });
 
     const ctx = makeCtx();
     await prayerHandler(ctx);
 
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Mecca", "SA");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith(
+      "2026-03-18",
+      "Mecca",
+      "SA",
+      fr
+    );
     expect(deletePrayerCacheForDate).toHaveBeenCalledWith(ctx.db, "2026-03-18");
     expect(setPrayerCache).toHaveBeenCalledWith(ctx.db, MOCK_TIMES);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Fajr : 05:30");
-    expect(msg).toContain("Dhuhr : 12:15");
+    expect(msg).toContain("Dhouhr : 12:15");
     expect(msg).toContain("Asr : 15:45");
-    expect(msg).toContain("Maghrib : 18:30");
+    expect(msg).toContain("Maghreb : 18:30");
     expect(msg).toContain("Isha : 20:00");
-    expect(msg).toContain("rafraichi");
+    expect(msg).toContain("rafraîchi");
   });
 
   it("does not delete cache when fetch fails", async () => {
-    vi.mocked(fetchPrayerTimes).mockResolvedValue({ ok: false, error: "API down" });
+    vi.mocked(fetchPrayerTimes).mockResolvedValue({
+      ok: false,
+      error: "API down",
+    });
 
     const ctx = makeCtx();
     await prayerHandler(ctx);
@@ -70,7 +89,8 @@ describe("prayerHandler", () => {
     expect(deletePrayerCacheForDate).not.toHaveBeenCalled();
     expect(setPrayerCache).not.toHaveBeenCalled();
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("API down");
   });
@@ -80,15 +100,24 @@ describe("prayerHandler", () => {
       .mockResolvedValueOnce("Asia/Riyadh")
       .mockResolvedValueOnce("Riyadh")
       .mockResolvedValueOnce("SA");
-    vi.mocked(fetchPrayerTimes).mockResolvedValue({ ok: true, value: MOCK_TIMES });
+    vi.mocked(fetchPrayerTimes).mockResolvedValue({
+      ok: true,
+      value: MOCK_TIMES,
+    });
 
     const ctx = makeCtx();
     await prayerHandler(ctx);
 
     expect(getTodayInTimezone).toHaveBeenCalledWith("Asia/Riyadh");
-    expect(fetchPrayerTimes).toHaveBeenCalledWith("2026-03-18", "Riyadh", "SA");
+    expect(fetchPrayerTimes).toHaveBeenCalledWith(
+      "2026-03-18",
+      "Riyadh",
+      "SA",
+      fr
+    );
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Riyadh");
     expect(msg).toContain("SA");
   });

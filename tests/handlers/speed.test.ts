@@ -1,7 +1,8 @@
 // tests/handlers/speed.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { speedHandler } from "../../src/handlers/stats";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { speedHandler } from "../../src/handlers/stats";
+import { fr } from "../../src/locales/fr";
 import type { Session } from "../../src/services/db";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
@@ -17,11 +18,11 @@ vi.mock("../../src/services/db", async (importOriginal) => {
 });
 
 import {
-  getTimezone,
-  getSpeedAverages,
   getBestSpeedSession,
   getLongestSession,
+  getSpeedAverages,
   getSpeedByType,
+  getTimezone,
 } from "../../src/services/db";
 
 function makeCtx(): CustomContext {
@@ -29,6 +30,7 @@ function makeCtx(): CustomContext {
     match: "",
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -71,15 +73,16 @@ describe("speedHandler", () => {
       durationSeconds: 4320,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "versets/h" },
-      { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "versets/h" },
-      { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages/h" },
+      { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "verses" },
+      { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "verses" },
+      { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
     ]);
 
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("-- Vitesse de lecture --");
     expect(msg).toContain("Moyenne globale : 155 versets/h");
     expect(msg).toContain("Moyenne 7 derniers jours : 162 versets/h");
@@ -105,7 +108,7 @@ describe("speedHandler", () => {
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistree.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
   it("gere le cas partiel : pas de sessions dans les 7 derniers jours", async () => {
@@ -117,13 +120,14 @@ describe("speedHandler", () => {
     vi.mocked(getBestSpeedSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getLongestSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 140, sessionCount: 10, unit: "versets/h" },
+      { type: "normal", avgSpeed: 140, sessionCount: 10, unit: "verses" },
     ]);
 
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Moyenne globale : 140 versets/h");
     expect(msg).not.toContain("Moyenne 7 derniers jours");
     expect(msg).toContain("Moyenne 30 derniers jours : 140 versets/h");
@@ -141,20 +145,25 @@ describe("speedHandler", () => {
       durationSeconds: 45,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 200, sessionCount: 5, unit: "versets/h" },
+      { type: "normal", avgSpeed: 200, sessionCount: 5, unit: "verses" },
     ]);
 
     const ctx = makeCtx();
     await speedHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Moyenne globale : 200 versets/h");
     expect(msg).not.toContain("Meilleure session");
     expect(msg).toContain("Plus longue session");
   });
 
   it("appelle les fonctions DB en parallele", async () => {
-    vi.mocked(getSpeedAverages).mockResolvedValue({ global: null, last7Days: null, last30Days: null });
+    vi.mocked(getSpeedAverages).mockResolvedValue({
+      global: null,
+      last7Days: null,
+      last30Days: null,
+    });
     vi.mocked(getBestSpeedSession).mockResolvedValue(null);
     vi.mocked(getLongestSession).mockResolvedValue(null);
     vi.mocked(getSpeedByType).mockResolvedValue([]);

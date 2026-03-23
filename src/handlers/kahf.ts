@@ -1,14 +1,31 @@
 // src/handlers/kahf.ts
 import type { CustomContext } from "../bot";
-import { parsePageCountAndDuration, formatKahfPageConfirmation, formatError } from "../services/format";
-import { getPageRange, KAHF_PAGE_START, KAHF_PAGE_END, KAHF_TOTAL_PAGES } from "../data/pages";
-import { insertSession, getTimezone, getNowTimestamp, getKahfSessionsThisWeek, getLastWeekKahfTotal, calculateKahfPagesRead } from "../services/db";
+import {
+  getPageRange,
+  KAHF_PAGE_END,
+  KAHF_PAGE_START,
+  KAHF_TOTAL_PAGES,
+} from "../data/pages";
+import {
+  calculateKahfPagesRead,
+  getKahfSessionsThisWeek,
+  getLastWeekKahfTotal,
+  getNowTimestamp,
+  getTimezone,
+  insertSession,
+} from "../services/db";
+import {
+  formatError,
+  formatKahfPageConfirmation,
+  parsePageCountAndDuration,
+} from "../services/format";
 
 export async function kahfHandler(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
-  const parsed = parsePageCountAndDuration(input, "/kahf 5m ou /kahf 3 15m");
+  const parsed = parsePageCountAndDuration(input, t.examples.kahf, t);
   if (!parsed.ok) {
-    await ctx.reply(formatError(parsed.error));
+    await ctx.reply(formatError(parsed.error, t));
     return;
   }
   const { count, durationSeconds } = parsed.value;
@@ -23,7 +40,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
 
   // Check if already finished Al-Kahf this week
   if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {
-    await ctx.reply("Al-Kahf deja terminee cette semaine !");
+    await ctx.reply(t.kahf.alreadyComplete);
     return;
   }
 
@@ -35,9 +52,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   if (pageEnd > KAHF_PAGE_END) {
     const remaining = KAHF_TOTAL_PAGES - pagesAlreadyRead;
     await ctx.reply(
-      formatError(
-        `il ne reste que ${remaining} page(s) d'Al-Kahf cette semaine (page ${pageStart} a ${KAHF_PAGE_END})`,
-      ),
+      formatError(t.kahf.remainingPages(remaining, pageStart, KAHF_PAGE_END), t)
     );
     return;
   }
@@ -45,7 +60,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   // Get page range data (surah/ayah info)
   const rangeData = getPageRange(pageStart, pageEnd);
   if (!rangeData) {
-    await ctx.reply(formatError("pages invalides"));
+    await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
   }
 
@@ -54,7 +69,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   // Insert session with type 'kahf'
   const result = await insertSession(ctx.db, {
     startedAt: now,
-    durationSeconds: durationSeconds,
+    durationSeconds,
     surahStart: rangeData.surahStart,
     ayahStart: rangeData.ayahStart,
     surahEnd: rangeData.surahEnd,
@@ -65,7 +80,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     pageEnd,
   });
   if (!result.ok) {
-    await ctx.reply(formatError(result.error));
+    await ctx.reply(formatError(result.error, t));
     return;
   }
 
@@ -85,28 +100,35 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
 
     await ctx.reply(
-      formatKahfPageConfirmation({
-        kahfPage: weekPagesRead,
-        kahfTotal: KAHF_TOTAL_PAGES,
-        durationSeconds: durationSeconds,
-        weekPagesRead,
-        weekTotalSeconds,
-        isComplete: true,
-        lastWeekTotalSeconds: lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-        sessionPages: count,
-      }),
+      formatKahfPageConfirmation(
+        {
+          kahfPage: weekPagesRead,
+          kahfTotal: KAHF_TOTAL_PAGES,
+          durationSeconds,
+          weekPagesRead,
+          weekTotalSeconds,
+          isComplete: true,
+          lastWeekTotalSeconds:
+            lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+          sessionPages: count,
+        },
+        t
+      )
     );
   } else {
     await ctx.reply(
-      formatKahfPageConfirmation({
-        kahfPage: weekPagesRead,
-        kahfTotal: KAHF_TOTAL_PAGES,
-        durationSeconds: durationSeconds,
-        weekPagesRead,
-        weekTotalSeconds,
-        isComplete: false,
-        sessionPages: count,
-      }),
+      formatKahfPageConfirmation(
+        {
+          kahfPage: weekPagesRead,
+          kahfTotal: KAHF_TOTAL_PAGES,
+          durationSeconds,
+          weekPagesRead,
+          weekTotalSeconds,
+          isComplete: false,
+          sessionPages: count,
+        },
+        t
+      )
     );
   }
 }

@@ -1,9 +1,9 @@
 // tests/handlers/read.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { readHandler } from "../../src/handlers/read";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { readHandler } from "../../src/handlers/read";
+import { fr } from "../../src/locales/fr";
 import type { Session } from "../../src/services/db";
-import { TOTAL_PAGES } from "../../src/data/pages";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -19,7 +19,15 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   };
 });
 
-import { getLastSession, insertSession, insertKhatma, getKhatmaCount, getConfig, getTimezone, getNowTimestamp } from "../../src/services/db";
+import {
+  getConfig,
+  getKhatmaCount,
+  getLastSession,
+  getNowTimestamp,
+  getTimezone,
+  insertKhatma,
+  insertSession,
+} from "../../src/services/db";
 
 const mockGetLastSession = getLastSession as ReturnType<typeof vi.fn>;
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
@@ -47,8 +55,9 @@ function createMockContext(match = ""): CustomContext {
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
-    chat: { id: 12345 },
+    chat: { id: 12_345 },
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -59,11 +68,14 @@ describe("readHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetLastSession.mockResolvedValue(null); // no previous session
-    vi.mocked(insertKhatma).mockResolvedValue({ id: 1, completedAt: "2026-03-15 14:00:00" });
+    vi.mocked(insertKhatma).mockResolvedValue({
+      id: 1,
+      completedAt: "2026-03-15 14:00:00",
+    });
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
-  it("/read 5m sans session precedente -> enregistre page 1", async () => {
+  it("/read 5m sans session précédente -> enregistre page 1", async () => {
     const session = makeSession({
       id: 1,
       durationSeconds: 300,
@@ -81,7 +93,8 @@ describe("readHandler", () => {
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Page 1");
     expect(msg).toContain("5m");
     expect(msg).toContain("1/604");
@@ -94,14 +107,12 @@ describe("readHandler", () => {
         type: "normal",
         pageStart: 1,
         pageEnd: 1,
-      }),
+      })
     );
   });
 
-  it("/read 5m avec derniere session pageEnd=41 -> enregistre page 42", async () => {
-    mockGetLastSession.mockResolvedValue(
-      makeSession({ pageEnd: 41 }),
-    );
+  it("/read 5m avec dernière session pageEnd=41 -> enregistre page 42", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 41 }));
     const session = makeSession({
       id: 2,
       pageStart: 42,
@@ -119,7 +130,8 @@ describe("readHandler", () => {
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Page 42");
     expect(msg).toContain("42/604");
 
@@ -128,7 +140,7 @@ describe("readHandler", () => {
       expect.objectContaining({
         pageStart: 42,
         pageEnd: 42,
-      }),
+      })
     );
   });
 
@@ -150,7 +162,8 @@ describe("readHandler", () => {
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Pages 1-3");
     expect(msg).toContain("15m");
     expect(msg).toContain("3/604");
@@ -163,14 +176,12 @@ describe("readHandler", () => {
         pageEnd: 3,
         type: "normal",
         durationSeconds: 900,
-      }),
+      })
     );
   });
 
-  it("/read 5m a page 604 -> khatma message", async () => {
-    mockGetLastSession.mockResolvedValue(
-      makeSession({ pageEnd: 603 }),
-    );
+  it("/read 5m à page 604 -> khatma message", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 603 }));
     const session = makeSession({
       id: 4,
       pageStart: 604,
@@ -184,18 +195,17 @@ describe("readHandler", () => {
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Khatma");
-    expect(msg).toContain("premiere");
+    expect(msg).toContain("première");
     expect(msg).toContain("Alhamdulillah");
     expect(insertKhatma).toHaveBeenCalled();
     expect(getKhatmaCount).toHaveBeenCalled();
   });
 
-  it("/read 5m quand currentPage > 604 -> reprend a page 1", async () => {
-    mockGetLastSession.mockResolvedValue(
-      makeSession({ pageEnd: 604 }),
-    );
+  it("/read 5m quand currentPage > 604 -> reprend à page 1", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 604 }));
     const session = makeSession({
       pageStart: 1,
       pageEnd: 1,
@@ -215,50 +225,52 @@ describe("readHandler", () => {
       expect.objectContaining({
         pageStart: 1,
         pageEnd: 1,
-      }),
+      })
     );
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Page 1");
     expect(msg).toContain("Prochaine page : 2");
   });
 
-  it("erreur si pageEnd depasse 604", async () => {
-    mockGetLastSession.mockResolvedValue(
-      makeSession({ pageEnd: 603 }),
-    );
+  it("erreur si pageEnd dépasse 604", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 603 }));
 
     const ctx = createMockContext("3 5m");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("1 page(s)");
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
-  it("erreur si duree manquante", async () => {
+  it("erreur si durée manquante", async () => {
     const ctx = createMockContext("");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("format invalide");
   });
 
-  it("erreur si format de duree invalide", async () => {
+  it("erreur si format de durée invalide", async () => {
     const ctx = createMockContext("abc");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("format de duree invalide");
+    expect(msg).toContain("format de durée invalide");
   });
 
-  it("passe type='normal' a insertSession", async () => {
+  it("passe type='normal' à insertSession", async () => {
     const session = makeSession();
     mockInsertSession.mockResolvedValue({ ok: true, value: session });
 
@@ -267,14 +279,12 @@ describe("readHandler", () => {
 
     expect(mockInsertSession).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ type: "normal" }),
+      expect.objectContaining({ type: "normal" })
     );
   });
 
-  it("demarre a page 1 si derniere session n'a pas de pageEnd", async () => {
-    mockGetLastSession.mockResolvedValue(
-      makeSession({ pageEnd: null }),
-    );
+  it("démarre à page 1 si dernière session n'a pas de pageEnd", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: null }));
     const session = makeSession({
       pageStart: 1,
       pageEnd: 1,
@@ -289,7 +299,7 @@ describe("readHandler", () => {
       expect.objectContaining({
         pageStart: 1,
         pageEnd: 1,
-      }),
+      })
     );
   });
 
@@ -309,8 +319,9 @@ describe("readHandler", () => {
     const ctx = createMockContext("5m");
     await readHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Sourate Al-Fatiha (1) terminee");
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Sourate Al-Fatiha (1) terminée");
   });
 
   it("pas de message fin de sourate en milieu de sourate", async () => {
@@ -329,7 +340,8 @@ describe("readHandler", () => {
     const ctx = createMockContext("5m");
     await readHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).not.toContain("terminee");
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).not.toContain("terminée");
   });
 });

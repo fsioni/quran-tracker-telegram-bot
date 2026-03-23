@@ -1,82 +1,82 @@
 import { DEFAULT_TZ } from "../config";
-import { ok, err, type Result } from "../types";
+import { err, ok, type Result } from "../types";
 
 // --- Row types (D1 snake_case) ---
 
-export type SessionType = 'normal' | 'extra' | 'kahf';
+export type SessionType = "normal" | "extra" | "kahf";
 
-type SessionRow = {
-  id: number;
-  started_at: string;
-  duration_seconds: number;
-  page_start: number | null;
-  page_end: number | null;
-  surah_start: number;
-  ayah_start: number;
-  surah_end: number;
-  ayah_end: number;
+interface SessionRow {
   ayah_count: number;
-  type: string;
+  ayah_end: number;
+  ayah_start: number;
   created_at: string;
-};
+  duration_seconds: number;
+  id: number;
+  page_end: number | null;
+  page_start: number | null;
+  started_at: string;
+  surah_end: number;
+  surah_start: number;
+  type: string;
+}
 
 // --- Public types (camelCase) ---
 
-export type Session = {
-  id: number;
-  startedAt: string;
-  durationSeconds: number;
-  pageStart: number | null;
-  pageEnd: number | null;
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
+export interface Session {
   ayahCount: number;
-  type: SessionType;
+  ayahEnd: number;
+  ayahStart: number;
   createdAt: string;
-};
+  durationSeconds: number;
+  id: number;
+  pageEnd: number | null;
+  pageStart: number | null;
+  startedAt: string;
+  surahEnd: number;
+  surahStart: number;
+  type: SessionType;
+}
 
-export type GlobalStats = {
-  totalSessions: number;
-  totalAyahs: number;
-  totalSeconds: number;
+export interface GlobalStats {
   avgAyahsPerSession: number;
   avgSecondsPerSession: number;
-};
+  totalAyahs: number;
+  totalSeconds: number;
+  totalSessions: number;
+}
 
-export type PeriodStats = {
-  sessions: number;
+export interface PeriodStats {
   ayahs: number;
   seconds: number;
-};
+  sessions: number;
+}
 
-export type StreakResult = {
-  currentStreak: number;
+export interface StreakResult {
   bestStreak: number;
-};
+  currentStreak: number;
+}
 
-export type SpeedAverages = {
+export interface SpeedAverages {
   global: number | null;
   last7Days: number | null;
   last30Days: number | null;
-};
+}
 
-export type TypeSpeed = {
-  type: SessionType;
+export interface TypeSpeed {
   avgSpeed: number;
   sessionCount: number;
-  unit: 'versets/h' | 'pages/h';
-};
+  type: SessionType;
+  unit: "pages" | "verses";
+}
 
-export type PrayerTimes = {
-  date: string;
-  fajr: string;
-  dhuhr: string;
+export interface PrayerTimes {
   asr: string;
-  maghrib: string;
+  date: string;
+  dhuhr: string;
+  fajr: string;
   isha: string;
-};
+  maghrib: string;
+}
 
 export type PrayerCacheRow = PrayerTimes & {
   fajr_sent: number;
@@ -123,7 +123,7 @@ export function getNowTimestamp(tz: string): string {
   return new Date()
     .toLocaleString("sv-SE", { timeZone: tz })
     .replace("T", " ")
-    .substring(0, 19);
+    .slice(0, 19);
 }
 
 export async function getTimezone(db: D1Database): Promise<string> {
@@ -131,7 +131,7 @@ export async function getTimezone(db: D1Database): Promise<string> {
 }
 
 export function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
+  const d = new Date(`${dateStr}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -140,7 +140,7 @@ export function addDays(dateStr: string, n: number): string {
 }
 
 export function getWeekBounds(today: string): { start: string; end: string } {
-  const d = new Date(today + "T00:00:00Z");
+  const d = new Date(`${today}T00:00:00Z`);
   const dow = d.getUTCDay(); // 0=Sunday
   const diffToMonday = dow === 0 ? -6 : 1 - dow;
   const start = addDays(today, diffToMonday);
@@ -149,7 +149,7 @@ export function getWeekBounds(today: string): { start: string; end: string } {
 }
 
 export function getMonthBounds(today: string): { start: string; end: string } {
-  const d = new Date(today + "T00:00:00Z");
+  const d = new Date(`${today}T00:00:00Z`);
   const year = d.getUTCFullYear();
   const month = d.getUTCMonth(); // 0-based
   const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
@@ -160,30 +160,30 @@ export function getMonthBounds(today: string): { start: string; end: string } {
 
 // --- Session data param ---
 
-export type InsertSessionData = {
-  startedAt: string;
-  durationSeconds: number;
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
+export interface InsertSessionData {
   ayahCount: number;
-  type?: SessionType;
-  pageStart?: number;
+  ayahEnd: number;
+  ayahStart: number;
+  durationSeconds: number;
   pageEnd?: number;
-};
+  pageStart?: number;
+  startedAt: string;
+  surahEnd: number;
+  surahStart: number;
+  type?: SessionType;
+}
 
 // --- Session functions ---
 
 export async function insertSession(
   db: D1Database,
-  data: InsertSessionData,
+  data: InsertSessionData
 ): Promise<Result<Session>> {
   const result = await db
     .prepare(
       `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       RETURNING *`,
+       RETURNING *`
     )
     .bind(
       data.startedAt,
@@ -193,18 +193,20 @@ export async function insertSession(
       data.surahEnd,
       data.ayahEnd,
       data.ayahCount,
-      data.type ?? 'normal',
+      data.type ?? "normal",
       data.pageStart ?? null,
-      data.pageEnd ?? null,
+      data.pageEnd ?? null
     )
     .first<SessionRow>();
-  if (!result) return err("insertSession: D1 returned no row after INSERT");
+  if (!result) {
+    return err("insertSession: D1 returned no row after INSERT");
+  }
   return ok(mapRow(result));
 }
 
 export async function getSessionById(
   db: D1Database,
-  id: number,
+  id: number
 ): Promise<Session | null> {
   const row = await db
     .prepare("SELECT * FROM sessions WHERE id = ?")
@@ -215,7 +217,7 @@ export async function getSessionById(
 
 export async function getLastSession(
   db: D1Database,
-  type?: SessionType,
+  type?: SessionType
 ): Promise<Session | null> {
   const query = type
     ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT 1"
@@ -227,7 +229,7 @@ export async function getLastSession(
 
 export async function deleteSessionById(
   db: D1Database,
-  id: number,
+  id: number
 ): Promise<Session | null> {
   const row = await db
     .prepare("DELETE FROM sessions WHERE id = ? RETURNING *")
@@ -238,15 +240,17 @@ export async function deleteSessionById(
 
 export async function insertBatch(
   db: D1Database,
-  sessions: InsertSessionData[],
+  sessions: InsertSessionData[]
 ): Promise<number> {
-  if (sessions.length === 0) return 0;
+  if (sessions.length === 0) {
+    return 0;
+  }
 
   const statements = sessions.map((s) =>
     db
       .prepare(
         `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         s.startedAt,
@@ -256,10 +260,10 @@ export async function insertBatch(
         s.surahEnd,
         s.ayahEnd,
         s.ayahCount,
-        s.type ?? 'normal',
+        s.type ?? "normal",
         s.pageStart ?? null,
-        s.pageEnd ?? null,
-      ),
+        s.pageEnd ?? null
+      )
   );
 
   await db.batch(statements);
@@ -268,8 +272,8 @@ export async function insertBatch(
 
 export async function getHistory(
   db: D1Database,
-  limit: number = 10,
-  type?: SessionType,
+  limit = 10,
+  type?: SessionType
 ): Promise<Session[]> {
   const query = type
     ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT ?"
@@ -285,7 +289,7 @@ export async function getHistory(
 
 export async function getKahfSessionsThisWeek(
   db: D1Database,
-  tz: string,
+  tz: string
 ): Promise<Session[]> {
   const today = getTodayInTimezone(tz);
   const { start, end } = getWeekBounds(today);
@@ -293,7 +297,7 @@ export async function getKahfSessionsThisWeek(
     .prepare(
       `SELECT * FROM sessions
        WHERE type = 'kahf' AND substr(started_at, 1, 10) BETWEEN ? AND ?
-       ORDER BY started_at DESC`,
+       ORDER BY started_at DESC`
     )
     .bind(start, end)
     .all<SessionRow>();
@@ -302,7 +306,7 @@ export async function getKahfSessionsThisWeek(
 
 export async function getLastWeekKahfTotal(
   db: D1Database,
-  tz: string,
+  tz: string
 ): Promise<Result<number>> {
   const today = getTodayInTimezone(tz);
   const lastWeekDay = addDays(today, -7);
@@ -311,11 +315,13 @@ export async function getLastWeekKahfTotal(
     .prepare(
       `SELECT COALESCE(SUM(duration_seconds), 0) AS total
        FROM sessions
-       WHERE type = 'kahf' AND substr(started_at, 1, 10) BETWEEN ? AND ?`,
+       WHERE type = 'kahf' AND substr(started_at, 1, 10) BETWEEN ? AND ?`
     )
     .bind(start, end)
     .first<{ total: number }>();
-  if (!row) return err("getLastWeekKahfTotal: D1 returned no row for aggregate query");
+  if (!row) {
+    return err("getLastWeekKahfTotal: D1 returned no row for aggregate query");
+  }
   return ok(row.total);
 }
 
@@ -325,7 +331,7 @@ export async function getKahfStats(db: D1Database): Promise<{
 }> {
   const row = await db
     .prepare(
-      "SELECT duration_seconds, substr(started_at, 1, 10) as day FROM sessions WHERE type = 'kahf' ORDER BY started_at DESC LIMIT 1",
+      "SELECT duration_seconds, substr(started_at, 1, 10) as day FROM sessions WHERE type = 'kahf' ORDER BY started_at DESC LIMIT 1"
     )
     .first<{ duration_seconds: number; day: string }>();
   return {
@@ -338,7 +344,7 @@ export async function getKahfStats(db: D1Database): Promise<{
 
 export async function getGlobalStats(
   db: D1Database,
-  type?: SessionType,
+  type?: SessionType
 ): Promise<Result<GlobalStats>> {
   const query = type
     ? `SELECT
@@ -364,7 +370,9 @@ export async function getGlobalStats(
     avg_seconds: number;
   }>();
 
-  if (!row) return err("getGlobalStats: D1 returned no row for aggregate query");
+  if (!row) {
+    return err("getGlobalStats: D1 returned no row for aggregate query");
+  }
   return ok({
     totalSessions: row.total_sessions,
     totalAyahs: row.total_ayahs,
@@ -380,12 +388,13 @@ export async function getPeriodStats(
   db: D1Database,
   period: "week" | "month",
   tz: string,
-  weekOffset: number = 0,
+  weekOffset = 0
 ): Promise<Result<PeriodStats>> {
   const today = getTodayInTimezone(tz);
-  const baseDay = period === "week" && weekOffset > 0
-    ? addDays(today, -7 * weekOffset)
-    : today;
+  const baseDay =
+    period === "week" && weekOffset > 0
+      ? addDays(today, -7 * weekOffset)
+      : today;
   const bounds =
     period === "week" ? getWeekBounds(baseDay) : getMonthBounds(today);
 
@@ -396,19 +405,21 @@ export async function getPeriodStats(
         COALESCE(SUM(ayah_count), 0) AS ayahs,
         COALESCE(SUM(duration_seconds), 0) AS seconds
       FROM sessions
-      WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`,
+      WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
     )
     .bind(bounds.start, bounds.end)
     .first<{ sessions: number; ayahs: number; seconds: number }>();
 
-  if (!row) return err("getPeriodStats: D1 returned no row for aggregate query");
+  if (!row) {
+    return err("getPeriodStats: D1 returned no row for aggregate query");
+  }
   return ok(row);
 }
 
 export async function getPreviousWeekStats(
   db: D1Database,
   tz: string,
-  todayOverride?: string,
+  todayOverride?: string
 ): Promise<Result<PeriodStats>> {
   const today = todayOverride ?? getTodayInTimezone(tz);
   const currentWeek = getWeekBounds(today);
@@ -423,22 +434,26 @@ export async function getPreviousWeekStats(
           COALESCE(SUM(ayah_count), 0) AS ayahs,
           COALESCE(SUM(duration_seconds), 0) AS seconds
         FROM sessions
-        WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`,
+        WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
       )
       .bind(start, end)
       .first<{ sessions: number; ayahs: number; seconds: number }>();
 
-    if (!row) return err("getPreviousWeekStats: D1 returned no row");
+    if (!row) {
+      return err("getPreviousWeekStats: D1 returned no row");
+    }
     return ok(row);
   } catch (e) {
-    return err(`getPreviousWeekStats: ${e instanceof Error ? e.message : String(e)}`);
+    return err(
+      `getPreviousWeekStats: ${e instanceof Error ? e.message : String(e)}`
+    );
   }
 }
 
 export async function getWeekPages(
   db: D1Database,
   tz: string,
-  weekOffset: number = 0,
+  weekOffset = 0
 ): Promise<Result<number>> {
   const today = getTodayInTimezone(tz);
   const baseDay = weekOffset > 0 ? addDays(today, -7 * weekOffset) : today;
@@ -448,17 +463,19 @@ export async function getWeekPages(
       `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages
        FROM sessions
        WHERE page_start IS NOT NULL AND page_end IS NOT NULL
-         AND substr(started_at, 1, 10) BETWEEN ? AND ?`,
+         AND substr(started_at, 1, 10) BETWEEN ? AND ?`
     )
     .bind(start, end)
     .first<{ total_pages: number }>();
-  if (!row) return err("getWeekPages: D1 returned no row for aggregate query");
+  if (!row) {
+    return err("getWeekPages: D1 returned no row for aggregate query");
+  }
   return ok(row.total_pages);
 }
 
 export async function getWeekSessions(
   db: D1Database,
-  tz: string,
+  tz: string
 ): Promise<Session[]> {
   const today = getTodayInTimezone(tz);
   const { start, end } = getWeekBounds(today);
@@ -466,7 +483,7 @@ export async function getWeekSessions(
     .prepare(
       `SELECT * FROM sessions
        WHERE substr(started_at, 1, 10) BETWEEN ? AND ?
-       ORDER BY started_at`,
+       ORDER BY started_at`
     )
     .bind(start, end)
     .all<SessionRow>();
@@ -477,13 +494,13 @@ export async function getWeekSessions(
 
 export async function calculateStreak(
   db: D1Database,
-  tz: string,
+  tz: string
 ): Promise<StreakResult> {
   const { results } = await db
     .prepare(
       `SELECT DISTINCT substr(started_at, 1, 10) AS day
        FROM sessions
-       ORDER BY day DESC`,
+       ORDER BY day DESC`
     )
     .all<{ day: string }>();
 
@@ -531,15 +548,15 @@ export async function calculateStreak(
 // --- Pace ---
 
 function diffDays(from: string, to: string): number {
-  const a = new Date(from + "T00:00:00Z");
-  const b = new Date(to + "T00:00:00Z");
+  const a = new Date(`${from}T00:00:00Z`);
+  const b = new Date(`${to}T00:00:00Z`);
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export async function getRecentPace(
   db: D1Database,
   tz: string,
-  days: number = 14,
+  days = 14
 ): Promise<number> {
   const today = getTodayInTimezone(tz);
   const startDate = addDays(today, -(days - 1));
@@ -551,13 +568,18 @@ export async function getRecentPace(
        WHERE type = 'normal'
          AND page_start IS NOT NULL
          AND page_end IS NOT NULL
-         AND started_at >= ?`,
+         AND started_at >= ?`
     )
     .bind(`${startDate} 00:00:00`)
     .first<{ total_pages: number; first_started_at: string | null }>();
-  if (!row || row.total_pages === 0) return 0;
+  if (!row || row.total_pages === 0) {
+    return 0;
+  }
 
-  const firstDate = row.first_started_at!.substring(0, 10);
+  const firstDate = row.first_started_at?.slice(0, 10);
+  if (!firstDate) {
+    return 0;
+  }
   const effectiveDays = diffDays(firstDate, today) + 1;
   return row.total_pages / Math.min(days, effectiveDays);
 }
@@ -566,7 +588,7 @@ export async function getRecentPace(
 
 export async function getSpeedAverages(
   db: D1Database,
-  tz: string,
+  tz: string
 ): Promise<SpeedAverages> {
   const today = getTodayInTimezone(tz);
   const date7d = addDays(today, -(7 - 1));
@@ -581,13 +603,13 @@ export async function getSpeedAverages(
         SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_7d,
         SUM(CASE WHEN started_at >= ? THEN ayah_count ELSE 0 END) as ayahs_30d,
         SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_30d
-      FROM sessions`,
+      FROM sessions`
     )
     .bind(
       `${date7d} 00:00:00`,
       `${date7d} 00:00:00`,
       `${date30d} 00:00:00`,
-      `${date30d} 00:00:00`,
+      `${date30d} 00:00:00`
     )
     .first<{
       total_ayahs: number | null;
@@ -598,51 +620,53 @@ export async function getSpeedAverages(
       seconds_30d: number;
     }>();
 
-  if (!row || !row.total_seconds) {
+  if (!row?.total_seconds) {
     return { global: null, last7Days: null, last30Days: null };
   }
 
-  const global = Math.round(row.total_ayahs! / (row.total_seconds / 3600));
-  const last7Days = row.seconds_7d > 0
-    ? Math.round(row.ayahs_7d / (row.seconds_7d / 3600))
-    : null;
-  const last30Days = row.seconds_30d > 0
-    ? Math.round(row.ayahs_30d / (row.seconds_30d / 3600))
-    : null;
+  const global = Math.round(
+    (row.total_ayahs ?? 0) / (row.total_seconds / 3600)
+  );
+  const last7Days =
+    row.seconds_7d > 0
+      ? Math.round(row.ayahs_7d / (row.seconds_7d / 3600))
+      : null;
+  const last30Days =
+    row.seconds_30d > 0
+      ? Math.round(row.ayahs_30d / (row.seconds_30d / 3600))
+      : null;
 
   return { global, last7Days, last30Days };
 }
 
 export async function getBestSpeedSession(
-  db: D1Database,
+  db: D1Database
 ): Promise<Session | null> {
   const row = await db
     .prepare(
       `SELECT * FROM sessions
        WHERE duration_seconds >= 60
        ORDER BY CAST(ayah_count AS REAL) / duration_seconds DESC
-       LIMIT 1`,
+       LIMIT 1`
     )
     .first<SessionRow>();
   return row ? mapRow(row) : null;
 }
 
 export async function getLongestSession(
-  db: D1Database,
+  db: D1Database
 ): Promise<Session | null> {
   const row = await db
     .prepare(
       `SELECT * FROM sessions
        ORDER BY duration_seconds DESC
-       LIMIT 1`,
+       LIMIT 1`
     )
     .first<SessionRow>();
   return row ? mapRow(row) : null;
 }
 
-export async function getSpeedByType(
-  db: D1Database,
-): Promise<TypeSpeed[]> {
+export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
   const { results } = await db
     .prepare(
       `SELECT type,
@@ -651,7 +675,7 @@ export async function getSpeedByType(
         SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
         COUNT(*) as session_count
       FROM sessions
-      GROUP BY type`,
+      GROUP BY type`
     )
     .all<{
       type: string;
@@ -664,51 +688,68 @@ export async function getSpeedByType(
   return results
     .filter((r) => r.total_seconds > 0)
     .map((r) => {
-      if (r.type === 'kahf') {
+      if (r.type === "kahf") {
         return {
           type: r.type as SessionType,
-          avgSpeed: parseFloat((r.total_pages / (r.total_seconds / 3600)).toFixed(1)),
+          avgSpeed: Number.parseFloat(
+            (r.total_pages / (r.total_seconds / 3600)).toFixed(1)
+          ),
           sessionCount: r.session_count,
-          unit: 'pages/h' as const,
+          unit: "pages" as const,
         };
       }
       return {
         type: r.type as SessionType,
         avgSpeed: Math.round(r.total_ayahs / (r.total_seconds / 3600)),
         sessionCount: r.session_count,
-        unit: 'versets/h' as const,
+        unit: "verses" as const,
       };
     });
 }
 
 // --- Timer state ---
 
-export type TimerType = 'normal_page' | 'normal_verse' | 'extra_page' | 'extra_verse' | 'kahf';
+export type TimerType =
+  | "normal_page"
+  | "normal_verse"
+  | "extra_page"
+  | "extra_verse"
+  | "kahf";
 
-export type TimerState = {
-  startedAt: string;
-  startedEpoch: number;
-  type: TimerType;
+export interface TimerState {
   args: string;
   awaitingResponse: boolean;
   durationSeconds?: number;
-};
+  startedAt: string;
+  startedEpoch: number;
+  type: TimerType;
+}
 
-const TIMER_CONFIG_KEY = 'timer_state';
+const TIMER_CONFIG_KEY = "timer_state";
 
-export async function getTimerState(db: D1Database): Promise<TimerState | null> {
+export async function getTimerState(
+  db: D1Database
+): Promise<TimerState | null> {
   const raw = await getConfig(db, TIMER_CONFIG_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as TimerState;
   } catch {
     console.error("getTimerState: corrupted timer state, clearing");
-    await db.prepare("DELETE FROM config WHERE key = ?").bind(TIMER_CONFIG_KEY).run();
+    await db
+      .prepare("DELETE FROM config WHERE key = ?")
+      .bind(TIMER_CONFIG_KEY)
+      .run();
     return null;
   }
 }
 
-export async function setTimerState(db: D1Database, state: TimerState): Promise<void> {
+export async function setTimerState(
+  db: D1Database,
+  state: TimerState
+): Promise<void> {
   await setConfig(db, TIMER_CONFIG_KEY, JSON.stringify(state));
 }
 
@@ -734,7 +775,7 @@ export function calculateKahfPagesRead(sessions: Session[]): number {
 
 export async function getConfig(
   db: D1Database,
-  key: string,
+  key: string
 ): Promise<string | null> {
   const row = await db
     .prepare("SELECT value FROM config WHERE key = ?")
@@ -746,7 +787,7 @@ export async function getConfig(
 export async function setConfig(
   db: D1Database,
   key: string,
-  value: string,
+  value: string
 ): Promise<void> {
   await db
     .prepare("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)")
@@ -758,7 +799,7 @@ export async function setConfig(
 
 export async function getPrayerCache(
   db: D1Database,
-  date: string,
+  date: string
 ): Promise<PrayerCacheRow | null> {
   const row = await db
     .prepare("SELECT * FROM prayer_cache WHERE date = ?")
@@ -769,7 +810,7 @@ export async function getPrayerCache(
 
 export async function setPrayerCache(
   db: D1Database,
-  times: PrayerTimes,
+  times: PrayerTimes
 ): Promise<void> {
   await db
     .prepare(
@@ -781,7 +822,7 @@ export async function setPrayerCache(
          asr = excluded.asr,
          maghrib = excluded.maghrib,
          isha = excluded.isha,
-         fetched_at = datetime('now')`,
+         fetched_at = datetime('now')`
     )
     .bind(
       times.date,
@@ -789,7 +830,7 @@ export async function setPrayerCache(
       times.dhuhr,
       times.asr,
       times.maghrib,
-      times.isha,
+      times.isha
     )
     .run();
 }
@@ -805,7 +846,7 @@ const VALID_PRAYER_NAMES: ReadonlySet<string> = new Set([
 export async function markPrayerSent(
   db: D1Database,
   date: string,
-  prayer: PrayerName,
+  prayer: PrayerName
 ): Promise<void> {
   if (!VALID_PRAYER_NAMES.has(prayer)) {
     throw new Error(`Invalid prayer name: ${prayer}`);
@@ -820,28 +861,40 @@ export async function markPrayerSent(
 
 export async function insertKhatma(
   db: D1Database,
-  completedAt: string,
+  completedAt: string
 ): Promise<{ id: number; completedAt: string }> {
   const row = await db
     .prepare("INSERT INTO khatmas (completed_at) VALUES (?) RETURNING *")
     .bind(completedAt)
     .first<{ id: number; completed_at: string }>();
-  return { id: row!.id, completedAt: row!.completed_at };
+  if (!row) {
+    throw new Error("insertKhatma: no row returned");
+  }
+  return { id: row.id, completedAt: row.completed_at };
 }
 
 export async function getKhatmaCount(db: D1Database): Promise<number> {
   const row = await db
     .prepare("SELECT COUNT(*) AS count FROM khatmas")
     .first<{ count: number }>();
-  return row!.count;
+  return row?.count ?? 0;
 }
 
-export async function cleanOldCache(db: D1Database, today: string): Promise<void> {
+export async function cleanOldCache(
+  db: D1Database,
+  today: string
+): Promise<void> {
   const cutoff = addDays(today, -7);
-  await db.prepare("DELETE FROM prayer_cache WHERE date < ?").bind(cutoff).run();
+  await db
+    .prepare("DELETE FROM prayer_cache WHERE date < ?")
+    .bind(cutoff)
+    .run();
 }
 
-export async function deletePrayerCacheForDate(db: D1Database, date: string): Promise<void> {
+export async function deletePrayerCacheForDate(
+  db: D1Database,
+  date: string
+): Promise<void> {
   await db.prepare("DELETE FROM prayer_cache WHERE date = ?").bind(date).run();
 }
 

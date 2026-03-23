@@ -1,11 +1,11 @@
-import { getSurah } from "./surahs";
 import { calculateAyahCount } from "../services/quran";
+import { getSurah } from "./surahs";
 
-export type PageBoundary = {
+export interface PageBoundary {
+  ayah: number;
   page: number;
   surah: number;
-  ayah: number;
-};
+}
 
 export const PAGES: readonly PageBoundary[] = [
   { page: 1, surah: 1, ayah: 1 },
@@ -620,23 +620,31 @@ export const KAHF_PAGE_END = 304;
 export const KAHF_TOTAL_PAGES = 12;
 
 export function getPageBoundary(page: number): PageBoundary | undefined {
-  if (page < 1 || page > TOTAL_PAGES) return undefined;
+  if (page < 1 || page > TOTAL_PAGES) {
+    return undefined;
+  }
   return PAGES[page - 1];
 }
 
 export function getPageRange(
   pageStart: number,
-  pageEnd: number,
-): {
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
-  ayahCount: number;
-} | undefined {
+  pageEnd: number
+):
+  | {
+      surahStart: number;
+      ayahStart: number;
+      surahEnd: number;
+      ayahEnd: number;
+      ayahCount: number;
+    }
+  | undefined {
   const start = getPageBoundary(pageStart);
-  if (!start) return undefined;
-  if (pageEnd < 1 || pageEnd > TOTAL_PAGES) return undefined;
+  if (!start) {
+    return undefined;
+  }
+  if (pageEnd < 1 || pageEnd > TOTAL_PAGES) {
+    return undefined;
+  }
 
   let surahEnd: number;
   let ayahEnd: number;
@@ -645,9 +653,15 @@ export function getPageRange(
     surahEnd = 114;
     ayahEnd = 6;
   } else {
-    const nextPage = getPageBoundary(pageEnd + 1)!;
+    const nextPage = getPageBoundary(pageEnd + 1);
+    if (!nextPage) {
+      return undefined;
+    }
     if (nextPage.ayah === 1) {
-      const prevSurah = getSurah(nextPage.surah - 1)!;
+      const prevSurah = getSurah(nextPage.surah - 1);
+      if (!prevSurah) {
+        return undefined;
+      }
       surahEnd = prevSurah.number;
       ayahEnd = prevSurah.ayahCount;
     } else {
@@ -656,7 +670,12 @@ export function getPageRange(
     }
   }
 
-  const ayahCount = calculateAyahCount(start.surah, start.ayah, surahEnd, ayahEnd);
+  const ayahCount = calculateAyahCount(
+    start.surah,
+    start.ayah,
+    surahEnd,
+    ayahEnd
+  );
 
   return {
     surahStart: start.surah,
@@ -666,4 +685,3 @@ export function getPageRange(
     ayahCount,
   };
 }
-

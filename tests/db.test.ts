@@ -1,41 +1,46 @@
 import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import {
-  insertSession,
-  getSessionById,
-  getLastSession,
-  deleteSessionById,
-  insertBatch,
-  getHistory,
-  getGlobalStats,
-  getStatsByType,
-  getPeriodStats,
-  getPreviousWeekStats,
-  calculateStreak,
-  getConfig,
-  setConfig,
-  getPrayerCache,
-  setPrayerCache,
-  markPrayerSent,
-  cleanOldCache,
-  getTodayInTimezone,
-  addDays,
-  getWeekBounds,
-  getMonthBounds,
-  getKahfSessionsThisWeek,
-  getLastWeekKahfTotal,
-  getKahfStats,
-  getRecentPace,
-  insertKhatma,
-  getKhatmaCount,
-} from "../src/services/db";
 import type { PrayerTimes, SessionType } from "../src/services/db";
+import {
+  addDays,
+  calculateStreak,
+  cleanOldCache,
+  deleteSessionById,
+  getConfig,
+  getGlobalStats,
+  getHistory,
+  getKahfSessionsThisWeek,
+  getKahfStats,
+  getKhatmaCount,
+  getLastSession,
+  getLastWeekKahfTotal,
+  getMonthBounds,
+  getPeriodStats,
+  getPrayerCache,
+  getPreviousWeekStats,
+  getRecentPace,
+  getSessionById,
+  getStatsByType,
+  getTodayInTimezone,
+  getWeekBounds,
+  insertBatch,
+  insertKhatma,
+  insertSession,
+  markPrayerSent,
+  setConfig,
+  setPrayerCache,
+} from "../src/services/db";
+
+const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 import type { Result } from "../src/types";
 
 function unwrap<T>(result: Result<T>): T {
-  if (!result.ok) throw new Error(`Expected ok result, got error: ${result.error}`);
+  if (!result.ok) {
+    throw new Error(`Expected ok result, got error: ${result.error}`);
+  }
   return result.value;
 }
 
@@ -66,18 +71,20 @@ afterEach(async () => {
 
 // --- Helper to create a session data object ---
 
-function makeSession(overrides: Partial<{
-  startedAt: string;
-  durationSeconds: number;
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
-  ayahCount: number;
-  type: SessionType;
-  pageStart: number;
-  pageEnd: number;
-}> = {}) {
+function makeSession(
+  overrides: Partial<{
+    startedAt: string;
+    durationSeconds: number;
+    surahStart: number;
+    ayahStart: number;
+    surahEnd: number;
+    ayahEnd: number;
+    ayahCount: number;
+    type: SessionType;
+    pageStart: number;
+    pageEnd: number;
+  }> = {}
+) {
   return {
     startedAt: "2026-03-10 13:30:00",
     durationSeconds: 533,
@@ -113,15 +120,27 @@ describe("insertSession", () => {
 
   it("auto-increments IDs", async () => {
     const s1 = unwrap(await insertSession(db, makeSession()));
-    const s2 = unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" })));
+    const s2 = unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" }))
+    );
     expect(s1.id).toBe(1);
     expect(s2.id).toBe(2);
   });
 
   it("stores type normal/extra/kahf correctly", async () => {
     const s1 = unwrap(await insertSession(db, makeSession({ type: "normal" })));
-    const s2 = unwrap(await insertSession(db, makeSession({ type: "extra", startedAt: "2026-03-11 10:00:00" })));
-    const s3 = unwrap(await insertSession(db, makeSession({ type: "kahf", startedAt: "2026-03-12 10:00:00" })));
+    const s2 = unwrap(
+      await insertSession(
+        db,
+        makeSession({ type: "extra", startedAt: "2026-03-11 10:00:00" })
+      )
+    );
+    const s3 = unwrap(
+      await insertSession(
+        db,
+        makeSession({ type: "kahf", startedAt: "2026-03-12 10:00:00" })
+      )
+    );
     expect(s1.type).toBe("normal");
     expect(s2.type).toBe("extra");
     expect(s3.type).toBe("kahf");
@@ -133,7 +152,9 @@ describe("insertSession", () => {
   });
 
   it("stores pageStart and pageEnd correctly", async () => {
-    const session = unwrap(await insertSession(db, makeSession({ pageStart: 5, pageEnd: 7 })));
+    const session = unwrap(
+      await insertSession(db, makeSession({ pageStart: 5, pageEnd: 7 }))
+    );
     expect(session.pageStart).toBe(5);
     expect(session.pageEnd).toBe(7);
   });
@@ -152,8 +173,8 @@ describe("getSessionById", () => {
     const inserted = unwrap(await insertSession(db, makeSession()));
     const found = await getSessionById(db, inserted.id);
     expect(found).not.toBeNull();
-    expect(found!.id).toBe(inserted.id);
-    expect(found!.ayahCount).toBe(7);
+    expect(found?.id).toBe(inserted.id);
+    expect(found?.ayahCount).toBe(7);
   });
 
   it("returns null for a non-existent ID", async () => {
@@ -166,13 +187,19 @@ describe("getSessionById", () => {
 
 describe("getLastSession", () => {
   it("returns the most recent session by started_at", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-10 13:30:00" })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-10 13:30:00" }))
+    );
 
     const last = await getLastSession(db);
     expect(last).not.toBeNull();
-    expect(last!.startedAt).toBe("2026-03-11 10:00:00");
+    expect(last?.startedAt).toBe("2026-03-11 10:00:00");
   });
 
   it("returns null when no sessions exist", async () => {
@@ -181,29 +208,54 @@ describe("getLastSession", () => {
   });
 
   it("filters by type when provided", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-10 10:00:00", type: "kahf" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "extra" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-10 10:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 10:00:00", type: "extra" })
+      )
+    );
 
     const lastKahf = await getLastSession(db, "kahf");
     expect(lastKahf).not.toBeNull();
-    expect(lastKahf!.startedAt).toBe("2026-03-10 10:00:00");
-    expect(lastKahf!.type).toBe("kahf");
+    expect(lastKahf?.startedAt).toBe("2026-03-10 10:00:00");
+    expect(lastKahf?.type).toBe("kahf");
 
     const lastExtra = await getLastSession(db, "extra");
     expect(lastExtra).not.toBeNull();
-    expect(lastExtra!.startedAt).toBe("2026-03-09 10:00:00");
-    expect(lastExtra!.type).toBe("extra");
+    expect(lastExtra?.startedAt).toBe("2026-03-09 10:00:00");
+    expect(lastExtra?.type).toBe("extra");
   });
 
   it("returns all types when type is not provided", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "kahf" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 10:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 10:00:00", type: "normal" })
+      )
+    );
 
     const last = await getLastSession(db);
     expect(last).not.toBeNull();
-    expect(last!.startedAt).toBe("2026-03-11 10:00:00");
-    expect(last!.type).toBe("normal");
+    expect(last?.startedAt).toBe("2026-03-11 10:00:00");
+    expect(last?.type).toBe("normal");
   });
 });
 
@@ -214,7 +266,7 @@ describe("deleteSessionById", () => {
     const session = unwrap(await insertSession(db, makeSession()));
     const deleted = await deleteSessionById(db, session.id);
     expect(deleted).not.toBeNull();
-    expect(deleted!.id).toBe(session.id);
+    expect(deleted?.id).toBe(session.id);
 
     const found = await getSessionById(db, session.id);
     expect(found).toBeNull();
@@ -252,9 +304,15 @@ describe("insertBatch", () => {
 
 describe("getHistory", () => {
   it("returns sessions ordered by started_at DESC", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-10 13:30:00" })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-11 10:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2026-03-10 13:30:00" }))
+    );
 
     const history = await getHistory(db);
     expect(history[0].startedAt).toBe("2026-03-11 10:00:00");
@@ -264,7 +322,14 @@ describe("getHistory", () => {
 
   it("respects the limit parameter", async () => {
     for (let i = 0; i < 5; i++) {
-      unwrap(await insertSession(db, makeSession({ startedAt: `2026-03-${String(i + 1).padStart(2, "0")} 08:00:00` })));
+      unwrap(
+        await insertSession(
+          db,
+          makeSession({
+            startedAt: `2026-03-${String(i + 1).padStart(2, "0")} 08:00:00`,
+          })
+        )
+      );
     }
     const history = await getHistory(db, 3);
     expect(history).toHaveLength(3);
@@ -272,7 +337,14 @@ describe("getHistory", () => {
 
   it("defaults to 10 results", async () => {
     for (let i = 0; i < 15; i++) {
-      unwrap(await insertSession(db, makeSession({ startedAt: `2026-03-${String(i + 1).padStart(2, "0")} 08:00:00` })));
+      unwrap(
+        await insertSession(
+          db,
+          makeSession({
+            startedAt: `2026-03-${String(i + 1).padStart(2, "0")} 08:00:00`,
+          })
+        )
+      );
     }
     const history = await getHistory(db);
     expect(history).toHaveLength(10);
@@ -284,10 +356,30 @@ describe("getHistory", () => {
   });
 
   it("filters by type when provided", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-12 08:00:00", type: "kahf" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-12 08:00:00", type: "kahf" })
+      )
+    );
 
     const kahfHistory = await getHistory(db, 10, "kahf");
     expect(kahfHistory).toHaveLength(2);
@@ -295,9 +387,24 @@ describe("getHistory", () => {
   });
 
   it("returns all types when type is not provided", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" })
+      )
+    );
 
     const allHistory = await getHistory(db);
     expect(allHistory).toHaveLength(3);
@@ -311,9 +418,24 @@ describe("getKahfSessionsThisWeek", () => {
     const today = getTodayInTimezone("America/Cancun");
     const { start } = getWeekBounds(today);
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 14:00:00`, type: "normal" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 18:00:00`, type: "kahf" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${start} 14:00:00`, type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${start} 18:00:00`, type: "kahf" })
+      )
+    );
 
     const kahfSessions = await getKahfSessionsThisWeek(db, "America/Cancun");
     expect(kahfSessions).toHaveLength(2);
@@ -325,9 +447,19 @@ describe("getKahfSessionsThisWeek", () => {
     const { start } = getWeekBounds(today);
 
     // This week
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${start} 10:00:00`, type: "kahf" })
+      )
+    );
     // Far in the past
-    unwrap(await insertSession(db, makeSession({ startedAt: "2020-01-06 10:00:00", type: "kahf" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2020-01-06 10:00:00", type: "kahf" })
+      )
+    );
 
     const kahfSessions = await getKahfSessionsThisWeek(db, "America/Cancun");
     expect(kahfSessions).toHaveLength(1);
@@ -343,10 +475,37 @@ describe("getLastWeekKahfTotal", () => {
     const lastWeekDay = addDays(today, -7);
     const { start } = getWeekBounds(lastWeekDay);
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, type: "kahf", durationSeconds: 300 })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 14:00:00`, type: "kahf", durationSeconds: 200 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 10:00:00`,
+          type: "kahf",
+          durationSeconds: 300,
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 14:00:00`,
+          type: "kahf",
+          durationSeconds: 200,
+        })
+      )
+    );
     // Normal session last week (should not count)
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 18:00:00`, type: "normal", durationSeconds: 1000 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 18:00:00`,
+          type: "normal",
+          durationSeconds: 1000,
+        })
+      )
+    );
 
     const total = unwrap(await getLastWeekKahfTotal(db, "America/Cancun"));
     expect(total).toBe(500);
@@ -362,8 +521,26 @@ describe("getLastWeekKahfTotal", () => {
 
 describe("getKahfStats", () => {
   it("returns last kahf session duration and date", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-09 10:00:00", type: "kahf", durationSeconds: 300 })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2026-03-11 14:00:00", type: "kahf", durationSeconds: 450 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: "2026-03-09 10:00:00",
+          type: "kahf",
+          durationSeconds: 300,
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: "2026-03-11 14:00:00",
+          type: "kahf",
+          durationSeconds: 450,
+        })
+      )
+    );
 
     const stats = await getKahfStats(db);
     expect(stats.lastDuration).toBe(450);
@@ -384,9 +561,34 @@ describe("getKahfStats", () => {
 
 describe("getStatsByType", () => {
   it("returns stats filtered by type", async () => {
-    unwrap(await insertSession(db, makeSession({ type: "kahf", ayahCount: 10, durationSeconds: 300 })));
-    unwrap(await insertSession(db, makeSession({ type: "kahf", ayahCount: 20, durationSeconds: 600, startedAt: "2026-03-11 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ type: "normal", ayahCount: 50, durationSeconds: 1000, startedAt: "2026-03-12 10:00:00" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ type: "kahf", ayahCount: 10, durationSeconds: 300 })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          type: "kahf",
+          ayahCount: 20,
+          durationSeconds: 600,
+          startedAt: "2026-03-11 10:00:00",
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          type: "normal",
+          ayahCount: 50,
+          durationSeconds: 1000,
+          startedAt: "2026-03-12 10:00:00",
+        })
+      )
+    );
 
     const kahfStats = unwrap(await getStatsByType(db, "kahf"));
     expect(kahfStats.totalSessions).toBe(2);
@@ -417,8 +619,22 @@ describe("getStatsByType", () => {
 
 describe("getGlobalStats", () => {
   it("returns correct sums and averages", async () => {
-    unwrap(await insertSession(db, makeSession({ ayahCount: 10, durationSeconds: 600 })));
-    unwrap(await insertSession(db, makeSession({ ayahCount: 20, durationSeconds: 1200, startedAt: "2026-03-11 10:00:00" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ ayahCount: 10, durationSeconds: 600 })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          ayahCount: 20,
+          durationSeconds: 1200,
+          startedAt: "2026-03-11 10:00:00",
+        })
+      )
+    );
 
     const stats = unwrap(await getGlobalStats(db));
     expect(stats.totalSessions).toBe(2);
@@ -438,9 +654,32 @@ describe("getGlobalStats", () => {
   });
 
   it("rounds averages correctly", async () => {
-    unwrap(await insertSession(db, makeSession({ ayahCount: 10, durationSeconds: 100 })));
-    unwrap(await insertSession(db, makeSession({ ayahCount: 11, durationSeconds: 101, startedAt: "2026-03-11 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ ayahCount: 12, durationSeconds: 102, startedAt: "2026-03-12 10:00:00" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ ayahCount: 10, durationSeconds: 100 })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          ayahCount: 11,
+          durationSeconds: 101,
+          startedAt: "2026-03-11 10:00:00",
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          ayahCount: 12,
+          durationSeconds: 102,
+          startedAt: "2026-03-12 10:00:00",
+        })
+      )
+    );
 
     const stats = unwrap(await getGlobalStats(db));
     // avg ayahs = 33/3 = 11
@@ -458,9 +697,27 @@ describe("getPeriodStats", () => {
     const { start } = getWeekBounds(today);
 
     // Session within this week
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, ayahCount: 15, durationSeconds: 300 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 10:00:00`,
+          ayahCount: 15,
+          durationSeconds: 300,
+        })
+      )
+    );
     // Session outside this week (far in the past)
-    unwrap(await insertSession(db, makeSession({ startedAt: "2020-01-01 10:00:00", ayahCount: 50, durationSeconds: 1000 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: "2020-01-01 10:00:00",
+          ayahCount: 50,
+          durationSeconds: 1000,
+        })
+      )
+    );
 
     const stats = unwrap(await getPeriodStats(db, "week", "America/Cancun"));
     expect(stats.sessions).toBe(1);
@@ -472,8 +729,26 @@ describe("getPeriodStats", () => {
     const today = getTodayInTimezone("America/Cancun");
     const { start } = getMonthBounds(today);
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${start} 10:00:00`, ayahCount: 20, durationSeconds: 400 })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2020-06-15 10:00:00", ayahCount: 50, durationSeconds: 1000 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 10:00:00`,
+          ayahCount: 20,
+          durationSeconds: 400,
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: "2020-06-15 10:00:00",
+          ayahCount: 50,
+          durationSeconds: 1000,
+        })
+      )
+    );
 
     const stats = unwrap(await getPeriodStats(db, "month", "America/Cancun"));
     expect(stats.sessions).toBe(1);
@@ -482,7 +757,9 @@ describe("getPeriodStats", () => {
   });
 
   it("returns zeros when no sessions match the period", async () => {
-    unwrap(await insertSession(db, makeSession({ startedAt: "2020-01-01 10:00:00" })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2020-01-01 10:00:00" }))
+    );
 
     const stats = unwrap(await getPeriodStats(db, "week", "America/Cancun"));
     expect(stats.sessions).toBe(0);
@@ -502,7 +779,9 @@ describe("calculateStreak", () => {
 
   it("returns 1 when only today has a session", async () => {
     const today = getTodayInTimezone("America/Cancun");
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` }))
+    );
 
     const result = await calculateStreak(db, "America/Cancun");
     expect(result.currentStreak).toBe(1);
@@ -514,9 +793,15 @@ describe("calculateStreak", () => {
     const d1 = addDays(today, -1);
     const d2 = addDays(today, -2);
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${d1} 10:00:00` })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${d2} 10:00:00` })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${d1} 10:00:00` }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${d2} 10:00:00` }))
+    );
 
     const result = await calculateStreak(db, "America/Cancun");
     expect(result.currentStreak).toBe(3);
@@ -527,12 +812,20 @@ describe("calculateStreak", () => {
     const today = getTodayInTimezone("America/Cancun");
 
     // Past streak of 3 consecutive days (far in the past)
-    unwrap(await insertSession(db, makeSession({ startedAt: "2025-01-01 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2025-01-02 10:00:00" })));
-    unwrap(await insertSession(db, makeSession({ startedAt: "2025-01-03 10:00:00" })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2025-01-01 10:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2025-01-02 10:00:00" }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: "2025-01-03 10:00:00" }))
+    );
 
     // Current streak of 1 (today only)
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 10:00:00` }))
+    );
 
     const result = await calculateStreak(db, "America/Cancun");
     expect(result.currentStreak).toBe(1);
@@ -541,9 +834,15 @@ describe("calculateStreak", () => {
 
   it("counts multiple sessions on the same day as 1", async () => {
     const today = getTodayInTimezone("America/Cancun");
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 08:00:00` })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 14:00:00` })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 20:00:00` })));
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 08:00:00` }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 14:00:00` }))
+    );
+    unwrap(
+      await insertSession(db, makeSession({ startedAt: `${today} 20:00:00` }))
+    );
 
     const result = await calculateStreak(db, "America/Cancun");
     expect(result.currentStreak).toBe(1);
@@ -555,8 +854,18 @@ describe("calculateStreak", () => {
     const yesterday = addDays(today, -1);
     const dayBefore = addDays(today, -2);
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${yesterday} 10:00:00` })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${dayBefore} 10:00:00` })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${yesterday} 10:00:00` })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${dayBefore} 10:00:00` })
+      )
+    );
 
     const result = await calculateStreak(db, "America/Cancun");
     expect(result.currentStreak).toBe(2);
@@ -607,14 +916,14 @@ describe("prayerCache", () => {
     const cached = await getPrayerCache(db, "2026-03-13");
 
     expect(cached).not.toBeNull();
-    expect(cached!.date).toBe("2026-03-13");
-    expect(cached!.fajr).toBe("05:30");
-    expect(cached!.dhuhr).toBe("12:15");
-    expect(cached!.asr).toBe("15:45");
-    expect(cached!.maghrib).toBe("18:30");
-    expect(cached!.isha).toBe("20:00");
-    expect(cached!.fajr_sent).toBe(0);
-    expect(cached!.dhuhr_sent).toBe(0);
+    expect(cached?.date).toBe("2026-03-13");
+    expect(cached?.fajr).toBe("05:30");
+    expect(cached?.dhuhr).toBe("12:15");
+    expect(cached?.asr).toBe("15:45");
+    expect(cached?.maghrib).toBe("18:30");
+    expect(cached?.isha).toBe("20:00");
+    expect(cached?.fajr_sent).toBe(0);
+    expect(cached?.dhuhr_sent).toBe(0);
   });
 
   it("returns null for a non-cached date", async () => {
@@ -627,8 +936,8 @@ describe("prayerCache", () => {
     await markPrayerSent(db, "2026-03-13", "fajr");
 
     const cached = await getPrayerCache(db, "2026-03-13");
-    expect(cached!.fajr_sent).toBe(1);
-    expect(cached!.dhuhr_sent).toBe(0);
+    expect(cached?.fajr_sent).toBe(1);
+    expect(cached?.dhuhr_sent).toBe(0);
   });
 
   it("overwrites prayer times but preserves sent flags on upsert", async () => {
@@ -639,15 +948,15 @@ describe("prayerCache", () => {
     await setPrayerCache(db, { ...sampleTimes, fajr: "05:45" });
 
     const cached = await getPrayerCache(db, "2026-03-13");
-    expect(cached!.fajr).toBe("05:45");
+    expect(cached?.fajr).toBe("05:45");
     // Sent flag must be preserved (not reset to 0)
-    expect(cached!.fajr_sent).toBe(1);
+    expect(cached?.fajr_sent).toBe(1);
   });
 
   it("rejects invalid prayer names at runtime", async () => {
     await setPrayerCache(db, sampleTimes);
     await expect(
-      markPrayerSent(db, "2026-03-13", "invalid" as any),
+      markPrayerSent(db, "2026-03-13", "invalid" as any)
     ).rejects.toThrow("Invalid prayer name");
   });
 });
@@ -657,7 +966,7 @@ describe("prayerCache", () => {
 describe("helper functions", () => {
   it("getTodayInTimezone returns YYYY-MM-DD format", () => {
     const today = getTodayInTimezone("America/Cancun");
-    expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(today).toMatch(DATE_FORMAT_RE);
   });
 
   it("addDays adds positive days", () => {
@@ -709,8 +1018,28 @@ describe("getRecentPace", () => {
 
     // 3 pages on d1, 5 pages on d2 = 8 pages total
     // Effective days = from d2 to today = 4 days
-    unwrap(await insertSession(db, makeSession({ startedAt: `${d1} 10:00:00`, type: "normal", pageStart: 10, pageEnd: 12 })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${d2} 10:00:00`, type: "normal", pageStart: 13, pageEnd: 17 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${d1} 10:00:00`,
+          type: "normal",
+          pageStart: 10,
+          pageEnd: 12,
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${d2} 10:00:00`,
+          type: "normal",
+          pageStart: 13,
+          pageEnd: 17,
+        })
+      )
+    );
 
     const pace = await getRecentPace(db, "America/Cancun");
     expect(pace).toBeCloseTo(8 / 4);
@@ -721,7 +1050,17 @@ describe("getRecentPace", () => {
     const d1 = addDays(today, -13); // oldest day in 14-day window
 
     // 5 pages on day -13 = 5 pages total / 14 days
-    unwrap(await insertSession(db, makeSession({ startedAt: `${d1} 10:00:00`, type: "normal", pageStart: 1, pageEnd: 5 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${d1} 10:00:00`,
+          type: "normal",
+          pageStart: 1,
+          pageEnd: 5,
+        })
+      )
+    );
 
     const pace = await getRecentPace(db, "America/Cancun");
     expect(pace).toBeCloseTo(5 / 14);
@@ -729,7 +1068,17 @@ describe("getRecentPace", () => {
 
   it("returns 0 when no recent sessions", async () => {
     // Session far in the past
-    unwrap(await insertSession(db, makeSession({ startedAt: "2020-01-01 10:00:00", type: "normal", pageStart: 1, pageEnd: 5 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: "2020-01-01 10:00:00",
+          type: "normal",
+          pageStart: 1,
+          pageEnd: 5,
+        })
+      )
+    );
 
     const pace = await getRecentPace(db, "America/Cancun");
     expect(pace).toBe(0);
@@ -738,8 +1087,28 @@ describe("getRecentPace", () => {
   it("ignores extra and kahf sessions", async () => {
     const today = getTodayInTimezone("America/Cancun");
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00`, type: "extra", pageStart: 1, pageEnd: 5 })));
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 12:00:00`, type: "kahf", pageStart: 293, pageEnd: 295 })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          type: "extra",
+          pageStart: 1,
+          pageEnd: 5,
+        })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 12:00:00`,
+          type: "kahf",
+          pageStart: 293,
+          pageEnd: 295,
+        })
+      )
+    );
 
     const pace = await getRecentPace(db, "America/Cancun");
     expect(pace).toBe(0);
@@ -748,7 +1117,12 @@ describe("getRecentPace", () => {
   it("ignores sessions without page_start/page_end", async () => {
     const today = getTodayInTimezone("America/Cancun");
 
-    unwrap(await insertSession(db, makeSession({ startedAt: `${today} 10:00:00`, type: "normal" })));
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: `${today} 10:00:00`, type: "normal" })
+      )
+    );
 
     const pace = await getRecentPace(db, "America/Cancun");
     expect(pace).toBe(0);
@@ -760,7 +1134,11 @@ describe("getRecentPace", () => {
 describe("cleanOldCache", () => {
   const makeTimes = (date: string): PrayerTimes => ({
     date,
-    fajr: "05:30", dhuhr: "12:15", asr: "15:45", maghrib: "18:30", isha: "20:00",
+    fajr: "05:30",
+    dhuhr: "12:15",
+    asr: "15:45",
+    maghrib: "18:30",
+    isha: "20:00",
   });
 
   it("supprime les entrees de plus de 7 jours", async () => {
@@ -782,16 +1160,22 @@ describe("getPreviousWeekStats", () => {
   it("returns stats from previous week only", async () => {
     // Today is Wednesday 2026-03-18 -> current week Mon 16 - Sun 22
     // Previous week: Mon 9 - Sun 15
-    await insertSession(db, makeSession({
-      startedAt: "2026-03-10 10:00:00", // prev week (Tue)
-      ayahCount: 50,
-      durationSeconds: 1200,
-    }));
-    await insertSession(db, makeSession({
-      startedAt: "2026-03-17 10:00:00", // current week (Mon)
-      ayahCount: 30,
-      durationSeconds: 600,
-    }));
+    await insertSession(
+      db,
+      makeSession({
+        startedAt: "2026-03-10 10:00:00", // prev week (Tue)
+        ayahCount: 50,
+        durationSeconds: 1200,
+      })
+    );
+    await insertSession(
+      db,
+      makeSession({
+        startedAt: "2026-03-17 10:00:00", // current week (Mon)
+        ayahCount: 30,
+        durationSeconds: 600,
+      })
+    );
 
     const result = await getPreviousWeekStats(db, "UTC", "2026-03-18");
     expect(result.ok).toBe(true);

@@ -1,12 +1,13 @@
 // tests/handlers/manage.test.ts
-import { describe, it, expect, vi } from "vitest";
-import {
-  undoHandler,
-  deleteHandler,
-  confirmDeleteCallback,
-  cancelDeleteCallback,
-} from "../../src/handlers/manage";
+import { describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import {
+  cancelDeleteCallback,
+  confirmDeleteCallback,
+  deleteHandler,
+  undoHandler,
+} from "../../src/handlers/manage";
+import { fr } from "../../src/locales/fr";
 
 const MOCK_SESSION_ROW = {
   id: 42,
@@ -20,28 +21,49 @@ const MOCK_SESSION_ROW = {
   created_at: "2026-03-10 13:30:00",
 };
 
-function createCommandContext(match = "", firstResult: unknown = null): CustomContext {
+function createCommandContext(
+  match = "",
+  firstResult: unknown = null
+): CustomContext {
   const firstFn = vi.fn().mockResolvedValue(firstResult);
-  const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+  const bindFn = vi
+    .fn()
+    .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+  const prepareFn = vi.fn().mockReturnValue({
+    bind: bindFn,
+    run: vi.fn(),
+    first: firstFn,
+    all: vi.fn(),
+  });
 
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
-    chat: { id: 12345 },
+    chat: { id: 12_345 },
     db: {
       prepare: prepareFn,
       batch: vi.fn(),
       exec: vi.fn(),
       dump: vi.fn(),
     } as unknown as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
-function createCallbackContext(data: string, sessionRow: unknown = null): CustomContext {
+function createCallbackContext(
+  data: string,
+  sessionRow: unknown = null
+): CustomContext {
   const firstFn = vi.fn().mockResolvedValue(sessionRow);
-  const bindFn = vi.fn().mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({ bind: bindFn, run: vi.fn(), first: firstFn, all: vi.fn() });
+  const bindFn = vi
+    .fn()
+    .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
+  const prepareFn = vi.fn().mockReturnValue({
+    bind: bindFn,
+    run: vi.fn(),
+    first: firstFn,
+    all: vi.fn(),
+  });
 
   return {
     callbackQuery: { data },
@@ -53,6 +75,7 @@ function createCallbackContext(data: string, sessionRow: unknown = null): Custom
       exec: vi.fn(),
       dump: vi.fn(),
     } as unknown as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
@@ -60,7 +83,7 @@ describe("undoHandler", () => {
   it("repond 'Aucune session' si aucune session", async () => {
     const ctx = createCommandContext("", null);
     await undoHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session a annuler.");
+    expect(ctx.reply).toHaveBeenCalledWith("Aucune session à annuler.");
   });
 
   it("affiche la confirmation avec boutons inline", async () => {
@@ -78,7 +101,8 @@ describe("deleteHandler", () => {
   it("repond erreur si pas d'ID", async () => {
     const ctx = createCommandContext("", null);
     await deleteHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("ID manquant");
   });
@@ -86,7 +110,8 @@ describe("deleteHandler", () => {
   it("repond erreur si ID non numerique", async () => {
     const ctx = createCommandContext("abc", null);
     await deleteHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("ID invalide");
   });
@@ -94,7 +119,8 @@ describe("deleteHandler", () => {
   it("repond erreur si ID est zero", async () => {
     const ctx = createCommandContext("0", null);
     await deleteHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("ID invalide");
   });
@@ -102,7 +128,8 @@ describe("deleteHandler", () => {
   it("repond erreur si session introuvable", async () => {
     const ctx = createCommandContext("99", null);
     await deleteHandler(ctx);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("n'existe pas");
   });
@@ -120,8 +147,9 @@ describe("confirmDeleteCallback", () => {
   it("supprime la session et affiche les details", async () => {
     const ctx = createCallbackContext("delete_confirm:42", MOCK_SESSION_ROW);
     await confirmDeleteCallback(ctx);
-    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(msg).toContain("Session #42 supprimee.");
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Session #42 supprimée.");
     expect(msg).toContain("Al-Baqara 2:77-83");
     expect(msg).toContain("7 versets");
     expect(msg).toContain("8m53");
@@ -131,7 +159,9 @@ describe("confirmDeleteCallback", () => {
   it("affiche introuvable si deja supprimee", async () => {
     const ctx = createCallbackContext("delete_confirm:42", null);
     await confirmDeleteCallback(ctx);
-    expect(ctx.editMessageText).toHaveBeenCalledWith("Session #42 introuvable.");
+    expect(ctx.editMessageText).toHaveBeenCalledWith(
+      "Session #42 introuvable."
+    );
   });
 });
 
@@ -139,7 +169,7 @@ describe("cancelDeleteCallback", () => {
   it("edite le message avec annulation", async () => {
     const ctx = createCallbackContext("delete_cancel:42");
     await cancelDeleteCallback(ctx);
-    expect(ctx.editMessageText).toHaveBeenCalledWith("Suppression annulee.");
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Suppression annulée.");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

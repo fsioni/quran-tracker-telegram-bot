@@ -1,60 +1,58 @@
-import { Bot, Context } from "grammy";
-import { startHandler, helpHandler, configHandler } from "./handlers/config";
-import { sessionHandler } from "./handlers/session";
-import { importHandler } from "./handlers/import";
-import { historyHandler, statsHandler, progressHandler, speedHandler } from "./handlers/stats";
-import { readHandler } from "./handlers/read";
+import { Bot, type Context } from "grammy";
+import {
+  configHandler,
+  helpHandler,
+  langSetCallback,
+  startHandler,
+} from "./handlers/config";
+import { debugHandler } from "./handlers/debug";
 import { extraHandler } from "./handlers/extra";
+import { importHandler } from "./handlers/import";
 import { kahfHandler } from "./handlers/kahf";
 import {
-  undoHandler,
-  deleteHandler,
-  confirmDeleteCallback,
-  cancelDeleteCallback,
-  CALLBACK_CONFIRM_RE,
   CALLBACK_CANCEL_RE,
+  CALLBACK_CONFIRM_RE,
+  cancelDeleteCallback,
+  confirmDeleteCallback,
+  deleteHandler,
+  undoHandler,
 } from "./handlers/manage";
-import {
-  goHandler,
-  stopHandler,
-  timerResponseHandler,
-  confirmTimerStopCallback,
-  cancelTimerStopCallback,
-  stopTimerCallback,
-  goTimerCallback,
-  CALLBACK_TIMER_CONFIRM_RE,
-  CALLBACK_TIMER_CANCEL_RE,
-  CALLBACK_TIMER_STOP_RE,
-  CALLBACK_TIMER_GO_RE,
-} from "./handlers/timer";
-import { debugHandler } from "./handlers/debug";
 import { prayerHandler } from "./handlers/prayer";
+import { readHandler } from "./handlers/read";
+import { sessionHandler } from "./handlers/session";
+import {
+  historyHandler,
+  progressHandler,
+  speedHandler,
+  statsHandler,
+} from "./handlers/stats";
+import {
+  CALLBACK_TIMER_CANCEL_RE,
+  CALLBACK_TIMER_CONFIRM_RE,
+  CALLBACK_TIMER_GO_RE,
+  CALLBACK_TIMER_STOP_RE,
+  cancelTimerStopCallback,
+  confirmTimerStopCallback,
+  goHandler,
+  goTimerCallback,
+  stopHandler,
+  stopTimerCallback,
+  timerResponseHandler,
+} from "./handlers/timer";
+import { CALLBACK_LANG_SET_RE } from "./locales";
+import type { Locale } from "./locales/types";
+import { resolveLocale } from "./services/locale-cache";
 
 export interface CustomContext extends Context {
   db: D1Database;
+  locale: Locale;
 }
 
-export const BOT_COMMANDS = [
-  { command: "start", description: "Demarrer le bot" },
-  { command: "help", description: "Afficher l'aide" },
-  { command: "session", description: "Enregistrer une session de lecture" },
-  { command: "go", description: "Demarrer un timer de lecture" },
-  { command: "stop", description: "Arreter le timer" },
-  { command: "read", description: "Lire la prochaine page" },
-  { command: "extra", description: "Enregistrer une lecture extra" },
-  { command: "kahf", description: "Lire sourate Al-Kahf (vendredi)" },
-  { command: "import", description: "Importer des sessions" },
-  { command: "history", description: "Historique des sessions" },
-  { command: "stats", description: "Statistiques de lecture" },
-  { command: "progress", description: "Progression dans le Coran" },
-  { command: "undo", description: "Annuler la derniere session" },
-  { command: "delete", description: "Supprimer une session" },
-  { command: "speed", description: "Vitesse de lecture" },
-  { command: "config", description: "Configurer ville, pays, fuseau horaire" },
-  { command: "prayer", description: "Rafraichir les horaires de priere" },
-];
-
-export function createBot(token: string, db: D1Database, allowedUserId: string): Bot<CustomContext> {
+export function createBot(
+  token: string,
+  db: D1Database,
+  allowedUserId: string
+): Bot<CustomContext> {
   const bot = new Bot<CustomContext>(token);
 
   // Auth middleware — restrict to allowed user
@@ -63,13 +61,21 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
     throw new Error("ALLOWED_USER_ID is not a valid integer");
   }
   bot.use((ctx, next) => {
-    if (ctx.from?.id !== parsedUserId) return;
+    if (ctx.from?.id !== parsedUserId) {
+      return;
+    }
     return next();
   });
 
   // Middleware to inject db into context
   bot.use((ctx, next) => {
     ctx.db = db;
+    return next();
+  });
+
+  // Middleware to inject locale into context (cached to avoid DB hit per message)
+  bot.use(async (ctx, next) => {
+    ctx.locale = await resolveLocale(db, ctx.from?.language_code ?? null);
     return next();
   });
 
@@ -103,6 +109,7 @@ export function createBot(token: string, db: D1Database, allowedUserId: string):
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
+  bot.callbackQuery(CALLBACK_LANG_SET_RE, langSetCallback);
 
   // Error handler global
   bot.catch((err) => {

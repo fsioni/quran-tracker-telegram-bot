@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/services/db")>();
@@ -15,30 +16,33 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   };
 });
 
+import { debugHandler } from "../../src/handlers/debug";
 import {
   getConfig,
-  getPrayerCache,
-  getLastSession,
   getGlobalStats,
+  getLastSession,
+  getNowTimestamp,
+  getPrayerCache,
   getTimezone,
   getTodayInTimezone,
-  getNowTimestamp,
 } from "../../src/services/db";
-import { debugHandler } from "../../src/handlers/debug";
 
 function createMockContext(): CustomContext {
   return {
     reply: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
+    locale: fr,
   } as unknown as CustomContext;
 }
 
-function setupMocks(overrides: { prayerCache?: null; lastSession?: null } = {}) {
+function setupMocks(
+  overrides: { prayerCache?: null; lastSession?: null } = {}
+) {
   vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
   vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
   vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 09:30:00");
 
-  vi.mocked(getConfig).mockImplementation(async (_db, key) => {
+  vi.mocked(getConfig).mockImplementation((_db, key) => {
     const values: Record<string, string> = {
       city: "Playa del Carmen",
       country: "MX",
@@ -91,7 +95,7 @@ function setupMocks(overrides: { prayerCache?: null; lastSession?: null } = {}) 
     value: {
       totalSessions: 42,
       totalAyahs: 500,
-      totalSeconds: 36000,
+      totalSeconds: 36_000,
       avgAyahsPerSession: 12,
       avgSecondsPerSession: 857,
     },
@@ -108,17 +112,18 @@ describe("debugHandler", () => {
     const ctx = createMockContext();
     await debugHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("-- Config --");
     expect(msg).toContain("Playa del Carmen");
     expect(msg).toContain("MX");
     expect(msg).toContain("America/Cancun");
     expect(msg).toContain("123456");
-    expect(msg).toContain("-- Cache priere (2026-03-15) --");
+    expect(msg).toContain("-- Cache prière (2026-03-15) --");
     expect(msg).toContain("05:30");
-    expect(msg).toContain("[envoye]");
+    expect(msg).toContain("[envoyé]");
     expect(msg).toContain("[en attente]");
-    expect(msg).toContain("-- Derniere session --");
+    expect(msg).toContain("-- Dernière session --");
     expect(msg).toContain("id         : 42");
     expect(msg).toContain("15/03 08h30");
     expect(msg).toContain("normal");
@@ -127,7 +132,7 @@ describe("debugHandler", () => {
     expect(msg).toContain("2026-03-14");
     expect(msg).toContain("-- DB stats --");
     expect(msg).toContain("total sessions : 42");
-    expect(msg).toContain("-- Systeme --");
+    expect(msg).toContain("-- Système --");
     expect(msg).toContain("serveur (UTC)");
     expect(msg).toContain("user (tz)");
   });
@@ -137,7 +142,8 @@ describe("debugHandler", () => {
     const ctx = createMockContext();
     await debugHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("aucun cache");
     expect(msg).not.toContain("fajr");
   });
@@ -147,7 +153,8 @@ describe("debugHandler", () => {
     const ctx = createMockContext();
     await debugHandler(ctx);
 
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
     expect(msg).toContain("aucune session");
     expect(msg).not.toContain("range");
   });
