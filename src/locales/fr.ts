@@ -108,9 +108,9 @@ export const fr: Locale = {
     versesPerHourShort: "versets/h",
     pagesPerHourShort: "pages/h",
     currentStreak: (days) =>
-      `Streak actuel : ${days} ${days <= 1 ? "jour" : "jours"}`,
+      `Streak actuel : ${days} ${days === 1 ? "jour" : "jours"}`,
     bestStreak: (days) =>
-      `Meilleur streak : ${days} ${days <= 1 ? "jour" : "jours"}`,
+      `Meilleur streak : ${days} ${days === 1 ? "jour" : "jours"}`,
     thisWeek: "-- Cette semaine --",
     thisMonth: "-- Ce mois --",
     versesLabel: "Versets",
@@ -134,9 +134,9 @@ export const fr: Locale = {
     lastSession: (date, surahName, ayah) =>
       `Dernière session : ${date} - sourate ${surahName} v.${ayah}`,
     thisWeek: (sessions, ayahs) =>
-      `Cette semaine : ${sessions} ${sessions <= 1 ? "session" : "sessions"}, ${ayahs} versets`,
+      `Cette semaine : ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} versets`,
     streak: (days) =>
-      `Série : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
+      `Série : ${days} ${days === 1 ? "jour consécutif" : "jours consécutifs"}`,
     keepItUp: "Continue comme ça !",
     timeToResume: "C'est le moment de reprendre !",
     noSession:
@@ -224,7 +224,8 @@ export const fr: Locale = {
     typeNormal: "Normal",
     typeExtra: "Extra",
     typeKahf: "Kahf",
-    sessionsCount: (count) => `${count} ${count <= 1 ? "session" : "sessions"}`,
+    sessionsCount: (count) =>
+      `${count} ${count === 1 ? "session" : "sessions"}`,
   },
 
   recap: {
@@ -234,7 +235,7 @@ export const fr: Locale = {
     duration: "Durée",
     sessions: "Sessions",
     streak: (days) =>
-      `Streak : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
+      `Streak : ${days} ${days === 1 ? "jour consécutif" : "jours consécutifs"}`,
   },
 
   timer: {
