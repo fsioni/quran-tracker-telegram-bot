@@ -1,6 +1,9 @@
+import { arPlural } from "./plural";
 import type { Locale } from "./types";
 
 export const ar: Locale = {
+  lang: "ar",
+
   commands: {
     start: "تشغيل البوت",
     help: "عرض المساعدة",
@@ -32,6 +35,9 @@ export const ar: Locale = {
     timeShort: (hour, minute) => `${hour}:${minute}`,
     versesPerHourCompact: (n) => `${n}آ/س`,
     pagesPerHourCompact: (n) => `${n}ص/س`,
+    hours: "س",
+    minutes: "د",
+    seconds: "ث",
   },
 
   config: {
@@ -53,6 +59,7 @@ export const ar: Locale = {
     languageUpdated: (lang) => `تم تحديث اللغة: ${lang}`,
     languageInvalid: (available) =>
       `لغة غير صالحة. اللغات المتاحة: ${available}`,
+    languageError: "تعذر تحديث اللغة",
   },
 
   parse: {
@@ -95,6 +102,25 @@ export const ar: Locale = {
     pagesPerHour: (n) => `${n} صفحة/س`,
     from: "آ.",
     to: "إلى",
+    confirmationSameSurah: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount,
+      duration,
+      speed
+    ) =>
+      `سورة ${surahName} آ.${ayahStart} إلى آ.${ayahEnd} -- ${ayahCount} آية في ${duration}${speed}`,
+    confirmationCrossSurah: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount,
+      duration,
+      speed
+    ) =>
+      `سورة ${startName} آ.${ayahStart} إلى سورة ${endName} آ.${ayahEnd} -- ${ayahCount} آية في ${duration}${speed}`,
   },
 
   stats: {
@@ -106,8 +132,9 @@ export const ar: Locale = {
     versesPerHourShort: "آية/س",
     pagesPerHourShort: "صفحة/س",
     currentStreak: (days) =>
-      `السلسلة الحالية: ${days} ${days === 1 ? "يوم" : "أيام"}`,
-    bestStreak: (days) => `أفضل سلسلة: ${days} ${days === 1 ? "يوم" : "أيام"}`,
+      `السلسلة الحالية: ${days} ${arPlural(days, { one: "يوم", two: "يومان", few: "أيام", many: "يومًا", other: "أيام" })}`,
+    bestStreak: (days) =>
+      `أفضل سلسلة: ${days} ${arPlural(days, { one: "يوم", two: "يومان", few: "أيام", many: "يومًا", other: "أيام" })}`,
     thisWeek: "-- هذا الأسبوع --",
     thisMonth: "-- هذا الشهر --",
     versesLabel: "الآيات",
@@ -130,9 +157,9 @@ export const ar: Locale = {
     lastSession: (date, surahName, ayah) =>
       `آخر جلسة: ${date} - سورة ${surahName} آ.${ayah}`,
     thisWeek: (sessions, ayahs) =>
-      `هذا الأسبوع: ${sessions} ${sessions === 1 ? "جلسة" : "جلسات"}، ${ayahs} آية`,
+      `هذا الأسبوع: ${sessions} ${arPlural(sessions, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}، ${ayahs} آية`,
     streak: (days) =>
-      `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+      `السلسلة: ${days} ${arPlural(days, { one: "يوم متتالي", two: "يومان متتاليان", few: "أيام متتالية", many: "يومًا متتاليًا", other: "أيام متتالية" })}`,
     keepItUp: "استمر على هذا!",
     timeToResume: "حان وقت العودة للقراءة!",
     noSession: "تذكير بقراءة القرآن\n\nلا توجد جلسات مسجلة. ابدأ بـ /session!",
@@ -216,7 +243,8 @@ export const ar: Locale = {
     typeNormal: "عادي",
     typeExtra: "إضافي",
     typeKahf: "الكهف",
-    sessionsCount: (count) => `${count} ${count === 1 ? "جلسة" : "جلسات"}`,
+    sessionsCount: (count) =>
+      `${count} ${arPlural(count, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}`,
   },
 
   recap: {
@@ -226,7 +254,7 @@ export const ar: Locale = {
     duration: "المدة",
     sessions: "الجلسات",
     streak: (days) =>
-      `السلسلة: ${days} ${days === 1 ? "يوم متتالي" : "أيام متتالية"}`,
+      `السلسلة: ${days} ${arPlural(days, { one: "يوم متتالي", two: "يومان متتاليان", few: "أيام متتالية", many: "يومًا متتاليًا", other: "أيام متتالية" })}`,
   },
 
   timer: {
@@ -283,11 +311,11 @@ export const ar: Locale = {
     noData: "لا توجد بيانات للاستيراد",
     lineError: (lineNum, error) => `السطر ${lineNum}: ${error}`,
     success: (count) =>
-      `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}.`,
+      `تم استيراد ${count} ${arPlural(count, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}.`,
     successWithErrors: (count, errorCount, errors) =>
-      `تم استيراد ${count} ${count === 1 ? "جلسة" : "جلسات"}، ${errorCount} ${errorCount === 1 ? "خطأ" : "أخطاء"}:\n${errors}`,
+      `تم استيراد ${count} ${arPlural(count, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}، ${errorCount} ${arPlural(errorCount, { one: "خطأ", two: "خطآن", few: "أخطاء", many: "خطأً", other: "أخطاء" })}:\n${errors}`,
     allFailed: (errorCount, errors) =>
-      `لم يتم استيراد أي جلسة. ${errorCount} ${errorCount === 1 ? "خطأ" : "أخطاء"}:\n${errors}`,
+      `لم يتم استيراد أي جلسة. ${errorCount} ${arPlural(errorCount, { one: "خطأ", two: "خطآن", few: "أخطاء", many: "خطأً", other: "أخطاء" })}:\n${errors}`,
   },
 
   prayer: {

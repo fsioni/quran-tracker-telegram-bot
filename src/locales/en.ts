@@ -1,6 +1,8 @@
 import type { Locale } from "./types";
 
 export const en: Locale = {
+  lang: "en",
+
   commands: {
     start: "Start the bot",
     help: "Show help",
@@ -32,6 +34,9 @@ export const en: Locale = {
     timeShort: (hour, minute) => `${hour}:${minute}`,
     versesPerHourCompact: (n) => `${n}v/h`,
     pagesPerHourCompact: (n) => `${n}p/h`,
+    hours: "h",
+    minutes: "m",
+    seconds: "s",
   },
 
   config: {
@@ -52,6 +57,7 @@ export const en: Locale = {
     languageUpdated: (lang) => `Language updated: ${lang}`,
     languageInvalid: (available) =>
       `invalid language. Available languages: ${available}`,
+    languageError: "failed to update language",
   },
 
   parse: {
@@ -94,6 +100,25 @@ export const en: Locale = {
     pagesPerHour: (n) => `${n} pages/h`,
     from: "v.",
     to: "to",
+    confirmationSameSurah: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount,
+      duration,
+      speed
+    ) =>
+      `surah ${surahName} v.${ayahStart} to v.${ayahEnd} -- ${ayahCount} verses in ${duration}${speed}`,
+    confirmationCrossSurah: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount,
+      duration,
+      speed
+    ) =>
+      `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses in ${duration}${speed}`,
   },
 
   stats: {

@@ -14,6 +14,7 @@ A Telegram bot for tracking Quran reading sessions with automatic prayer time re
 - Reading stats: speed analytics, streaks, and weekly recap
 - Progress tracking through the entire Quran
 - Bulk import of past sessions
+- Multi-language support (English, French, Arabic)
 - Khatma (full Quran completion) tracking
 
 ## Commands
@@ -35,7 +36,7 @@ A Telegram bot for tracking Quran reading sessions with automatic prayer time re
 | `/speed` | Reading speed analytics |
 | `/undo` | Undo the last session |
 | `/delete <id>` | Delete a session by ID |
-| `/config [key] [value]` | Configure city, country, timezone |
+| `/config [key] [value]` | Configure city, country, timezone, language |
 | `/prayer` | Refresh prayer times |
 
 ## Prerequisites
@@ -119,7 +120,10 @@ Use `/config` to set your location for prayer time reminders:
 /config city Mecca
 /config country SA
 /config timezone Asia/Riyadh
+/config language fr
 ```
+
+Available languages: `en` (English, default), `fr` (French), `ar` (Arabic).
 
 Defaults to Mecca, Saudi Arabia (`Asia/Riyadh`) if not configured.
 

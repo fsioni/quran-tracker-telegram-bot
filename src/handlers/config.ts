@@ -111,8 +111,13 @@ async function handleConfigUpdate(
         );
         return;
       }
-      const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
-      await ctx.reply(newT.config.languageUpdated(lang));
+      try {
+        const newT = await applyLanguageChange(ctx.db, lang, ctx.api);
+        await ctx.reply(newT.config.languageUpdated(lang));
+      } catch (e) {
+        console.error("applyLanguageChange failed:", (e as Error).message);
+        await ctx.reply(formatError(t.config.languageError, t));
+      }
       break;
     }
     default:
@@ -194,6 +199,11 @@ export async function langSetCallback(ctx: CustomContext): Promise<void> {
     ]);
   } catch (e) {
     console.error("applyLanguageChange failed:", (e as Error).message);
-    await ctx.answerCallbackQuery();
+    await Promise.all([
+      ctx.answerCallbackQuery(),
+      ctx.editMessageText(
+        formatError(ctx.locale.config.languageError, ctx.locale)
+      ),
+    ]);
   }
 }

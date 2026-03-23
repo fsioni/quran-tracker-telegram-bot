@@ -474,3 +474,85 @@ describe("LANGUAGES", () => {
     }
   });
 });
+
+describe("plural boundaries", () => {
+  for (const [name, t] of locales) {
+    describe(name, () => {
+      it("stats.currentStreak handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.stats.currentStreak(n);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+
+      it("stats.bestStreak handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.stats.bestStreak(n);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+
+      it("reminder.thisWeek handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.reminder.thisWeek(n, 50);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+
+      it("reminder.streak handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.reminder.streak(n);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+
+      it("speed.sessionsCount handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.speed.sessionsCount(n);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+
+      it("recap.streak handles n=0, n=1, n=2, n=5", () => {
+        for (const n of [0, 1, 2, 5]) {
+          const result = t.recap.streak(n);
+          expect(result).toBeTruthy();
+          expect(result).toContain(String(n));
+        }
+      });
+    });
+  }
+
+  it("French uses singular for n=0", () => {
+    expect(fr.stats.currentStreak(0)).toContain("jour");
+    expect(fr.stats.currentStreak(0)).not.toContain("jours");
+  });
+
+  it("French uses singular for n=1", () => {
+    expect(fr.stats.currentStreak(1)).toContain("jour");
+    expect(fr.stats.currentStreak(1)).not.toContain("jours");
+  });
+
+  it("French uses plural for n=2", () => {
+    expect(fr.stats.currentStreak(2)).toContain("jours");
+  });
+});
+
+describe("locale lang field", () => {
+  it("en locale has lang='en'", () => {
+    expect(en.lang).toBe("en");
+  });
+
+  it("fr locale has lang='fr'", () => {
+    expect(fr.lang).toBe("fr");
+  });
+
+  it("ar locale has lang='ar'", () => {
+    expect(ar.lang).toBe("ar");
+  });
+});

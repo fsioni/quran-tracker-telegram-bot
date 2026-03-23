@@ -98,7 +98,7 @@ export async function confirmDeleteCallback(ctx: CustomContext): Promise<void> {
       session.ayahEnd,
       t
     );
-    const duration = formatDuration(session.durationSeconds);
+    const duration = formatDuration(session.durationSeconds, t);
     await ctx.editMessageText(
       t.manage.sessionDeleted(id, range, session.ayahCount, duration)
     );

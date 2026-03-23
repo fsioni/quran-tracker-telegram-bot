@@ -577,6 +577,9 @@ export async function getRecentPace(
   }
 
   const firstDate = row.first_started_at?.slice(0, 10);
+  if (!firstDate) {
+    return 0;
+  }
   const effectiveDays = diffDays(firstDate, today) + 1;
   return row.total_pages / Math.min(days, effectiveDays);
 }
@@ -864,14 +867,17 @@ export async function insertKhatma(
     .prepare("INSERT INTO khatmas (completed_at) VALUES (?) RETURNING *")
     .bind(completedAt)
     .first<{ id: number; completed_at: string }>();
-  return { id: row?.id, completedAt: row?.completed_at };
+  if (!row) {
+    throw new Error("insertKhatma: no row returned");
+  }
+  return { id: row.id, completedAt: row.completed_at };
 }
 
 export async function getKhatmaCount(db: D1Database): Promise<number> {
   const row = await db
     .prepare("SELECT COUNT(*) AS count FROM khatmas")
     .first<{ count: number }>();
-  return row?.count;
+  return row?.count ?? 0;
 }
 
 export async function cleanOldCache(

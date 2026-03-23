@@ -66,7 +66,7 @@ type ParsedGoArgs =
 
 export async function goHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
-  const input = ((ctx.match as string) || "").trim();
+  const input = ((ctx.match as string) || "").trim().toLowerCase();
 
   // No args => normal_page, use shared logic
   if (!input) {
@@ -78,7 +78,7 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
   if (existing) {
     const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
     await ctx.reply(
-      formatError(t.timer.alreadyActive(formatDuration(elapsed)), t)
+      formatError(t.timer.alreadyActive(formatDuration(elapsed, t)), t)
     );
     return;
   }
@@ -217,7 +217,7 @@ async function executeTimerStop(
       .text(t.timer.yes, CALLBACK_TIMER_CONFIRM)
       .text(t.timer.no, CALLBACK_TIMER_CANCEL);
     await setTimerState(db, { ...state, durationSeconds });
-    await send(t.timer.confirmLongTimer(formatDuration(durationSeconds)), {
+    await send(t.timer.confirmLongTimer(formatDuration(durationSeconds, t)), {
       reply_markup: keyboard,
     });
     return;
@@ -236,7 +236,7 @@ async function executeTimerStop(
 
 export async function stopHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
-  const input = ((ctx.match as string) || "").trim();
+  const input = ((ctx.match as string) || "").trim().toLowerCase();
 
   // /stop cancel
   if (input === "cancel") {
@@ -258,7 +258,7 @@ function getQuestionForType(
   durationSeconds: number,
   t: Locale
 ): string {
-  const dur = formatDuration(durationSeconds);
+  const dur = formatDuration(durationSeconds, t);
   switch (type) {
     case "normal_page":
     case "extra_page":
@@ -327,7 +327,9 @@ async function executeTimerGoNormalPage(
   const existing = await getTimerState(db);
   if (existing) {
     const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
-    await send(formatError(t.timer.alreadyActive(formatDuration(elapsed)), t));
+    await send(
+      formatError(t.timer.alreadyActive(formatDuration(elapsed, t)), t)
+    );
     return;
   }
 
@@ -647,8 +649,10 @@ export async function timerResponseHandler(
       case "kahf":
         return handleKahfResponse(ctx, state, trimmed, tz);
 
-      default:
+      default: {
+        const _exhaustive: never = state.type;
         break;
+      }
     }
   } catch (e) {
     console.error("timerResponseHandler error:", e);

@@ -11,6 +11,14 @@ import {
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weekly-recap";
 
+function getSurahName(surahNum: number, t: Locale): string {
+  const surah = getSurah(surahNum);
+  if (!surah) {
+    return t.session.surahFallback(surahNum);
+  }
+  return t.lang === "ar" ? surah.nameAr : surah.name;
+}
+
 export interface SpeedReportData {
   averages: SpeedAverages;
   bestSession: Session | null;
@@ -231,24 +239,25 @@ export function formatRange(
   ayahEnd: number,
   t: Locale
 ): string {
-  const startName =
-    getSurah(surahStart)?.name ?? t.session.surahFallback(surahStart);
+  const startName = getSurahName(surahStart, t);
   if (surahStart === surahEnd) {
     return `${startName} ${surahStart}:${ayahStart}-${ayahEnd}`;
   }
-  const endName = getSurah(surahEnd)?.name ?? t.session.surahFallback(surahEnd);
+  const endName = getSurahName(surahEnd, t);
   return `${startName} ${surahStart}:${ayahStart} - ${endName} ${surahEnd}:${ayahEnd}`;
 }
 
-export function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number, t?: Locale): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
+  const hSuf = t?.fmt.hours ?? "h";
+  const mSuf = t?.fmt.minutes ?? "m";
 
   if (h > 0) {
-    return s > 0 ? `${h}h${m}m${s}` : `${h}h${m}m`;
+    return s > 0 ? `${h}${hSuf}${m}${mSuf}${s}` : `${h}${hSuf}${m}${mSuf}`;
   }
-  return s > 0 ? `${m}m${s}` : `${m}m`;
+  return s > 0 ? `${m}${mSuf}${s}` : `${m}${mSuf}`;
 }
 
 export function formatSessionConfirmation(
@@ -265,13 +274,9 @@ export function formatSessionConfirmation(
   },
   t: Locale
 ): string {
-  const startName =
-    getSurah(session.surahStart)?.name ??
-    t.session.surahFallback(session.surahStart);
-  const endName =
-    getSurah(session.surahEnd)?.name ??
-    t.session.surahFallback(session.surahEnd);
-  const duration = formatDuration(session.durationSeconds);
+  const startName = getSurahName(session.surahStart, t);
+  const endName = getSurahName(session.surahEnd, t);
+  const duration = formatDuration(session.durationSeconds, t);
   const prefix =
     session.type === "extra" ? t.session.extraRecorded : t.session.recorded;
 
@@ -291,10 +296,10 @@ export function formatSessionConfirmation(
   }
 
   if (session.surahStart === session.surahEnd) {
-    return `${prefix} ${t.session.surah} ${startName} ${t.session.from}${session.ayahStart} ${t.session.to} ${t.session.from}${session.ayahEnd} -- ${session.ayahCount} ${t.session.verses} ${t.session.in} ${duration}${speedSuffix}`;
+    return `${prefix} ${t.session.confirmationSameSurah(startName, session.ayahStart, session.ayahEnd, session.ayahCount, duration, speedSuffix)}`;
   }
 
-  return `${prefix} ${t.session.surah} ${startName} ${t.session.from}${session.ayahStart} ${t.session.to} ${t.session.surah} ${endName} ${t.session.from}${session.ayahEnd} -- ${session.ayahCount} ${t.session.verses} ${t.session.in} ${duration}${speedSuffix}`;
+  return `${prefix} ${t.session.confirmationCrossSurah(startName, session.ayahStart, endName, session.ayahEnd, session.ayahCount, duration, speedSuffix)}`;
 }
 
 export function formatHistoryLine(
@@ -319,7 +324,7 @@ export function formatHistoryLine(
   const month = s.slice(5, 7);
   const hour = s.slice(11, 13);
   const minute = s.slice(14, 16);
-  const duration = formatDuration(session.durationSeconds);
+  const duration = formatDuration(session.durationSeconds, t);
 
   const range = formatRange(
     session.surahStart,
@@ -373,10 +378,10 @@ export function formatStats(
   const computeSpeed = (ayahs: number, seconds: number): number =>
     seconds > 0 ? Math.round((ayahs / seconds) * 3600) : 0;
 
-  const totalDuration = formatDuration(data.totalSeconds);
+  const totalDuration = formatDuration(data.totalSeconds, t);
   const speed = computeSpeed(data.totalAyahs, data.totalSeconds);
-  const weekDuration = formatDuration(data.weekSeconds);
-  const monthDuration = formatDuration(data.monthSeconds);
+  const weekDuration = formatDuration(data.weekSeconds, t);
+  const monthDuration = formatDuration(data.monthSeconds, t);
 
   // Week line with optional speed and trend
   let weekLine = `${t.stats.versesLabel} : ${data.weekAyahs} | ${t.stats.durationLabel} : ${weekDuration}`;
@@ -435,8 +440,7 @@ export function formatProgress(
     data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
   const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
-  const surah = getSurah(data.lastSurah);
-  const surahName = surah?.name ?? `#${data.lastSurah}`;
+  const surahName = getSurahName(data.lastSurah, t);
 
   const lines = [
     t.progress.label(data.totalAyahsRead, data.totalAyahs, pct.toFixed(1)),
@@ -465,8 +469,7 @@ export function formatReminder(
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
   const day = data.lastSessionDate.slice(8, 10);
   const month = data.lastSessionDate.slice(5, 7);
-  const surah = getSurah(data.lastSurahNum);
-  const surahName = surah?.name ?? `#${data.lastSurahNum}`;
+  const surahName = getSurahName(data.lastSurahNum, t);
   const closing =
     data.streak > 0 ? t.reminder.keepItUp : t.reminder.timeToResume;
 
@@ -495,7 +498,7 @@ export function formatReadConfirmation(
   },
   t: Locale
 ): string {
-  const duration = formatDuration(data.durationSeconds);
+  const duration = formatDuration(data.durationSeconds, t);
   const isLastPage = data.pageEnd === data.totalPages;
 
   let speedPart = "";
@@ -533,7 +536,7 @@ export function formatKahfPageConfirmation(
   },
   t: Locale
 ): string {
-  const duration = formatDuration(data.durationSeconds);
+  const duration = formatDuration(data.durationSeconds, t);
   const pages = data.sessionPages ?? 1;
 
   let speedPart = "";
@@ -543,23 +546,23 @@ export function formatKahfPageConfirmation(
   }
 
   if (!data.isComplete) {
-    const weekDuration = formatDuration(data.weekTotalSeconds);
+    const weekDuration = formatDuration(data.weekTotalSeconds, t);
     return `${t.kahf.pageRead(data.kahfPage, data.kahfTotal, duration)}${speedPart}\n${t.kahf.thisWeek(data.weekPagesRead, data.kahfTotal, weekDuration)}`;
   }
 
-  const weekDuration = formatDuration(data.weekTotalSeconds);
+  const weekDuration = formatDuration(data.weekTotalSeconds, t);
   const lines: string[] = [
     t.kahf.complete(data.kahfPage, data.kahfTotal, weekDuration),
   ];
 
   if (data.lastWeekTotalSeconds !== undefined) {
-    const lastWeekDuration = formatDuration(data.lastWeekTotalSeconds);
+    const lastWeekDuration = formatDuration(data.lastWeekTotalSeconds, t);
     const diff = data.weekTotalSeconds - data.lastWeekTotalSeconds;
     if (diff < 0) {
-      const absDiff = formatDuration(Math.abs(diff));
+      const absDiff = formatDuration(Math.abs(diff), t);
       lines.push(t.kahf.lastWeekFaster(lastWeekDuration, absDiff));
     } else if (diff > 0) {
-      const absDiff = formatDuration(diff);
+      const absDiff = formatDuration(diff, t);
       lines.push(t.kahf.lastWeekSlower(lastWeekDuration, absDiff));
     } else {
       lines.push(t.kahf.lastWeek(lastWeekDuration));
@@ -580,7 +583,7 @@ export function formatKahfReminder(
   if (data.lastDate !== undefined && data.lastDuration !== undefined) {
     const day = data.lastDate.slice(8, 10);
     const month = data.lastDate.slice(5, 7);
-    const duration = formatDuration(data.lastDuration);
+    const duration = formatDuration(data.lastDuration, t);
     return `${base}\n\n${t.kahf.reminderLast(t.fmt.dateShort(day, month), duration)}`;
   }
   return base;
@@ -616,13 +619,15 @@ export function formatKhatmaMessage(khatmaNumber: number, t: Locale): string {
 }
 
 export function formatSurahsComplete(
-  surahs: { number: number; name: string }[],
+  surahs: { number: number; name: string; nameAr?: string }[],
   t: Locale
 ): string {
+  const getName = (s: { name: string; nameAr?: string }) =>
+    t.lang === "ar" && s.nameAr ? s.nameAr : s.name;
   if (surahs.length === 1) {
-    return t.surahComplete.singular(surahs[0].name, surahs[0].number);
+    return t.surahComplete.singular(getName(surahs[0]), surahs[0].number);
   }
-  const list = surahs.map((s) => `${s.name} (${s.number})`).join(", ");
+  const list = surahs.map((s) => `${getName(s)} (${s.number})`).join(", ");
   return t.surahComplete.plural(list);
 }
 
@@ -675,7 +680,7 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
       );
     }
     if (data.longestSession) {
-      const duration = formatDuration(data.longestSession.durationSeconds);
+      const duration = formatDuration(data.longestSession.durationSeconds, t);
       const day = data.longestSession.startedAt.slice(8, 10);
       const month = data.longestSession.startedAt.slice(5, 7);
       lines.push(
@@ -748,7 +753,7 @@ export function formatWeeklyRecap(data: WeeklyRecapData, t: Locale): string {
   const hasLastWeek = data.lastWeek.sessions > 0;
 
   const pagesStr = `${t.recap.pagesRead} : ${data.thisWeekPages}${hasLastWeek ? formatPercentChange(data.thisWeekPages, data.lastWeekPages) : ""}`;
-  const durationStr = `${t.recap.duration} : ${formatDuration(data.thisWeek.seconds)}${hasLastWeek ? formatPercentChange(data.thisWeek.seconds, data.lastWeek.seconds) : ""}`;
+  const durationStr = `${t.recap.duration} : ${formatDuration(data.thisWeek.seconds, t)}${hasLastWeek ? formatPercentChange(data.thisWeek.seconds, data.lastWeek.seconds) : ""}`;
   const sessionsStr = `${t.recap.sessions} : ${data.thisWeek.sessions}${hasLastWeek ? formatPercentChange(data.thisWeek.sessions, data.lastWeek.sessions) : ""}`;
   const streakStr = t.recap.streak(data.streak.currentStreak);
 

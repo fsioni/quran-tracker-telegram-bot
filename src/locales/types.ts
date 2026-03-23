@@ -38,6 +38,7 @@ export interface Locale {
     unknownParam: (param: string) => string;
     languageUpdated: (lang: string) => string;
     languageInvalid: (available: string) => string;
+    languageError: string;
   };
 
   // Debug
@@ -87,6 +88,9 @@ export interface Locale {
     timeShort: (hour: string, minute: string) => string;
     versesPerHourCompact: (n: number) => string;
     pagesPerHourCompact: (n: string) => string;
+    hours: string;
+    minutes: string;
+    seconds: string;
   };
 
   // Import
@@ -121,6 +125,8 @@ export interface Locale {
     first: string;
     nth: (n: number) => string;
   };
+  // Language identifier
+  lang: "en" | "fr" | "ar";
 
   // Manage (delete/undo)
   manage: {
@@ -248,6 +254,23 @@ export interface Locale {
     pagesPerHour: (n: string) => string;
     from: string;
     to: string;
+    confirmationSameSurah: (
+      surahName: string,
+      ayahStart: number,
+      ayahEnd: number,
+      ayahCount: number,
+      duration: string,
+      speed: string
+    ) => string;
+    confirmationCrossSurah: (
+      startName: string,
+      ayahStart: number,
+      endName: string,
+      ayahEnd: number,
+      ayahCount: number,
+      duration: string,
+      speed: string
+    ) => string;
   };
 
   // Speed report

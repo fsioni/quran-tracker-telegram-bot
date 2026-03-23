@@ -5,7 +5,7 @@ import type { Locale } from "./types";
 
 export type Language = "en" | "fr" | "ar";
 
-export const LANGUAGES: Language[] = ["en", "fr", "ar"];
+export const LANGUAGES: readonly Language[] = ["en", "fr", "ar"] as const;
 
 export const CALLBACK_LANG_SET = "lang_set";
 export const CALLBACK_LANG_SET_RE = /^lang_set:(.+)$/;
