@@ -8,7 +8,7 @@ import {
   KAHF_TOTAL_PAGES,
   TOTAL_PAGES,
 } from "../data/pages";
-import type { Locale } from "../locales";
+import type { Locale } from "../locales/types";
 import {
   calculateKahfPagesRead,
   clearTimerState,
@@ -481,13 +481,103 @@ async function handleVerseResponse(
   ]);
 }
 
+// --- Kahf response handler (extracted for complexity) ---
+
+async function handleKahfResponse(
+  ctx: CustomContext,
+  state: TimerState,
+  trimmed: string,
+  tz: string
+): Promise<void> {
+  const t = ctx.locale;
+  const count = parsePageCount(trimmed);
+  if (!count) {
+    await ctx.reply(formatError(t.timer.invalidPageCount, t));
+    return;
+  }
+  const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
+  const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
+  const pageStart = KAHF_PAGE_START + pagesAlreadyRead;
+  const pageEnd = pageStart + count - 1;
+  if (pageEnd > KAHF_PAGE_END) {
+    const remaining = KAHF_TOTAL_PAGES - pagesAlreadyRead;
+    await ctx.reply(
+      formatError(t.kahf.remainingPages(remaining, pageStart, KAHF_PAGE_END), t)
+    );
+    return;
+  }
+  const rangeData = getPageRange(pageStart, pageEnd);
+  if (!rangeData) {
+    await ctx.reply(formatError(t.read.pagesInvalid, t));
+    return;
+  }
+  const result = await insertSession(ctx.db, {
+    startedAt: state.startedAt,
+    durationSeconds: state.durationSeconds ?? 0,
+    surahStart: rangeData.surahStart,
+    ayahStart: rangeData.ayahStart,
+    surahEnd: rangeData.surahEnd,
+    ayahEnd: rangeData.ayahEnd,
+    ayahCount: rangeData.ayahCount,
+    type: "kahf",
+    pageStart,
+    pageEnd,
+  });
+  if (!result.ok) {
+    await ctx.reply(formatError(result.error, t));
+    return;
+  }
+  await clearTimerState(ctx.db);
+
+  const weekPagesRead = pagesAlreadyRead + count;
+  const weekTotalSeconds =
+    weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
+    (state.durationSeconds ?? 0);
+  const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
+
+  if (isComplete) {
+    const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
+    const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
+    await ctx.reply(
+      formatKahfPageConfirmation(
+        {
+          kahfPage: weekPagesRead,
+          kahfTotal: KAHF_TOTAL_PAGES,
+          durationSeconds: state.durationSeconds ?? 0,
+          weekPagesRead,
+          weekTotalSeconds,
+          isComplete: true,
+          lastWeekTotalSeconds:
+            lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+          sessionPages: count,
+        },
+        t
+      )
+    );
+  } else {
+    await ctx.reply(
+      formatKahfPageConfirmation(
+        {
+          kahfPage: weekPagesRead,
+          kahfTotal: KAHF_TOTAL_PAGES,
+          durationSeconds: state.durationSeconds ?? 0,
+          weekPagesRead,
+          weekTotalSeconds,
+          isComplete: false,
+          sessionPages: count,
+        },
+        t
+      )
+    );
+  }
+}
+
 // --- Middleware: timerResponseHandler ---
 
 export async function timerResponseHandler(
   ctx: CustomContext,
   next: () => Promise<void>
 ): Promise<void> {
-  // Only intercept plain text messages (not commands)
   const text = ctx.message?.text;
   if (!text || text.startsWith("/")) {
     return next();
@@ -554,95 +644,8 @@ export async function timerResponseHandler(
       case "extra_verse":
         return handleVerseResponse(ctx, state, trimmed, "extra");
 
-      case "kahf": {
-        const count = parsePageCount(trimmed);
-        if (!count) {
-          await ctx.reply(formatError(t.timer.invalidPageCount, t));
-          return;
-        }
-        const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
-        const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
-        const pageStart = KAHF_PAGE_START + pagesAlreadyRead;
-        const pageEnd = pageStart + count - 1;
-        if (pageEnd > KAHF_PAGE_END) {
-          const remaining = KAHF_TOTAL_PAGES - pagesAlreadyRead;
-          await ctx.reply(
-            formatError(
-              t.kahf.remainingPages(remaining, pageStart, KAHF_PAGE_END),
-              t
-            )
-          );
-          return;
-        }
-        const rangeData = getPageRange(pageStart, pageEnd);
-        if (!rangeData) {
-          await ctx.reply(formatError(t.read.pagesInvalid, t));
-          return;
-        }
-        const result = await insertSession(ctx.db, {
-          startedAt: state.startedAt,
-          durationSeconds: state.durationSeconds ?? 0,
-          surahStart: rangeData.surahStart,
-          ayahStart: rangeData.ayahStart,
-          surahEnd: rangeData.surahEnd,
-          ayahEnd: rangeData.ayahEnd,
-          ayahCount: rangeData.ayahCount,
-          type: "kahf",
-          pageStart,
-          pageEnd,
-        });
-        if (!result.ok) {
-          await ctx.reply(formatError(result.error, t));
-          return;
-        }
-        await clearTimerState(ctx.db);
-
-        // Calculate week totals
-        const weekPagesRead = pagesAlreadyRead + count;
-        const weekTotalSeconds =
-          weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
-          (state.durationSeconds ?? 0);
-        const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
-
-        if (isComplete) {
-          const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
-          const lastWeekTotalSeconds = lastWeekResult.ok
-            ? lastWeekResult.value
-            : 0;
-          await ctx.reply(
-            formatKahfPageConfirmation(
-              {
-                kahfPage: weekPagesRead,
-                kahfTotal: KAHF_TOTAL_PAGES,
-                durationSeconds: state.durationSeconds ?? 0,
-                weekPagesRead,
-                weekTotalSeconds,
-                isComplete: true,
-                lastWeekTotalSeconds:
-                  lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-                sessionPages: count,
-              },
-              t
-            )
-          );
-        } else {
-          await ctx.reply(
-            formatKahfPageConfirmation(
-              {
-                kahfPage: weekPagesRead,
-                kahfTotal: KAHF_TOTAL_PAGES,
-                durationSeconds: state.durationSeconds ?? 0,
-                weekPagesRead,
-                weekTotalSeconds,
-                isComplete: false,
-                sessionPages: count,
-              },
-              t
-            )
-          );
-        }
-        return;
-      }
+      case "kahf":
+        return handleKahfResponse(ctx, state, trimmed, tz);
 
       default:
         break;

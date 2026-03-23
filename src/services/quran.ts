@@ -1,5 +1,5 @@
 import { getSurah, SURAHS, type Surah } from "../data/surahs";
-import type { Locale } from "../locales";
+import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
 
 export function validateSurah(surahNum: number, t: Locale): Result<Surah> {

@@ -3,6 +3,7 @@ import { createBot } from "./bot";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "./config";
 import { CALLBACK_TIMER_GO } from "./handlers/timer";
 import { getBotCommands, getLocale } from "./locales";
+import type { Locale } from "./locales/types";
 import type { PrayerCacheRow } from "./services/db";
 import {
   calculateStreak,
@@ -28,7 +29,7 @@ import {
   getNowInTimezone,
   isReminderDue,
 } from "./services/prayer";
-import { buildWeeklyRecap } from "./services/weeklyRecap";
+import { buildWeeklyRecap } from "./services/weekly-recap";
 
 export interface Env {
   ALLOWED_USER_ID: string;
@@ -63,6 +64,139 @@ async function sendTelegramMessage(
   } catch (e) {
     console.error("Telegram sendMessage failed:", (e as Error).message);
     return false;
+  }
+}
+
+function getDayOfWeek(tz: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(new Date());
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const d = Number(parts.find((p) => p.type === "day")?.value);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=Sun, 5=Fri
+}
+
+interface ScheduledContext {
+  botToken: string;
+  chatId: string;
+  db: D1Database;
+  nowHHMM: string;
+  t: Locale;
+  today: string;
+  tz: string;
+}
+
+async function sendPrayerReminders(
+  sctx: ScheduledContext,
+  cache: PrayerCacheRow
+): Promise<void> {
+  const duePrayers = getDueReminders(cache, sctx.nowHHMM);
+  if (duePrayers.length === 0) {
+    return;
+  }
+
+  const [lastSession, weekStatsResult, streak] = await Promise.all([
+    getLastSession(sctx.db),
+    getPeriodStats(sctx.db, "week", sctx.tz),
+    calculateStreak(sctx.db, sctx.tz),
+  ]);
+
+  const weekStats = weekStatsResult.ok
+    ? weekStatsResult.value
+    : (() => {
+        console.error("getPeriodStats failed:", weekStatsResult.error);
+        return { sessions: 0, ayahs: 0, seconds: 0 };
+      })();
+
+  const message = lastSession
+    ? formatReminder(
+        {
+          lastSessionDate: lastSession.startedAt,
+          lastSurahNum: lastSession.surahEnd,
+          lastAyah: lastSession.ayahEnd,
+          weekSessions: weekStats.sessions,
+          weekAyahs: weekStats.ayahs,
+          streak: streak.currentStreak,
+        },
+        sctx.t
+      )
+    : sctx.t.reminder.noSession;
+
+  const goKeyboard = {
+    inline_keyboard: [
+      [{ text: sctx.t.timer.go, callback_data: CALLBACK_TIMER_GO }],
+    ],
+  };
+  const sent = await sendTelegramMessage(
+    sctx.botToken,
+    sctx.chatId,
+    message,
+    goKeyboard
+  );
+  if (sent) {
+    for (const prayer of duePrayers) {
+      await markPrayerSent(sctx.db, sctx.today, prayer);
+    }
+  }
+}
+
+async function sendKahfReminder(
+  sctx: ScheduledContext,
+  cache: PrayerCacheRow
+): Promise<void> {
+  const kahfReminderLast = await getConfig(sctx.db, "kahf_reminder_last");
+  if (
+    kahfReminderLast === sctx.today ||
+    !isReminderDue(sctx.nowHHMM, cache.fajr)
+  ) {
+    return;
+  }
+
+  const kahfStats = await getKahfStats(sctx.db);
+  const kahfMsg = formatKahfReminder(
+    {
+      lastDate: kahfStats.lastDate ?? undefined,
+      lastDuration: kahfStats.lastDuration ?? undefined,
+    },
+    sctx.t
+  );
+  const kahfSent = await sendTelegramMessage(
+    sctx.botToken,
+    sctx.chatId,
+    kahfMsg
+  );
+  if (kahfSent) {
+    await setConfig(sctx.db, "kahf_reminder_last", sctx.today);
+  }
+}
+
+async function sendWeeklyRecap(sctx: ScheduledContext): Promise<void> {
+  const recapLast = await getConfig(sctx.db, "weekly_recap_last");
+  if (recapLast === sctx.today || sctx.nowHHMM < "21:00") {
+    return;
+  }
+
+  try {
+    const recapResult = await buildWeeklyRecap(sctx.db, sctx.tz);
+    if (!recapResult.ok) {
+      console.error("buildWeeklyRecap failed:", recapResult.error);
+      return;
+    }
+    const recapMsg = formatWeeklyRecap(recapResult.value, sctx.t);
+    const recapSent = await sendTelegramMessage(
+      sctx.botToken,
+      sctx.chatId,
+      recapMsg
+    );
+    if (recapSent) {
+      await setConfig(sctx.db, "weekly_recap_last", sctx.today);
+    }
+  } catch (e) {
+    console.error("Weekly recap failed:", (e as Error).message);
   }
 }
 
@@ -117,111 +251,24 @@ export async function handleScheduled(
   await cleanOldCache(db, today);
 
   const nowHHMM = getNowInTimezone(tz);
-  const duePrayers = getDueReminders(cache, nowHHMM);
+  const sctx: ScheduledContext = {
+    db,
+    botToken,
+    chatId,
+    today,
+    nowHHMM,
+    tz,
+    t,
+  };
 
-  if (duePrayers.length > 0) {
-    const [lastSession, weekStatsResult, streak] = await Promise.all([
-      getLastSession(db),
-      getPeriodStats(db, "week", tz),
-      calculateStreak(db, tz),
-    ]);
+  await sendPrayerReminders(sctx, cache);
 
-    const weekStats = weekStatsResult.ok
-      ? weekStatsResult.value
-      : (() => {
-          console.error("getPeriodStats failed:", weekStatsResult.error);
-          return { sessions: 0, ayahs: 0, seconds: 0 };
-        })();
-
-    let message: string;
-    if (lastSession) {
-      message = formatReminder(
-        {
-          lastSessionDate: lastSession.startedAt,
-          lastSurahNum: lastSession.surahEnd,
-          lastAyah: lastSession.ayahEnd,
-          weekSessions: weekStats.sessions,
-          weekAyahs: weekStats.ayahs,
-          streak: streak.currentStreak,
-        },
-        t
-      );
-    } else {
-      message = t.reminder.noSession;
-    }
-
-    const goKeyboard = {
-      inline_keyboard: [
-        [{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }],
-      ],
-    };
-    const sent = await sendTelegramMessage(
-      botToken,
-      chatId,
-      message,
-      goKeyboard
-    );
-    if (sent) {
-      for (const prayer of duePrayers) {
-        await markPrayerSent(db, today, prayer);
-      }
-    }
-  }
-
-  // Al-Kahf Friday reminder — use numeric day check (locale-independent)
-  const nowDate = new Date();
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).formatToParts(nowDate);
-  const y = Number(parts.find((p) => p.type === "year")?.value);
-  const m = Number(parts.find((p) => p.type === "month")?.value);
-  const d = Number(parts.find((p) => p.type === "day")?.value);
-  const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=Sun, 5=Fri
-
+  const dayOfWeek = getDayOfWeek(tz);
   if (dayOfWeek === 5) {
-    const kahfReminderLast = await getConfig(db, "kahf_reminder_last");
-    if (kahfReminderLast !== today && isReminderDue(nowHHMM, cache.fajr)) {
-      const kahfStats = await getKahfStats(db);
-      const kahfMsg = formatKahfReminder(
-        {
-          lastDate: kahfStats.lastDate ?? undefined,
-          lastDuration: kahfStats.lastDuration ?? undefined,
-        },
-        t
-      );
-      const kahfSent = await sendTelegramMessage(botToken, chatId, kahfMsg);
-      if (kahfSent) {
-        await setConfig(db, "kahf_reminder_last", today);
-      }
-    }
+    await sendKahfReminder(sctx, cache);
   }
-
-  // Weekly recap - Sunday evening
   if (dayOfWeek === 0) {
-    const recapLast = await getConfig(db, "weekly_recap_last");
-    if (recapLast !== today && nowHHMM >= "21:00") {
-      try {
-        const recapResult = await buildWeeklyRecap(db, tz);
-        if (recapResult.ok) {
-          const recapMsg = formatWeeklyRecap(recapResult.value, t);
-          const recapSent = await sendTelegramMessage(
-            botToken,
-            chatId,
-            recapMsg
-          );
-          if (recapSent) {
-            await setConfig(db, "weekly_recap_last", today);
-          }
-        } else {
-          console.error("buildWeeklyRecap failed:", recapResult.error);
-        }
-      } catch (e) {
-        console.error("Weekly recap failed:", (e as Error).message);
-      }
-    }
+    await sendWeeklyRecap(sctx);
   }
 }
 

@@ -61,8 +61,9 @@ describe("Al-Kahf constants", () => {
 
   it("Al-Kahf pages contain surah 18", () => {
     for (let p = KAHF_PAGE_START + 1; p <= KAHF_PAGE_END; p++) {
-      const boundary = getPageBoundary(p)!;
-      expect(boundary.surah).toBe(18);
+      const boundary = getPageBoundary(p);
+      expect(boundary).toBeDefined();
+      expect(boundary?.surah).toBe(18);
     }
   });
 });

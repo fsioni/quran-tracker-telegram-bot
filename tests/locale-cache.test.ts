@@ -11,7 +11,7 @@ vi.mock("../src/services/db", () => ({
 import {
   invalidateLocaleCache,
   resolveLocale,
-} from "../src/services/localeCache";
+} from "../src/services/locale-cache";
 
 const fakeDb = {} as D1Database;
 
@@ -54,6 +54,28 @@ describe("resolveLocale", () => {
   it("DB language takes precedence over Telegram code", async () => {
     mockGetConfig.mockResolvedValue("en");
     const locale = await resolveLocale(fakeDb, "fr");
+    expect(locale).toBe(en);
+  });
+
+  it("second call uses cache and skips DB query", async () => {
+    mockGetConfig.mockResolvedValue("fr");
+    await resolveLocale(fakeDb);
+    expect(mockGetConfig).toHaveBeenCalledTimes(1);
+
+    mockGetConfig.mockClear();
+    const second = await resolveLocale(fakeDb);
+    expect(mockGetConfig).not.toHaveBeenCalled();
+    expect(second).toBe(fr);
+  });
+
+  it("invalidateLocaleCache forces re-query on next call", async () => {
+    mockGetConfig.mockResolvedValue("fr");
+    await resolveLocale(fakeDb);
+
+    invalidateLocaleCache();
+    mockGetConfig.mockResolvedValue("en");
+    const locale = await resolveLocale(fakeDb);
+    expect(mockGetConfig).toHaveBeenCalled();
     expect(locale).toBe(en);
   });
 });

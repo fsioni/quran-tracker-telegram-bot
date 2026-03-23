@@ -32,6 +32,9 @@ import {
   setConfig,
   setPrayerCache,
 } from "../src/services/db";
+
+const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 import type { Result } from "../src/types";
 
 function unwrap<T>(result: Result<T>): T {
@@ -963,7 +966,7 @@ describe("prayerCache", () => {
 describe("helper functions", () => {
   it("getTodayInTimezone returns YYYY-MM-DD format", () => {
     const today = getTodayInTimezone("America/Cancun");
-    expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(today).toMatch(DATE_FORMAT_RE);
   });
 
   it("addDays adds positive days", () => {

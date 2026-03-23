@@ -1,6 +1,6 @@
 import { TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
-import type { Locale } from "../locales";
+import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
 import {
   addDays,
@@ -9,7 +9,7 @@ import {
   type TypeSpeed,
 } from "./db";
 import { getCompletedSurahs } from "./quran";
-import type { WeeklyRecapData } from "./weeklyRecap";
+import type { WeeklyRecapData } from "./weekly-recap";
 
 export interface SpeedReportData {
   averages: SpeedAverages;

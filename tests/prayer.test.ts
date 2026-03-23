@@ -1,4 +1,6 @@
 // tests/prayer.test.ts
+const TIME_FORMAT_RE = /^\d{2}:\d{2}$/;
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fr } from "../src/locales/fr";
 import type { PrayerCacheRow } from "../src/services/db";
@@ -248,6 +250,6 @@ describe("getDueReminders", () => {
 describe("getNowInTimezone", () => {
   it("retourne un format HH:MM", () => {
     const now = getNowInTimezone("America/Cancun");
-    expect(now).toMatch(/^\d{2}:\d{2}$/);
+    expect(now).toMatch(TIME_FORMAT_RE);
   });
 });

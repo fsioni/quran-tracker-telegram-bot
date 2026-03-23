@@ -19,8 +19,8 @@ import {
   getWeekSessions,
 } from "../src/services/db";
 import { formatWeeklyRecap } from "../src/services/format";
-import type { WeeklyRecapData } from "../src/services/weeklyRecap";
-import { buildWeeklyRecap } from "../src/services/weeklyRecap";
+import type { WeeklyRecapData } from "../src/services/weekly-recap";
+import { buildWeeklyRecap } from "../src/services/weekly-recap";
 
 describe("buildWeeklyRecap", () => {
   const db = {} as D1Database;

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import { buildWelcome } from "../../src/locales";
+import { buildWelcome, getBotCommands } from "../../src/locales";
+import { en } from "../../src/locales/en";
 import { fr } from "../../src/locales/fr";
 
 vi.mock("../../src/services/db", async (importOriginal) => {
@@ -13,12 +14,23 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   };
 });
 
+vi.mock("../../src/services/locale-cache", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/locale-cache")>();
+  return {
+    ...actual,
+    invalidateLocaleCache: vi.fn(),
+  };
+});
+
 import {
   configHandler,
   helpHandler,
+  langSetCallback,
   startHandler,
 } from "../../src/handlers/config";
 import { clearPrayerCache, getConfig, setConfig } from "../../src/services/db";
+import { invalidateLocaleCache } from "../../src/services/locale-cache";
 
 function createMockContext(chatId = 12_345): CustomContext {
   return {
@@ -203,5 +215,90 @@ describe("configHandler", () => {
       .calls[0][0] as string;
     expect(msg).toContain("Erreur");
     expect(msg).toContain("valeur manquante");
+  });
+
+  it("affiche le clavier de langue sans valeur", async () => {
+    const ctx = makeConfigCtx("language");
+    await configHandler(ctx);
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts.reply_markup).toBeDefined();
+  });
+
+  it("affiche le clavier de langue avec alias lang", async () => {
+    const ctx = makeConfigCtx("lang");
+    await configHandler(ctx);
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts.reply_markup).toBeDefined();
+  });
+
+  it("met a jour la langue via texte (valide)", async () => {
+    const mockApi = { setMyCommands: vi.fn().mockResolvedValue(undefined) };
+    const ctx = {
+      ...makeConfigCtx("language fr"),
+      api: mockApi,
+    } as unknown as CustomContext;
+    await configHandler(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "language", "fr");
+    expect(invalidateLocaleCache).toHaveBeenCalled();
+    expect(mockApi.setMyCommands).toHaveBeenCalledWith(getBotCommands(fr));
+  });
+
+  it("rejette une langue invalide via texte", async () => {
+    const ctx = makeConfigCtx("language xx");
+    await configHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+  });
+});
+
+function makeLangCallbackCtx(match: string[] | undefined): CustomContext {
+  return {
+    match,
+    db: {} as D1Database,
+    locale: fr,
+    api: { setMyCommands: vi.fn().mockResolvedValue(undefined) },
+    answerCallbackQuery: vi.fn().mockResolvedValue(undefined),
+    editMessageText: vi.fn().mockResolvedValue(undefined),
+  } as unknown as CustomContext;
+}
+
+describe("langSetCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("met a jour la langue et repond au callback", async () => {
+    const ctx = makeLangCallbackCtx(["lang_set:en", "en"]);
+    await langSetCallback(ctx);
+    expect(setConfig).toHaveBeenCalledWith(ctx.db, "language", "en");
+    expect(invalidateLocaleCache).toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(ctx.editMessageText).toHaveBeenCalledWith(
+      en.config.languageUpdated("en")
+    );
+  });
+
+  it("repond au callback meme avec une langue invalide", async () => {
+    const ctx = makeLangCallbackCtx(["lang_set:xx", "xx"]);
+    await langSetCallback(ctx);
+    expect(setConfig).not.toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("repond au callback quand match est undefined", async () => {
+    const ctx = makeLangCallbackCtx(undefined);
+    await langSetCallback(ctx);
+    expect(setConfig).not.toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("repond au callback meme si applyLanguageChange echoue", async () => {
+    const ctx = makeLangCallbackCtx(["lang_set:fr", "fr"]);
+    (ctx.api.setMyCommands as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("network error")
+    );
+    await langSetCallback(ctx);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

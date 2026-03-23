@@ -1,6 +1,6 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
-import type { Locale } from "../locales";
+import type { Locale } from "../locales/types";
 import {
   deleteSessionById,
   getLastSession,

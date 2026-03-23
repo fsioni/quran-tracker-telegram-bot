@@ -1,5 +1,9 @@
 import { fr } from "../src/locales/fr";
 import type { Session } from "../src/services/db";
+
+const MONTHS_REMAINING_RE =
+  /^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/;
+
 import {
   formatDuration,
   formatError,
@@ -1030,9 +1034,7 @@ describe("formatEstimation", () => {
   it("retourne format en mois quand estimation > 5 ans", () => {
     // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
     const result = formatEstimation(0.1, 500, today, fr);
-    expect(result).toMatch(
-      /^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/
-    );
+    expect(result).toMatch(MONTHS_REMAINING_RE);
   });
 
   it("retourne message pour pace negatif", () => {

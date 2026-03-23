@@ -120,6 +120,6 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   lines.push(`serveur (UTC) : ${nowUtc}`);
   lines.push(`user (tz)     : ${nowLocal}`);
 
-  const body = lines.join("\n");
+  const body = lines.join("\n").replace(/[`\\]/g, "\\$&");
   await ctx.reply(`\`\`\`\n${body}\n\`\`\``, { parse_mode: "MarkdownV2" });
 }

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { Locale } from "../src/locales";
 import {
   buildWelcome,
   getBotCommands,
@@ -9,6 +8,7 @@ import {
 import { ar } from "../src/locales/ar";
 import { en } from "../src/locales/en";
 import { fr } from "../src/locales/fr";
+import type { Locale } from "../src/locales/types";
 import {
   formatError,
   formatEstimation,
@@ -146,7 +146,9 @@ describe("locale completeness", () => {
 
     // Months
     expect(t.months).toHaveLength(12);
-    t.months.forEach((m) => expect(m).toBeTruthy());
+    for (const m of t.months) {
+      expect(m).toBeTruthy();
+    }
   });
 
   it.each(locales)("%s: format functions produce non-empty output", (_, t) => {

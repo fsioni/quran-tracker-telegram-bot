@@ -3,11 +3,6 @@ import { en } from "./en";
 import { fr } from "./fr";
 import type { Locale } from "./types";
 
-export { ar } from "./ar";
-export { en } from "./en";
-export { fr } from "./fr";
-export type { Locale } from "./types";
-
 export type Language = "en" | "fr" | "ar";
 
 export const LANGUAGES: Language[] = ["en", "fr", "ar"];

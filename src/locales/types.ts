@@ -142,7 +142,20 @@ export interface Locale {
   };
 
   // Months
-  months: string[];
+  months: [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
 
   // Native language name for inline keyboard
   nativeName: string;

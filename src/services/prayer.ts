@@ -1,4 +1,4 @@
-import type { Locale } from "../locales";
+import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
 import type { PrayerCacheRow, PrayerName, PrayerTimes } from "./db";
 

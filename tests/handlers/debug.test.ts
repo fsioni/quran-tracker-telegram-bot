@@ -42,7 +42,7 @@ function setupMocks(
   vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
   vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 09:30:00");
 
-  vi.mocked(getConfig).mockImplementation(async (_db, key) => {
+  vi.mocked(getConfig).mockImplementation((_db, key) => {
     const values: Record<string, string> = {
       city: "Playa del Carmen",
       country: "MX",

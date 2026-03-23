@@ -41,9 +41,9 @@ vi.mock("../src/services/format", async (importOriginal) => {
   };
 });
 
-vi.mock("../src/services/weeklyRecap", async (importOriginal) => {
+vi.mock("../src/services/weekly-recap", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("../src/services/weeklyRecap")>();
+    await importOriginal<typeof import("../src/services/weekly-recap")>();
   return { ...actual, buildWeeklyRecap: vi.fn() };
 });
 
@@ -73,7 +73,7 @@ import {
   getNowInTimezone,
   isReminderDue,
 } from "../src/services/prayer";
-import { buildWeeklyRecap } from "../src/services/weeklyRecap";
+import { buildWeeklyRecap } from "../src/services/weekly-recap";
 
 describe("handleScheduled", () => {
   const db = {} as D1Database;
@@ -94,7 +94,7 @@ describe("handleScheduled", () => {
   });
 
   it("ne fait rien si aucune priere dans la fenetre", async () => {
-    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+    vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
       }
@@ -135,7 +135,7 @@ describe("handleScheduled", () => {
   });
 
   it("envoie un rappel et marque la priere", async () => {
-    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+    vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
       }
@@ -210,7 +210,7 @@ describe("handleScheduled", () => {
   });
 
   it("fetch Aladhan si cache absent", async () => {
-    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+    vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
       }
@@ -258,7 +258,7 @@ describe("handleScheduled", () => {
   });
 
   it("ne marque pas la priere si Telegram echoue", async () => {
-    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+    vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
       }
@@ -313,7 +313,7 @@ describe("handleScheduled", () => {
   });
 
   it("envoie message fallback si aucune session", async () => {
-    vi.mocked(getConfig).mockImplementation(async (_, key) => {
+    vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
       }
@@ -372,7 +372,7 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }
@@ -444,7 +444,7 @@ describe("handleScheduled", () => {
       // 2026-03-11 is a Wednesday
       vi.setSystemTime(new Date("2026-03-11T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }
@@ -489,7 +489,7 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }
@@ -537,7 +537,7 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }
@@ -621,7 +621,7 @@ describe("handleScheduled", () => {
         )
       );
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }
@@ -698,7 +698,7 @@ describe("handleScheduled", () => {
       // 2026-03-11 is a Wednesday
       vi.setSystemTime(new Date("2026-03-11T21:05:00Z"));
 
-      vi.mocked(getConfig).mockImplementation(async (_, key) => {
+      vi.mocked(getConfig).mockImplementation((_, key) => {
         if (key === "chat_id") {
           return "123";
         }

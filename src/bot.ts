@@ -39,8 +39,9 @@ import {
   stopTimerCallback,
   timerResponseHandler,
 } from "./handlers/timer";
-import { CALLBACK_LANG_SET_RE, type Locale } from "./locales";
-import { resolveLocale } from "./services/localeCache";
+import { CALLBACK_LANG_SET_RE } from "./locales";
+import type { Locale } from "./locales/types";
+import { resolveLocale } from "./services/locale-cache";
 
 export interface CustomContext extends Context {
   db: D1Database;
