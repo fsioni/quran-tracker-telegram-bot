@@ -1,11 +1,11 @@
 import { calculateAyahCount } from "../services/quran";
 import { getSurah } from "./surahs";
 
-export type PageBoundary = {
+export interface PageBoundary {
+  ayah: number;
   page: number;
   surah: number;
-  ayah: number;
-};
+}
 
 export const PAGES: readonly PageBoundary[] = [
   { page: 1, surah: 1, ayah: 1 },
@@ -653,9 +653,15 @@ export function getPageRange(
     surahEnd = 114;
     ayahEnd = 6;
   } else {
-    const nextPage = getPageBoundary(pageEnd + 1)!;
+    const nextPage = getPageBoundary(pageEnd + 1);
+    if (!nextPage) {
+      return undefined;
+    }
     if (nextPage.ayah === 1) {
-      const prevSurah = getSurah(nextPage.surah - 1)!;
+      const prevSurah = getSurah(nextPage.surah - 1);
+      if (!prevSurah) {
+        return undefined;
+      }
       surahEnd = prevSurah.number;
       ayahEnd = prevSurah.ayahCount;
     } else {

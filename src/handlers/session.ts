@@ -10,10 +10,12 @@ import {
 } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
 
+const WHITESPACE_RE = /\s+/;
+
 export async function sessionHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
-  const parts = input.split(/\s+/);
+  const parts = input.split(WHITESPACE_RE);
 
   if (parts.length < 2 || !parts[0]) {
     await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.session));

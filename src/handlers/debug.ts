@@ -17,7 +17,7 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   // Timezone needed first for today's date
   const tz = await getTimezone(db);
   const today = getTodayInTimezone(tz);
-  const nowUtc = new Date().toISOString().substring(0, 19).replace("T", " ");
+  const nowUtc = new Date().toISOString().slice(0, 19).replace("T", " ");
   const nowLocal = getNowTimestamp(tz);
 
   // Collect all data in parallel
@@ -79,10 +79,10 @@ export async function debugHandler(ctx: CustomContext): Promise<void> {
   lines.push(t.debug.lastSessionSection);
   if (lastSession) {
     const s = lastSession.startedAt;
-    const day = s.substring(8, 10);
-    const month = s.substring(5, 7);
-    const hour = s.substring(11, 13);
-    const minute = s.substring(14, 16);
+    const day = s.slice(8, 10);
+    const month = s.slice(5, 7);
+    const hour = s.slice(11, 13);
+    const minute = s.slice(14, 16);
     const range = formatRange(
       lastSession.surahStart,
       lastSession.ayahStart,

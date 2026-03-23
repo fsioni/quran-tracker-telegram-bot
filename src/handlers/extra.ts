@@ -12,10 +12,13 @@ import {
 } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
 
+const WHITESPACE_RE = /\s+/;
+const PAGE_OR_RANGE_RE = /^\d+(-\d+)?$/;
+
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
-  const parts = input.split(/\s+/);
+  const parts = input.split(WHITESPACE_RE);
 
   if (parts.length < 2 || !parts[0]) {
     await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.extra));
@@ -56,7 +59,7 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
     surahEnd = rangeData.surahEnd;
     ayahEnd = rangeData.ayahEnd;
     ayahCount = rangeData.ayahCount;
-  } else if (/^\d+(-\d+)?$/.test(targetStr)) {
+  } else if (PAGE_OR_RANGE_RE.test(targetStr)) {
     // Looks like a page number/range but parsePage rejected it (e.g. 0, 605)
     await ctx.reply(formatError(pageResult.error, t));
     return;

@@ -30,7 +30,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   // Determine current page from last normal session
   const lastSession = await getLastSession(ctx.db, "normal");
   let currentPage: number;
-  if (lastSession && lastSession.pageEnd) {
+  if (lastSession?.pageEnd) {
     currentPage = lastSession.pageEnd + 1;
   } else {
     currentPage = 1;
@@ -99,10 +99,10 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     parts.push(
       formatReadConfirmation(
         {
-          pageStart: session.pageStart!,
-          pageEnd: session.pageEnd!,
+          pageStart: session.pageStart ?? pageStart,
+          pageEnd: session.pageEnd ?? pageEnd,
           durationSeconds: session.durationSeconds,
-          totalPagesRead: session.pageEnd!,
+          totalPagesRead: session.pageEnd ?? pageEnd,
           totalPages: TOTAL_PAGES,
         },
         t

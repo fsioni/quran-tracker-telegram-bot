@@ -8,6 +8,8 @@ import {
 import { formatError, parseImportLine } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
 
+const NEWLINE_RE = /\r?\n/;
+
 export async function importHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
@@ -17,7 +19,7 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const lines = input.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const lines = input.split(NEWLINE_RE).filter((l) => l.trim() !== "");
 
   let type: SessionType = "normal";
   let startIndex = 0;

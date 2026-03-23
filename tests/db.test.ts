@@ -170,8 +170,8 @@ describe("getSessionById", () => {
     const inserted = unwrap(await insertSession(db, makeSession()));
     const found = await getSessionById(db, inserted.id);
     expect(found).not.toBeNull();
-    expect(found!.id).toBe(inserted.id);
-    expect(found!.ayahCount).toBe(7);
+    expect(found?.id).toBe(inserted.id);
+    expect(found?.ayahCount).toBe(7);
   });
 
   it("returns null for a non-existent ID", async () => {
@@ -196,7 +196,7 @@ describe("getLastSession", () => {
 
     const last = await getLastSession(db);
     expect(last).not.toBeNull();
-    expect(last!.startedAt).toBe("2026-03-11 10:00:00");
+    expect(last?.startedAt).toBe("2026-03-11 10:00:00");
   });
 
   it("returns null when no sessions exist", async () => {
@@ -226,13 +226,13 @@ describe("getLastSession", () => {
 
     const lastKahf = await getLastSession(db, "kahf");
     expect(lastKahf).not.toBeNull();
-    expect(lastKahf!.startedAt).toBe("2026-03-10 10:00:00");
-    expect(lastKahf!.type).toBe("kahf");
+    expect(lastKahf?.startedAt).toBe("2026-03-10 10:00:00");
+    expect(lastKahf?.type).toBe("kahf");
 
     const lastExtra = await getLastSession(db, "extra");
     expect(lastExtra).not.toBeNull();
-    expect(lastExtra!.startedAt).toBe("2026-03-09 10:00:00");
-    expect(lastExtra!.type).toBe("extra");
+    expect(lastExtra?.startedAt).toBe("2026-03-09 10:00:00");
+    expect(lastExtra?.type).toBe("extra");
   });
 
   it("returns all types when type is not provided", async () => {
@@ -251,8 +251,8 @@ describe("getLastSession", () => {
 
     const last = await getLastSession(db);
     expect(last).not.toBeNull();
-    expect(last!.startedAt).toBe("2026-03-11 10:00:00");
-    expect(last!.type).toBe("normal");
+    expect(last?.startedAt).toBe("2026-03-11 10:00:00");
+    expect(last?.type).toBe("normal");
   });
 });
 
@@ -263,7 +263,7 @@ describe("deleteSessionById", () => {
     const session = unwrap(await insertSession(db, makeSession()));
     const deleted = await deleteSessionById(db, session.id);
     expect(deleted).not.toBeNull();
-    expect(deleted!.id).toBe(session.id);
+    expect(deleted?.id).toBe(session.id);
 
     const found = await getSessionById(db, session.id);
     expect(found).toBeNull();
@@ -913,14 +913,14 @@ describe("prayerCache", () => {
     const cached = await getPrayerCache(db, "2026-03-13");
 
     expect(cached).not.toBeNull();
-    expect(cached!.date).toBe("2026-03-13");
-    expect(cached!.fajr).toBe("05:30");
-    expect(cached!.dhuhr).toBe("12:15");
-    expect(cached!.asr).toBe("15:45");
-    expect(cached!.maghrib).toBe("18:30");
-    expect(cached!.isha).toBe("20:00");
-    expect(cached!.fajr_sent).toBe(0);
-    expect(cached!.dhuhr_sent).toBe(0);
+    expect(cached?.date).toBe("2026-03-13");
+    expect(cached?.fajr).toBe("05:30");
+    expect(cached?.dhuhr).toBe("12:15");
+    expect(cached?.asr).toBe("15:45");
+    expect(cached?.maghrib).toBe("18:30");
+    expect(cached?.isha).toBe("20:00");
+    expect(cached?.fajr_sent).toBe(0);
+    expect(cached?.dhuhr_sent).toBe(0);
   });
 
   it("returns null for a non-cached date", async () => {
@@ -933,8 +933,8 @@ describe("prayerCache", () => {
     await markPrayerSent(db, "2026-03-13", "fajr");
 
     const cached = await getPrayerCache(db, "2026-03-13");
-    expect(cached!.fajr_sent).toBe(1);
-    expect(cached!.dhuhr_sent).toBe(0);
+    expect(cached?.fajr_sent).toBe(1);
+    expect(cached?.dhuhr_sent).toBe(0);
   });
 
   it("overwrites prayer times but preserves sent flags on upsert", async () => {
@@ -945,9 +945,9 @@ describe("prayerCache", () => {
     await setPrayerCache(db, { ...sampleTimes, fajr: "05:45" });
 
     const cached = await getPrayerCache(db, "2026-03-13");
-    expect(cached!.fajr).toBe("05:45");
+    expect(cached?.fajr).toBe("05:45");
     // Sent flag must be preserved (not reset to 0)
-    expect(cached!.fajr_sent).toBe(1);
+    expect(cached?.fajr_sent).toBe(1);
   });
 
   it("rejects invalid prayer names at runtime", async () => {

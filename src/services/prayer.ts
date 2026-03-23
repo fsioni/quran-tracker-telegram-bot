@@ -2,24 +2,26 @@ import type { Locale } from "../locales";
 import { err, ok, type Result } from "../types";
 import type { PrayerCacheRow, PrayerName, PrayerTimes } from "./db";
 
-type AladhanTimings = {
-  Fajr: string;
-  Dhuhr: string;
+interface AladhanTimings {
   Asr: string;
-  Maghrib: string;
+  Dhuhr: string;
+  Fajr: string;
   Isha: string;
+  Maghrib: string;
   [key: string]: string;
-};
+}
 
-type AladhanResponse = {
+interface AladhanResponse {
   code: number;
   data: {
     timings: AladhanTimings;
   };
-};
+}
+
+const TIMEZONE_SUFFIX_RE = /\s*\(.*\)$/;
 
 function stripTimezone(time: string): string {
-  return time.replace(/\s*\(.*\)$/, "").trim();
+  return time.replace(TIMEZONE_SUFFIX_RE, "").trim();
 }
 
 const REQUIRED_TIMINGS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;

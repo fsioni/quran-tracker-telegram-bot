@@ -17,7 +17,7 @@ export async function resolveLocale(
   const lang = await getConfig(db, "language");
   // If no language in DB, use Telegram's language_code as fallback (extract 2-letter prefix)
   const fallback = telegramLangCode
-    ? telegramLangCode.substring(0, 2).toLowerCase()
+    ? telegramLangCode.slice(0, 2).toLowerCase()
     : null;
   cachedLocale = getLocale(lang ?? fallback);
   return cachedLocale;

@@ -250,11 +250,7 @@ export default {
     return webhookCallback(bot, "cloudflare-mod")(request);
   },
 
-  async scheduled(
-    event: ScheduledEvent,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<void> {
+  scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): void {
     ctx.waitUntil(handleScheduled(env.DB, env.BOT_TOKEN));
   },
 };

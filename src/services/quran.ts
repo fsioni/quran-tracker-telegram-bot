@@ -92,7 +92,10 @@ export function calculateAyahCount(
     return ayahEnd - ayahStart + 1;
   }
 
-  const startSurah = getSurah(surahStart)!;
+  const startSurah = getSurah(surahStart);
+  if (!startSurah) {
+    return 0;
+  }
   const remainingInStart = startSurah.ayahCount - ayahStart + 1;
 
   let middleAyahs = 0;

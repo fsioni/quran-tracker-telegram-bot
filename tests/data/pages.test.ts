@@ -76,7 +76,7 @@ describe("getPageBoundary", () => {
   it("returns page 604 boundary", () => {
     const b = getPageBoundary(604);
     expect(b).toBeDefined();
-    expect(b!.page).toBe(604);
+    expect(b?.page).toBe(604);
   });
 
   it("returns undefined for page 0", () => {
@@ -96,21 +96,21 @@ describe("getPageRange", () => {
   it("returns range for a single page (page 1)", () => {
     const range = getPageRange(1, 1);
     expect(range).toBeDefined();
-    expect(range!.surahStart).toBe(1);
-    expect(range!.ayahStart).toBe(1);
-    expect(range!.surahEnd).toBe(1);
-    expect(range!.ayahEnd).toBe(7);
-    expect(range!.ayahCount).toBe(7);
+    expect(range?.surahStart).toBe(1);
+    expect(range?.ayahStart).toBe(1);
+    expect(range?.surahEnd).toBe(1);
+    expect(range?.ayahEnd).toBe(7);
+    expect(range?.ayahCount).toBe(7);
   });
 
   it("returns range for multiple pages", () => {
     const range = getPageRange(1, 2);
     expect(range).toBeDefined();
-    expect(range!.surahStart).toBe(1);
-    expect(range!.ayahStart).toBe(1);
-    expect(range!.surahEnd).toBe(2);
+    expect(range?.surahStart).toBe(1);
+    expect(range?.ayahStart).toBe(1);
+    expect(range?.surahEnd).toBe(2);
     // page 3 starts at 2:6, so page 2 ends at 2:5
-    expect(range!.ayahEnd).toBe(5);
+    expect(range?.ayahEnd).toBe(5);
   });
 
   it("returns range for Al-Kahf pages (293-304)", () => {
@@ -118,22 +118,22 @@ describe("getPageRange", () => {
     expect(range).toBeDefined();
     // Page 293 starts at 17:105, page 305 starts at 19:1
     // so range ends at surah 18 ayah 110 (last ayah of Al-Kahf)
-    expect(range!.surahEnd).toBe(18);
-    expect(range!.ayahEnd).toBe(getSurah(18)!.ayahCount);
+    expect(range?.surahEnd).toBe(18);
+    expect(range?.ayahEnd).toBe(getSurah(18)?.ayahCount);
   });
 
   it("returns range for last page (604)", () => {
     const range = getPageRange(604, 604);
     expect(range).toBeDefined();
-    expect(range!.surahEnd).toBe(114);
-    expect(range!.ayahEnd).toBe(6);
+    expect(range?.surahEnd).toBe(114);
+    expect(range?.ayahEnd).toBe(6);
   });
 
   it("calculates ayah count correctly across surahs", () => {
     // Pages 1-2: Al-Fatiha (7) + first 5 of Al-Baqara = 12
     const range = getPageRange(1, 2);
     expect(range).toBeDefined();
-    expect(range!.ayahCount).toBe(12);
+    expect(range?.ayahCount).toBe(12);
   });
 
   it("returns undefined for invalid start page", () => {

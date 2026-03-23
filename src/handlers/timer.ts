@@ -132,7 +132,7 @@ export async function goHandler(ctx: CustomContext): Promise<void> {
     extra_page: t.timer.startedExtraPage(
       "page" in parsed ? String(parsed.page) : ""
     ),
-    extra_verse: t.timer.startedExtraVerse(input.substring(6).trim()),
+    extra_verse: t.timer.startedExtraVerse(input.slice(6).trim()),
     kahf: t.timer.startedKahf,
   };
 
@@ -151,7 +151,7 @@ function parseGoArgs(input: string, t: Locale): ParsedGoArgs | string {
   }
 
   if (input.startsWith("extra ")) {
-    const rest = input.substring(6).trim();
+    const rest = input.slice(6).trim();
     const verseResult = parseVerseStart(rest, t);
     if (verseResult.ok) {
       return {
@@ -206,7 +206,7 @@ async function executeTimerStop(
   }
 
   if (state.awaitingResponse) {
-    await send(getQuestionForType(state.type, state.durationSeconds!, t));
+    await send(getQuestionForType(state.type, state.durationSeconds ?? 0, t));
     return;
   }
 
@@ -268,6 +268,8 @@ function getQuestionForType(
       return t.timer.questionVerses(dur);
     case "kahf":
       return t.timer.questionKahfPages(dur);
+    default:
+      return t.timer.questionPages(dur);
   }
 }
 
@@ -367,7 +369,7 @@ export async function goTimerCallback(ctx: CustomContext): Promise<void> {
 
 function parsePageCount(text: string): number | null {
   const count = Number.parseInt(text, 10);
-  return isNaN(count) || count < 1 ? null : count;
+  return Number.isNaN(count) || count < 1 ? null : count;
 }
 
 async function handlePageResponse(
@@ -403,7 +405,7 @@ async function handlePageResponse(
   }
   const result = await insertSession(ctx.db, {
     startedAt: state.startedAt,
-    durationSeconds: state.durationSeconds!,
+    durationSeconds: state.durationSeconds ?? 0,
     surahStart: rangeData.surahStart,
     ayahStart: rangeData.ayahStart,
     surahEnd: rangeData.surahEnd,
@@ -420,7 +422,7 @@ async function handlePageResponse(
   await Promise.all([
     clearTimerState(ctx.db),
     ctx.reply(
-      formatReply(result.value, pageStart, pageEnd, state.durationSeconds!)
+      formatReply(result.value, pageStart, pageEnd, state.durationSeconds ?? 0)
     ),
   ]);
 }
@@ -459,7 +461,7 @@ async function handleVerseResponse(
   );
   const result = await insertSession(ctx.db, {
     startedAt: state.startedAt,
-    durationSeconds: state.durationSeconds!,
+    durationSeconds: state.durationSeconds ?? 0,
     surahStart,
     ayahStart,
     surahEnd,
@@ -492,7 +494,7 @@ export async function timerResponseHandler(
   }
 
   const state = await getTimerState(ctx.db);
-  if (!(state && state.awaitingResponse)) {
+  if (!state?.awaitingResponse) {
     return next();
   }
 
@@ -579,7 +581,7 @@ export async function timerResponseHandler(
         }
         const result = await insertSession(ctx.db, {
           startedAt: state.startedAt,
-          durationSeconds: state.durationSeconds!,
+          durationSeconds: state.durationSeconds ?? 0,
           surahStart: rangeData.surahStart,
           ayahStart: rangeData.ayahStart,
           surahEnd: rangeData.surahEnd,
@@ -599,7 +601,7 @@ export async function timerResponseHandler(
         const weekPagesRead = pagesAlreadyRead + count;
         const weekTotalSeconds =
           weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
-          state.durationSeconds!;
+          (state.durationSeconds ?? 0);
         const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
 
         if (isComplete) {
@@ -612,7 +614,7 @@ export async function timerResponseHandler(
               {
                 kahfPage: weekPagesRead,
                 kahfTotal: KAHF_TOTAL_PAGES,
-                durationSeconds: state.durationSeconds!,
+                durationSeconds: state.durationSeconds ?? 0,
                 weekPagesRead,
                 weekTotalSeconds,
                 isComplete: true,
@@ -629,7 +631,7 @@ export async function timerResponseHandler(
               {
                 kahfPage: weekPagesRead,
                 kahfTotal: KAHF_TOTAL_PAGES,
-                durationSeconds: state.durationSeconds!,
+                durationSeconds: state.durationSeconds ?? 0,
                 weekPagesRead,
                 weekTotalSeconds,
                 isComplete: false,
@@ -641,6 +643,9 @@ export async function timerResponseHandler(
         }
         return;
       }
+
+      default:
+        break;
     }
   } catch (e) {
     console.error("timerResponseHandler error:", e);

@@ -5,78 +5,78 @@ import { err, ok, type Result } from "../types";
 
 export type SessionType = "normal" | "extra" | "kahf";
 
-type SessionRow = {
-  id: number;
-  started_at: string;
-  duration_seconds: number;
-  page_start: number | null;
-  page_end: number | null;
-  surah_start: number;
-  ayah_start: number;
-  surah_end: number;
-  ayah_end: number;
+interface SessionRow {
   ayah_count: number;
-  type: string;
+  ayah_end: number;
+  ayah_start: number;
   created_at: string;
-};
+  duration_seconds: number;
+  id: number;
+  page_end: number | null;
+  page_start: number | null;
+  started_at: string;
+  surah_end: number;
+  surah_start: number;
+  type: string;
+}
 
 // --- Public types (camelCase) ---
 
-export type Session = {
-  id: number;
-  startedAt: string;
-  durationSeconds: number;
-  pageStart: number | null;
-  pageEnd: number | null;
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
+export interface Session {
   ayahCount: number;
-  type: SessionType;
+  ayahEnd: number;
+  ayahStart: number;
   createdAt: string;
-};
+  durationSeconds: number;
+  id: number;
+  pageEnd: number | null;
+  pageStart: number | null;
+  startedAt: string;
+  surahEnd: number;
+  surahStart: number;
+  type: SessionType;
+}
 
-export type GlobalStats = {
-  totalSessions: number;
-  totalAyahs: number;
-  totalSeconds: number;
+export interface GlobalStats {
   avgAyahsPerSession: number;
   avgSecondsPerSession: number;
-};
+  totalAyahs: number;
+  totalSeconds: number;
+  totalSessions: number;
+}
 
-export type PeriodStats = {
-  sessions: number;
+export interface PeriodStats {
   ayahs: number;
   seconds: number;
-};
+  sessions: number;
+}
 
-export type StreakResult = {
-  currentStreak: number;
+export interface StreakResult {
   bestStreak: number;
-};
+  currentStreak: number;
+}
 
-export type SpeedAverages = {
+export interface SpeedAverages {
   global: number | null;
   last7Days: number | null;
   last30Days: number | null;
-};
+}
 
-export type TypeSpeed = {
-  type: SessionType;
+export interface TypeSpeed {
   avgSpeed: number;
   sessionCount: number;
+  type: SessionType;
   unit: "pages" | "verses";
-};
+}
 
-export type PrayerTimes = {
-  date: string;
-  fajr: string;
-  dhuhr: string;
+export interface PrayerTimes {
   asr: string;
-  maghrib: string;
+  date: string;
+  dhuhr: string;
+  fajr: string;
   isha: string;
-};
+  maghrib: string;
+}
 
 export type PrayerCacheRow = PrayerTimes & {
   fajr_sent: number;
@@ -123,7 +123,7 @@ export function getNowTimestamp(tz: string): string {
   return new Date()
     .toLocaleString("sv-SE", { timeZone: tz })
     .replace("T", " ")
-    .substring(0, 19);
+    .slice(0, 19);
 }
 
 export async function getTimezone(db: D1Database): Promise<string> {
@@ -131,7 +131,7 @@ export async function getTimezone(db: D1Database): Promise<string> {
 }
 
 export function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
+  const d = new Date(`${dateStr}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -140,7 +140,7 @@ export function addDays(dateStr: string, n: number): string {
 }
 
 export function getWeekBounds(today: string): { start: string; end: string } {
-  const d = new Date(today + "T00:00:00Z");
+  const d = new Date(`${today}T00:00:00Z`);
   const dow = d.getUTCDay(); // 0=Sunday
   const diffToMonday = dow === 0 ? -6 : 1 - dow;
   const start = addDays(today, diffToMonday);
@@ -149,7 +149,7 @@ export function getWeekBounds(today: string): { start: string; end: string } {
 }
 
 export function getMonthBounds(today: string): { start: string; end: string } {
-  const d = new Date(today + "T00:00:00Z");
+  const d = new Date(`${today}T00:00:00Z`);
   const year = d.getUTCFullYear();
   const month = d.getUTCMonth(); // 0-based
   const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
@@ -160,18 +160,18 @@ export function getMonthBounds(today: string): { start: string; end: string } {
 
 // --- Session data param ---
 
-export type InsertSessionData = {
-  startedAt: string;
-  durationSeconds: number;
-  surahStart: number;
-  ayahStart: number;
-  surahEnd: number;
-  ayahEnd: number;
+export interface InsertSessionData {
   ayahCount: number;
-  type?: SessionType;
-  pageStart?: number;
+  ayahEnd: number;
+  ayahStart: number;
+  durationSeconds: number;
   pageEnd?: number;
-};
+  pageStart?: number;
+  startedAt: string;
+  surahEnd: number;
+  surahStart: number;
+  type?: SessionType;
+}
 
 // --- Session functions ---
 
@@ -548,8 +548,8 @@ export async function calculateStreak(
 // --- Pace ---
 
 function diffDays(from: string, to: string): number {
-  const a = new Date(from + "T00:00:00Z");
-  const b = new Date(to + "T00:00:00Z");
+  const a = new Date(`${from}T00:00:00Z`);
+  const b = new Date(`${to}T00:00:00Z`);
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -576,7 +576,7 @@ export async function getRecentPace(
     return 0;
   }
 
-  const firstDate = row.first_started_at!.substring(0, 10);
+  const firstDate = row.first_started_at?.slice(0, 10);
   const effectiveDays = diffDays(firstDate, today) + 1;
   return row.total_pages / Math.min(days, effectiveDays);
 }
@@ -617,11 +617,13 @@ export async function getSpeedAverages(
       seconds_30d: number;
     }>();
 
-  if (!(row && row.total_seconds)) {
+  if (!row?.total_seconds) {
     return { global: null, last7Days: null, last30Days: null };
   }
 
-  const global = Math.round(row.total_ayahs! / (row.total_seconds / 3600));
+  const global = Math.round(
+    (row.total_ayahs ?? 0) / (row.total_seconds / 3600)
+  );
   const last7Days =
     row.seconds_7d > 0
       ? Math.round(row.ayahs_7d / (row.seconds_7d / 3600))
@@ -711,14 +713,14 @@ export type TimerType =
   | "extra_verse"
   | "kahf";
 
-export type TimerState = {
-  startedAt: string;
-  startedEpoch: number;
-  type: TimerType;
+export interface TimerState {
   args: string;
   awaitingResponse: boolean;
   durationSeconds?: number;
-};
+  startedAt: string;
+  startedEpoch: number;
+  type: TimerType;
+}
 
 const TIMER_CONFIG_KEY = "timer_state";
 
@@ -862,14 +864,14 @@ export async function insertKhatma(
     .prepare("INSERT INTO khatmas (completed_at) VALUES (?) RETURNING *")
     .bind(completedAt)
     .first<{ id: number; completed_at: string }>();
-  return { id: row!.id, completedAt: row!.completed_at };
+  return { id: row?.id, completedAt: row?.completed_at };
 }
 
 export async function getKhatmaCount(db: D1Database): Promise<number> {
   const row = await db
     .prepare("SELECT COUNT(*) AS count FROM khatmas")
     .first<{ count: number }>();
-  return row!.count;
+  return row?.count;
 }
 
 export async function cleanOldCache(

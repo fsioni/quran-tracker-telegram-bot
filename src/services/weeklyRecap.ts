@@ -10,14 +10,14 @@ import {
 } from "./db";
 import { getCompletedSurahs } from "./quran";
 
-export type WeeklyRecapData = {
-  thisWeek: PeriodStats;
+export interface WeeklyRecapData {
+  completedSurahs: Surah[];
   lastWeek: PeriodStats;
-  thisWeekPages: number;
   lastWeekPages: number;
   streak: StreakResult;
-  completedSurahs: Surah[];
-};
+  thisWeek: PeriodStats;
+  thisWeekPages: number;
+}
 
 export async function buildWeeklyRecap(
   db: D1Database,

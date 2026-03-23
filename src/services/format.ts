@@ -11,26 +11,38 @@ import {
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weeklyRecap";
 
-export type SpeedReportData = {
+export interface SpeedReportData {
   averages: SpeedAverages;
   bestSession: Session | null;
-  longestSession: Session | null;
   byType: TypeSpeed[];
-};
+  longestSession: Session | null;
+}
 
-export type ParsedRange = {
-  surahStart: number;
+export interface ParsedRange {
+  ayahEnd: number;
   ayahStart: number;
   surahEnd: number;
-  ayahEnd: number;
-};
+  surahStart: number;
+}
 
-export type ParsedImportLine = {
+export interface ParsedImportLine {
   date: string;
-  time: string;
   duration: number;
   range: ParsedRange;
-};
+  time: string;
+}
+
+// --- Regex constants ---
+
+const VERSE_START_RE = /^(\d+):(\d+)$/;
+const DURATION_RE = /^(?:(\d+)h)?(\d+)m(\d+)?$/;
+const SAME_SURAH_RE = /^(\d+):(\d+)-(\d+)$/;
+const CROSS_SURAH_RE = /^(\d+):(\d+)-(\d+):(\d+)$/;
+const IMPORT_LINE_RE =
+  /^(\d{2})\/(\d{2}),\s*(\d{1,2})[h:](\d{2})\s*-\s*(.+?)\s*-\s*(.+)$/;
+const PAGE_RANGE_RE = /^(\d+)-(\d+)$/;
+const SINGLE_PAGE_RE = /^(\d+)$/;
+const WHITESPACE_RE = /\s+/;
 
 // --- Parsing functions ---
 
@@ -39,7 +51,7 @@ export function parseVerseStart(
   input: string,
   t: Locale
 ): Result<{ surah: number; ayah: number }> {
-  const match = input.match(/^(\d+):(\d+)$/);
+  const match = input.match(VERSE_START_RE);
   if (!match) {
     return err(t.parse.invalidVerseFormat(input));
   }
@@ -50,7 +62,7 @@ export function parseVerseStart(
 }
 
 export function parseDuration(input: string, t: Locale): Result<number> {
-  const match = input.match(/^(?:(\d+)h)?(\d+)m(\d+)?$/);
+  const match = input.match(DURATION_RE);
   if (!match) {
     return err(t.parse.invalidDurationFormat(input));
   }
@@ -62,7 +74,7 @@ export function parseDuration(input: string, t: Locale): Result<number> {
 
 export function parseRange(input: string, t: Locale): Result<ParsedRange> {
   // Same surah: 2:77-83
-  const sameSurah = input.match(/^(\d+):(\d+)-(\d+)$/);
+  const sameSurah = input.match(SAME_SURAH_RE);
   if (sameSurah) {
     const surah = Number.parseInt(sameSurah[1], 10);
     return ok({
@@ -74,7 +86,7 @@ export function parseRange(input: string, t: Locale): Result<ParsedRange> {
   }
 
   // Cross-surah: 2:280-3:10
-  const crossSurah = input.match(/^(\d+):(\d+)-(\d+):(\d+)$/);
+  const crossSurah = input.match(CROSS_SURAH_RE);
   if (crossSurah) {
     return ok({
       surahStart: Number.parseInt(crossSurah[1], 10),
@@ -94,9 +106,7 @@ export function parseImportLine(
   referenceDate?: Date
 ): Result<ParsedImportLine> {
   // Format: JJ/MM, HHhMM - DUREE - RANGE
-  const match = line.match(
-    /^(\d{2})\/(\d{2}),\s*(\d{1,2})[h:](\d{2})\s*-\s*(.+?)\s*-\s*(.+)$/
-  );
+  const match = line.match(IMPORT_LINE_RE);
   if (!match) {
     return err(t.parse.invalidImportLineFormat(line));
   }
@@ -152,7 +162,7 @@ export function parsePage(
   input: string,
   t: Locale
 ): Result<{ pageStart: number; pageEnd: number }> {
-  const rangeMatch = input.match(/^(\d+)-(\d+)$/);
+  const rangeMatch = input.match(PAGE_RANGE_RE);
   if (rangeMatch) {
     const pageStart = Number.parseInt(rangeMatch[1], 10);
     const pageEnd = Number.parseInt(rangeMatch[2], 10);
@@ -168,7 +178,7 @@ export function parsePage(
     return ok({ pageStart, pageEnd });
   }
 
-  const singleMatch = input.match(/^(\d+)$/);
+  const singleMatch = input.match(SINGLE_PAGE_RE);
   if (singleMatch) {
     const page = Number.parseInt(singleMatch[1], 10);
     if (page < 1 || page > TOTAL_PAGES) {
@@ -188,7 +198,7 @@ export function parsePageCountAndDuration(
   if (!input) {
     return err(t.parse.invalidFormat(cmdExample));
   }
-  const parts = input.split(/\s+/);
+  const parts = input.split(WHITESPACE_RE);
   let count: number;
   let durationStr: string;
 
@@ -197,7 +207,7 @@ export function parsePageCountAndDuration(
     durationStr = parts[0];
   } else {
     const parsed = Number.parseInt(parts[0], 10);
-    if (isNaN(parsed) || parsed < 1) {
+    if (Number.isNaN(parsed) || parsed < 1) {
       return err(t.parse.invalidPageCount(cmdExample));
     }
     count = parsed;
@@ -305,10 +315,10 @@ export function formatHistoryLine(
 ): string {
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
   const s = session.startedAt;
-  const day = s.substring(8, 10);
-  const month = s.substring(5, 7);
-  const hour = s.substring(11, 13);
-  const minute = s.substring(14, 16);
+  const day = s.slice(8, 10);
+  const month = s.slice(5, 7);
+  const hour = s.slice(11, 13);
+  const minute = s.slice(14, 16);
   const duration = formatDuration(session.durationSeconds);
 
   const range = formatRange(
@@ -425,12 +435,13 @@ export function formatProgress(
     data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
   const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
-  const surah = getSurah(data.lastSurah)!;
+  const surah = getSurah(data.lastSurah);
+  const surahName = surah?.name ?? `#${data.lastSurah}`;
 
   const lines = [
     t.progress.label(data.totalAyahsRead, data.totalAyahs, pct.toFixed(1)),
     `[${bar}] ${pct.toFixed(1)}%`,
-    t.progress.lastPosition(surah.name, data.lastSurah, data.lastAyah),
+    t.progress.lastPosition(surahName, data.lastSurah, data.lastAyah),
   ];
 
   if (data.khatmaCount) {
@@ -452,9 +463,10 @@ export function formatReminder(
   t: Locale
 ): string {
   // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
-  const day = data.lastSessionDate.substring(8, 10);
-  const month = data.lastSessionDate.substring(5, 7);
-  const surah = getSurah(data.lastSurahNum)!;
+  const day = data.lastSessionDate.slice(8, 10);
+  const month = data.lastSessionDate.slice(5, 7);
+  const surah = getSurah(data.lastSurahNum);
+  const surahName = surah?.name ?? `#${data.lastSurahNum}`;
   const closing =
     data.streak > 0 ? t.reminder.keepItUp : t.reminder.timeToResume;
 
@@ -463,7 +475,7 @@ export function formatReminder(
     "",
     t.reminder.lastSession(
       t.fmt.dateShort(day, month),
-      surah.name,
+      surahName,
       data.lastAyah
     ),
     t.reminder.thisWeek(data.weekSessions, data.weekAyahs),
@@ -566,8 +578,8 @@ export function formatKahfReminder(
 ): string {
   const base = t.kahf.reminderBase;
   if (data.lastDate !== undefined && data.lastDuration !== undefined) {
-    const day = data.lastDate.substring(8, 10);
-    const month = data.lastDate.substring(5, 7);
+    const day = data.lastDate.slice(8, 10);
+    const month = data.lastDate.slice(5, 7);
     const duration = formatDuration(data.lastDuration);
     return `${base}\n\n${t.kahf.reminderLast(t.fmt.dateShort(day, month), duration)}`;
   }
@@ -589,7 +601,7 @@ export function formatEstimation(
     return t.estimation.monthsRemaining(pagesPerDay.toFixed(1), months);
   }
   const target = addDays(today, daysRemaining);
-  const d = new Date(target + "T00:00:00Z");
+  const d = new Date(`${target}T00:00:00Z`);
   const day = d.getUTCDate();
   const month = t.months[d.getUTCMonth()];
   const year = d.getUTCFullYear();
@@ -652,8 +664,8 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
       const speed = Math.round(
         data.bestSession.ayahCount / (data.bestSession.durationSeconds / 3600)
       );
-      const day = data.bestSession.startedAt.substring(8, 10);
-      const month = data.bestSession.startedAt.substring(5, 7);
+      const day = data.bestSession.startedAt.slice(8, 10);
+      const month = data.bestSession.startedAt.slice(5, 7);
       lines.push(
         t.speed.bestSession(
           data.bestSession.id,
@@ -664,8 +676,8 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
     }
     if (data.longestSession) {
       const duration = formatDuration(data.longestSession.durationSeconds);
-      const day = data.longestSession.startedAt.substring(8, 10);
-      const month = data.longestSession.startedAt.substring(5, 7);
+      const day = data.longestSession.startedAt.slice(8, 10);
+      const month = data.longestSession.startedAt.slice(5, 7);
       lines.push(
         t.speed.longestSession(
           data.longestSession.id,

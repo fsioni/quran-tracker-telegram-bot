@@ -65,7 +65,7 @@ export async function deleteHandler(ctx: CustomContext): Promise<void> {
   }
 
   const id = Number.parseInt(input, 10);
-  if (isNaN(id) || id <= 0) {
+  if (Number.isNaN(id) || id <= 0) {
     await ctx.reply(formatError(t.manage.invalidId(input), t, "/delete 42"));
     return;
   }

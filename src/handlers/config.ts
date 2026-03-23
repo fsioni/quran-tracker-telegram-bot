@@ -13,8 +13,10 @@ import { clearPrayerCache, getConfig, setConfig } from "../services/db";
 import { formatError } from "../services/format";
 import { invalidateLocaleCache } from "../services/localeCache";
 
+const COUNTRY_CODE_RE = /^[A-Za-z]{2}$/;
+
 export async function startHandler(ctx: CustomContext): Promise<void> {
-  await setConfig(ctx.db, "chat_id", String(ctx.chat!.id));
+  await setConfig(ctx.db, "chat_id", String(ctx.chat?.id));
   await ctx.reply(buildWelcome(ctx.locale));
 }
 
@@ -71,8 +73,8 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const subCommand = input.substring(0, spaceIdx).toLowerCase();
-  const value = input.substring(spaceIdx + 1).trim();
+  const subCommand = input.slice(0, spaceIdx).toLowerCase();
+  const value = input.slice(spaceIdx + 1).trim();
 
   if (!value) {
     await ctx.reply(
@@ -90,7 +92,7 @@ export async function configHandler(ctx: CustomContext): Promise<void> {
       await ctx.reply(t.config.cityUpdated(value));
       break;
     case "country":
-      if (!/^[A-Za-z]{2}$/.test(value)) {
+      if (!COUNTRY_CODE_RE.test(value)) {
         await ctx.reply(
           formatError(t.config.countryCodeInvalid, t, "/config country MX")
         );

@@ -1,9 +1,9 @@
-export type Surah = {
-  number: number;
-  nameAr: string;
-  name: string;
+export interface Surah {
   ayahCount: number;
-};
+  name: string;
+  nameAr: string;
+  number: number;
+}
 
 export const SURAHS: readonly Surah[] = [
   { number: 1, nameAr: "الفاتحة", name: "Al-Fatiha", ayahCount: 7 },
