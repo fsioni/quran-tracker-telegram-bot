@@ -41,12 +41,14 @@ export interface GlobalStats {
   avgAyahsPerSession: number;
   avgSecondsPerSession: number;
   totalAyahs: number;
+  totalPages: number;
   totalSeconds: number;
   totalSessions: number;
 }
 
 export interface PeriodStats {
   ayahs: number;
+  pages: number;
   seconds: number;
   sessions: number;
 }
@@ -352,14 +354,16 @@ export async function getGlobalStats(
         COALESCE(SUM(ayah_count), 0) AS total_ayahs,
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
-        COALESCE(AVG(duration_seconds), 0) AS avg_seconds
+        COALESCE(AVG(duration_seconds), 0) AS avg_seconds,
+        COALESCE(SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS total_pages
       FROM sessions WHERE type = ?`
     : `SELECT
         COALESCE(COUNT(*), 0) AS total_sessions,
         COALESCE(SUM(ayah_count), 0) AS total_ayahs,
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
-        COALESCE(AVG(duration_seconds), 0) AS avg_seconds
+        COALESCE(AVG(duration_seconds), 0) AS avg_seconds,
+        COALESCE(SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS total_pages
       FROM sessions`;
   const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
   const row = await stmt.first<{
@@ -368,6 +372,7 @@ export async function getGlobalStats(
     total_seconds: number;
     avg_ayahs: number;
     avg_seconds: number;
+    total_pages: number;
   }>();
 
   if (!row) {
@@ -376,6 +381,7 @@ export async function getGlobalStats(
   return ok({
     totalSessions: row.total_sessions,
     totalAyahs: row.total_ayahs,
+    totalPages: row.total_pages,
     totalSeconds: row.total_seconds,
     avgAyahsPerSession: Math.round(row.avg_ayahs),
     avgSecondsPerSession: Math.round(row.avg_seconds),
@@ -403,12 +409,18 @@ export async function getPeriodStats(
       `SELECT
         COALESCE(COUNT(*), 0) AS sessions,
         COALESCE(SUM(ayah_count), 0) AS ayahs,
-        COALESCE(SUM(duration_seconds), 0) AS seconds
+        COALESCE(SUM(duration_seconds), 0) AS seconds,
+        COALESCE(SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS pages
       FROM sessions
       WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
     )
     .bind(bounds.start, bounds.end)
-    .first<{ sessions: number; ayahs: number; seconds: number }>();
+    .first<{
+      sessions: number;
+      ayahs: number;
+      seconds: number;
+      pages: number;
+    }>();
 
   if (!row) {
     return err("getPeriodStats: D1 returned no row for aggregate query");
@@ -432,12 +444,18 @@ export async function getPreviousWeekStats(
         `SELECT
           COALESCE(COUNT(*), 0) AS sessions,
           COALESCE(SUM(ayah_count), 0) AS ayahs,
-          COALESCE(SUM(duration_seconds), 0) AS seconds
+          COALESCE(SUM(duration_seconds), 0) AS seconds,
+          COALESCE(SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS pages
         FROM sessions
         WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
       )
       .bind(start, end)
-      .first<{ sessions: number; ayahs: number; seconds: number }>();
+      .first<{
+        sessions: number;
+        ayahs: number;
+        seconds: number;
+        pages: number;
+      }>();
 
     if (!row) {
       return err("getPreviousWeekStats: D1 returned no row");

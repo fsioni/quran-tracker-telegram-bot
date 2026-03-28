@@ -424,12 +424,15 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780, // 4h23m
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 45,
+        weekPages: 3,
         weekSeconds: 2280, // 38m
         monthAyahs: 187,
+        monthPages: 10,
         monthSeconds: 8100, // 2h15m
       },
       fr
@@ -439,15 +442,15 @@ describe("formatStats", () => {
         "-- Stats globales --",
         "Versets lus : 342",
         "Durée totale : 4h23m",
-        "Vitesse moyenne : 78 versets/heure",
+        "Vitesse moyenne : 4.6 pages/h",
         "Streak actuel : 5 jours",
         "Meilleur streak : 12 jours",
         "",
         "-- Cette semaine --",
-        "Versets : 45 | Durée : 38m | Vitesse : 71 versets/h",
+        "Versets : 45 | Durée : 38m | Vitesse : 4.7 pages/h",
         "",
         "-- Ce mois --",
-        "Versets : 187 | Durée : 2h15m | Vitesse : 83 versets/h",
+        "Versets : 187 | Durée : 2h15m | Vitesse : 4.4 pages/h",
       ].join("\n")
     );
   });
@@ -456,40 +459,46 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 0,
+        totalPages: 0,
         totalSeconds: 0,
         currentStreak: 0,
         bestStreak: 0,
         weekAyahs: 0,
+        weekPages: 0,
         weekSeconds: 0,
         monthAyahs: 0,
+        monthPages: 0,
         monthSeconds: 0,
       },
       fr
     );
     expect(result).toContain("Versets lus : 0");
-    expect(result).toContain("Vitesse moyenne : 0 versets/heure");
-    expect(result).not.toContain("Vitesse : 0 versets/h");
+    expect(result).toContain("Vitesse moyenne : 0.0 pages/h");
+    expect(result).not.toContain("Vitesse : 0.0 pages/h");
   });
 
   it("affiche la vitesse par periode", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
-        weekSeconds: 2700, // 45m -> 120/2700*3600 = 160
+        weekPages: 5,
+        weekSeconds: 2700, // 45m -> 5/2700*3600 = 6.7
         monthAyahs: 340,
-        monthSeconds: 8100, // 2h15m -> 340/8100*3600 = 151
+        monthPages: 10,
+        monthSeconds: 8100, // 2h15m -> 10/8100*3600 = 4.4
       },
       fr
     );
     expect(result).toContain(
-      "Versets : 120 | Durée : 45m | Vitesse : 160 versets/h"
+      "Versets : 120 | Durée : 45m | Vitesse : 6.7 pages/h"
     );
     expect(result).toContain(
-      "Versets : 340 | Durée : 2h15m | Vitesse : 151 versets/h"
+      "Versets : 340 | Durée : 2h15m | Vitesse : 4.4 pages/h"
     );
   });
 
@@ -497,33 +506,39 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 0,
+        weekPages: 0,
         weekSeconds: 0,
         monthAyahs: 0,
+        monthPages: 0,
         monthSeconds: 0,
       },
       fr
     );
     expect(result).toContain("Versets : 0 | Durée : 0m");
-    expect(result).not.toContain("Vitesse : 0 versets/h");
+    expect(result).not.toContain("Vitesse : 0.0 pages/h");
   });
 
   it("affiche la tendance positive vs semaine dernière", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
-        weekSeconds: 2700, // 160 v/h
+        weekPages: 6,
+        weekSeconds: 2700, // 8.0 p/h
         monthAyahs: 340,
+        monthPages: 10,
         monthSeconds: 8100,
-        prevWeekAyahs: 100,
-        prevWeekSeconds: 2520, // ~143 v/h -> +12%
+        prevWeekPages: 5,
+        prevWeekSeconds: 2520, // ~7.1 p/h -> +12%
       },
       fr
     );
@@ -534,15 +549,18 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 100,
-        weekSeconds: 2520, // ~143 v/h
+        weekPages: 5,
+        weekSeconds: 2520, // ~7.1 p/h
         monthAyahs: 340,
+        monthPages: 10,
         monthSeconds: 8100,
-        prevWeekAyahs: 120,
-        prevWeekSeconds: 2700, // 160 v/h -> -11%
+        prevWeekPages: 6,
+        prevWeekSeconds: 2700, // 8.0 p/h -> -11%
       },
       fr
     );
@@ -553,12 +571,15 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPages: 5,
         weekSeconds: 2700,
         monthAyahs: 340,
+        monthPages: 10,
         monthSeconds: 8100,
       },
       fr
@@ -570,14 +591,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPages: 5,
         weekSeconds: 2700,
         monthAyahs: 340,
+        monthPages: 10,
         monthSeconds: 8100,
-        prevWeekAyahs: 0,
+        prevWeekPages: 0,
         prevWeekSeconds: 0,
       },
       fr

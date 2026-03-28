@@ -8,15 +8,15 @@ exports[`format functions match snapshots > ar: format snapshots 3`] = `
 "-- الإحصائيات العامة --
 الآيات المقروءة : 300
 المدة الإجمالية : 1س23د20
-السرعة المتوسطة : 216 آية/ساعة
+السرعة المتوسطة : 10.8 صفحة/س
 السلسلة الحالية: 5 أيام
 أفضل سلسلة: 10 أيام
 
 -- هذا الأسبوع --
-الآيات : 50 | المدة : 16د40 | السرعة : 180 آية/س
+الآيات : 50 | المدة : 16د40 | السرعة : 10.8 صفحة/س
 
 -- هذا الشهر --
-الآيات : 200 | المدة : 1س6د40 | السرعة : 180 آية/س"
+الآيات : 200 | المدة : 1س6د40 | السرعة : 9.0 صفحة/س"
 `;
 
 exports[`format functions match snapshots > ar: format snapshots 4`] = `
@@ -88,15 +88,15 @@ exports[`format functions match snapshots > en: format snapshots 3`] = `
 "-- Overall stats --
 Verses read : 300
 Total duration : 1h23m20
-Average speed : 216 verses/hour
+Average speed : 10.8 pages/h
 Current streak: 5 days
 Best streak: 10 days
 
 -- This week --
-Verses : 50 | Duration : 16m40 | Speed : 180 verses/h
+Verses : 50 | Duration : 16m40 | Speed : 10.8 pages/h
 
 -- This month --
-Verses : 200 | Duration : 1h6m40 | Speed : 180 verses/h"
+Verses : 200 | Duration : 1h6m40 | Speed : 9.0 pages/h"
 `;
 
 exports[`format functions match snapshots > en: format snapshots 4`] = `
@@ -168,15 +168,15 @@ exports[`format functions match snapshots > fr: format snapshots 3`] = `
 "-- Stats globales --
 Versets lus : 300
 Durée totale : 1h23m20
-Vitesse moyenne : 216 versets/heure
+Vitesse moyenne : 10.8 pages/h
 Streak actuel : 5 jours
 Meilleur streak : 10 jours
 
 -- Cette semaine --
-Versets : 50 | Durée : 16m40 | Vitesse : 180 versets/h
+Versets : 50 | Durée : 16m40 | Vitesse : 10.8 pages/h
 
 -- Ce mois --
-Versets : 200 | Durée : 1h6m40 | Vitesse : 180 versets/h"
+Versets : 200 | Durée : 1h6m40 | Vitesse : 9.0 pages/h"
 `;
 
 exports[`format functions match snapshots > fr: format snapshots 4`] = `

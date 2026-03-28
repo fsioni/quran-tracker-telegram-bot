@@ -363,38 +363,41 @@ export function formatHistoryLine(
 export function formatStats(
   data: {
     totalAyahs: number;
+    totalPages: number;
     totalSeconds: number;
     currentStreak: number;
     bestStreak: number;
     weekAyahs: number;
+    weekPages: number;
     weekSeconds: number;
     monthAyahs: number;
+    monthPages: number;
     monthSeconds: number;
-    prevWeekAyahs?: number;
+    prevWeekPages?: number;
     prevWeekSeconds?: number;
   },
   t: Locale
 ): string {
-  const computeSpeed = (ayahs: number, seconds: number): number =>
-    seconds > 0 ? Math.round((ayahs / seconds) * 3600) : 0;
+  const computeSpeed = (pages: number, seconds: number): number =>
+    seconds > 0 ? (pages / seconds) * 3600 : 0;
 
   const totalDuration = formatDuration(data.totalSeconds, t);
-  const speed = computeSpeed(data.totalAyahs, data.totalSeconds);
+  const speed = computeSpeed(data.totalPages, data.totalSeconds);
   const weekDuration = formatDuration(data.weekSeconds, t);
   const monthDuration = formatDuration(data.monthSeconds, t);
 
   // Week line with optional speed and trend
   let weekLine = `${t.stats.versesLabel} : ${data.weekAyahs} | ${t.stats.durationLabel} : ${weekDuration}`;
   if (data.weekSeconds > 0) {
-    const weekSpeed = computeSpeed(data.weekAyahs, data.weekSeconds);
-    weekLine += ` | ${t.stats.speedLabel} : ${weekSpeed} ${t.stats.versesPerHourShort}`;
+    const weekSpeed = computeSpeed(data.weekPages, data.weekSeconds);
+    weekLine += ` | ${t.stats.speedLabel} : ${weekSpeed.toFixed(1)} ${t.stats.pagesPerHourShort}`;
 
     if (
-      data.prevWeekAyahs != null &&
+      data.prevWeekPages != null &&
       data.prevWeekSeconds != null &&
       data.prevWeekSeconds > 0
     ) {
-      const prevSpeed = computeSpeed(data.prevWeekAyahs, data.prevWeekSeconds);
+      const prevSpeed = computeSpeed(data.prevWeekPages, data.prevWeekSeconds);
       if (prevSpeed > 0) {
         const pct = Math.round(((weekSpeed - prevSpeed) / prevSpeed) * 100);
         const sign = pct >= 0 ? "+" : "";
@@ -406,15 +409,15 @@ export function formatStats(
   // Month line with optional speed
   let monthLine = `${t.stats.versesLabel} : ${data.monthAyahs} | ${t.stats.durationLabel} : ${monthDuration}`;
   if (data.monthSeconds > 0) {
-    const monthSpeed = computeSpeed(data.monthAyahs, data.monthSeconds);
-    monthLine += ` | ${t.stats.speedLabel} : ${monthSpeed} ${t.stats.versesPerHourShort}`;
+    const monthSpeed = computeSpeed(data.monthPages, data.monthSeconds);
+    monthLine += ` | ${t.stats.speedLabel} : ${monthSpeed.toFixed(1)} ${t.stats.pagesPerHourShort}`;
   }
 
   return [
     t.stats.title,
     `${t.stats.versesRead} : ${data.totalAyahs}`,
     `${t.stats.totalDuration} : ${totalDuration}`,
-    `${t.stats.averageSpeed} : ${speed} ${t.stats.versesPerHour}`,
+    `${t.stats.averageSpeed} : ${speed.toFixed(1)} ${t.stats.pagesPerHourShort}`,
     t.stats.currentStreak(data.currentStreak),
     t.stats.bestStreak(data.bestStreak),
     "",

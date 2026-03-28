@@ -57,15 +57,18 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
   const msg = formatStats(
     {
       totalAyahs: globalResult.value.totalAyahs,
+      totalPages: globalResult.value.totalPages,
       totalSeconds: globalResult.value.totalSeconds,
       currentStreak: streak.currentStreak,
       bestStreak: streak.bestStreak,
       weekAyahs: weekResult.value.ayahs,
+      weekPages: weekResult.value.pages,
       weekSeconds: weekResult.value.seconds,
       monthAyahs: monthResult.value.ayahs,
+      monthPages: monthResult.value.pages,
       monthSeconds: monthResult.value.seconds,
       ...(prevWeekResult.ok && {
-        prevWeekAyahs: prevWeekResult.value.ayahs,
+        prevWeekPages: prevWeekResult.value.pages,
         prevWeekSeconds: prevWeekResult.value.seconds,
       }),
     },
