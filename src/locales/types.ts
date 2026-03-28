@@ -205,7 +205,7 @@ export interface Locale {
   // Progress
   progress: {
     label: (read: number, total: number, pct: string) => string;
-    lastPosition: (surahName: string, surahNum: number, ayah: number) => string;
+    nextPage: (page: number) => string;
     khatmas: (count: number) => string;
     page: string;
   };

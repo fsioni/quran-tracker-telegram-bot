@@ -321,7 +321,7 @@ describe("progressHandler", () => {
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
   });
 
-  it("affiche la progression avec barre et dernier point", async () => {
+  it("affiche la progression avec barre sans prochaine page si pageEnd absent", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -353,7 +353,7 @@ describe("progressHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("342 / 6236 versets");
-    expect(msg).toContain("Dernier point : sourate Al-Imran (3), verset 10");
+    expect(msg).not.toContain("Prochaine page");
   });
 
   it("appelle getLastSession avec type 'normal'", async () => {
@@ -397,6 +397,7 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
+    expect(msg).toContain("Prochaine page : 43");
     expect(msg).toContain("Page : 42 / 604");
   });
 
@@ -419,6 +420,7 @@ describe("progressHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).not.toContain("Page :");
+    expect(msg).not.toContain("Prochaine page");
   });
 
   it("affiche un message si aucune session", async () => {
@@ -516,6 +518,7 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
+    expect(msg).toContain("Prochaine page : 1");
     expect(msg).toContain("Page : 604 / 604");
     expect(msg).not.toContain("rythme");
     expect(msg).not.toContain("finiras");

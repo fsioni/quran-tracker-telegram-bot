@@ -148,8 +148,7 @@ export const fr: Locale = {
   progress: {
     label: (read, total, pct) =>
       `Progression : ${read} / ${total} versets (${pct}%)`,
-    lastPosition: (surahName, surahNum, ayah) =>
-      `Dernier point : sourate ${surahName} (${surahNum}), verset ${ayah}`,
+    nextPage: (page) => `Prochaine page : ${page}`,
     khatmas: (count) => `Khatmas : ${count}`,
     page: "Page",
   },

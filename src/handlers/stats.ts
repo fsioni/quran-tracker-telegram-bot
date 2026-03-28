@@ -94,12 +94,20 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
+  let nextPage: number | null = null;
+  if (lastSession.pageEnd != null) {
+    let n = lastSession.pageEnd + 1;
+    if (n > TOTAL_PAGES) {
+      n = 1;
+    }
+    nextPage = n;
+  }
+
   let msg = formatProgress(
     {
       totalAyahsRead: globalResult.value.totalAyahs,
       totalAyahs: TOTAL_AYAH_COUNT,
-      lastSurah: lastSession.surahEnd,
-      lastAyah: lastSession.ayahEnd,
+      nextPage,
       khatmaCount,
     },
     t

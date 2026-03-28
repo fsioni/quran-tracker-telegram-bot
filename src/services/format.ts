@@ -430,8 +430,7 @@ export function formatProgress(
   data: {
     totalAyahsRead: number;
     totalAyahs: number;
-    lastSurah: number;
-    lastAyah: number;
+    nextPage: number | null;
     khatmaCount?: number;
   },
   t: Locale
@@ -440,13 +439,14 @@ export function formatProgress(
     data.totalAyahs > 0 ? (data.totalAyahsRead / data.totalAyahs) * 100 : 0;
   const filled = Math.max(0, Math.min(20, Math.round(pct / 5)));
   const bar = "#".repeat(filled) + "-".repeat(20 - filled);
-  const surahName = getSurahName(data.lastSurah, t);
 
   const lines = [
     t.progress.label(data.totalAyahsRead, data.totalAyahs, pct.toFixed(1)),
     `[${bar}] ${pct.toFixed(1)}%`,
-    t.progress.lastPosition(surahName, data.lastSurah, data.lastAyah),
   ];
+  if (data.nextPage != null) {
+    lines.push(t.progress.nextPage(data.nextPage));
+  }
 
   if (data.khatmaCount) {
     lines.push(t.progress.khatmas(data.khatmaCount));
