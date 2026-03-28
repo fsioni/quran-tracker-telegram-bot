@@ -276,10 +276,10 @@ export interface Locale {
   // Speed report
   speed: {
     title: string;
-    globalAverage: (speed: number) => string;
-    last7Days: (speed: number) => string;
-    last30Days: (speed: number) => string;
-    bestSession: (id: number, speed: number, date: string) => string;
+    globalAverage: (speed: string) => string;
+    last7Days: (speed: string) => string;
+    last30Days: (speed: string) => string;
+    bestSession: (id: number, speed: string, date: string) => string;
     longestSession: (id: number, duration: string, date: string) => string;
     byType: string;
     typeNormal: string;

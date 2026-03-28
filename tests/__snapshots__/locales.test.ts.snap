@@ -66,9 +66,9 @@ exports[`format functions match snapshots > ar: format snapshots 14`] = `
 exports[`format functions match snapshots > ar: format snapshots 15`] = `
 "-- سرعة القراءة --
 
-المتوسط العام: 150 آية/س
-متوسط آخر 7 أيام: 160 آية/س
-متوسط آخر 30 يوم: 140 آية/س"
+المتوسط العام: 150.0 صفحة/س
+متوسط آخر 7 أيام: 160.0 صفحة/س
+متوسط آخر 30 يوم: 140.0 صفحة/س"
 `;
 
 exports[`format functions match snapshots > ar: format snapshots 16`] = `
@@ -146,9 +146,9 @@ Example : /example"
 exports[`format functions match snapshots > en: format snapshots 15`] = `
 "-- Reading speed --
 
-Overall average: 150 verses/h
-Last 7 days average: 160 verses/h
-Last 30 days average: 140 verses/h"
+Overall average: 150.0 pages/h
+Last 7 days average: 160.0 pages/h
+Last 30 days average: 140.0 pages/h"
 `;
 
 exports[`format functions match snapshots > en: format snapshots 16`] = `
@@ -226,9 +226,9 @@ Exemple : /example"
 exports[`format functions match snapshots > fr: format snapshots 15`] = `
 "-- Vitesse de lecture --
 
-Moyenne globale : 150 versets/h
-Moyenne 7 derniers jours : 160 versets/h
-Moyenne 30 derniers jours : 140 versets/h"
+Moyenne globale : 150.0 pages/h
+Moyenne 7 derniers jours : 160.0 pages/h
+Moyenne 30 derniers jours : 140.0 pages/h"
 `;
 
 exports[`format functions match snapshots > fr: format snapshots 16`] = `

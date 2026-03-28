@@ -57,14 +57,16 @@ describe("speedHandler", () => {
 
   it("affiche le rapport complet avec toutes les donnees", async () => {
     vi.mocked(getSpeedAverages).mockResolvedValue({
-      global: 155,
-      last7Days: 162,
-      last30Days: 148,
+      global: 15.5,
+      last7Days: 16.2,
+      last30Days: 14.8,
     });
     vi.mocked(getBestSpeedSession).mockResolvedValue({
       ...MOCK_SESSION,
       ayahCount: 50,
       durationSeconds: 800,
+      pageStart: 1,
+      pageEnd: 5,
     });
     vi.mocked(getLongestSession).mockResolvedValue({
       ...MOCK_SESSION,
@@ -73,8 +75,8 @@ describe("speedHandler", () => {
       durationSeconds: 4320,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "verses" },
-      { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "verses" },
+      { type: "normal", avgSpeed: 15.2, sessionCount: 45, unit: "pages" },
+      { type: "extra", avgSpeed: 17.1, sessionCount: 12, unit: "pages" },
       { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
     ]);
 
@@ -84,9 +86,9 @@ describe("speedHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("-- Vitesse de lecture --");
-    expect(msg).toContain("Moyenne globale : 155 versets/h");
-    expect(msg).toContain("Moyenne 7 derniers jours : 162 versets/h");
-    expect(msg).toContain("Moyenne 30 derniers jours : 148 versets/h");
+    expect(msg).toContain("Moyenne globale : 15.5 pages/h");
+    expect(msg).toContain("Moyenne 7 derniers jours : 16.2 pages/h");
+    expect(msg).toContain("Moyenne 30 derniers jours : 14.8 pages/h");
     expect(msg).toContain("Meilleure session : #42");
     expect(msg).toContain("Plus longue session : #38 (1h12m) - 08/03");
     expect(msg).toContain("Par type :");
@@ -113,14 +115,18 @@ describe("speedHandler", () => {
 
   it("gere le cas partiel : pas de sessions dans les 7 derniers jours", async () => {
     vi.mocked(getSpeedAverages).mockResolvedValue({
-      global: 140,
+      global: 12.4,
       last7Days: null,
-      last30Days: 140,
+      last30Days: 12.4,
     });
-    vi.mocked(getBestSpeedSession).mockResolvedValue(MOCK_SESSION);
+    vi.mocked(getBestSpeedSession).mockResolvedValue({
+      ...MOCK_SESSION,
+      pageStart: 10,
+      pageEnd: 10,
+    });
     vi.mocked(getLongestSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 140, sessionCount: 10, unit: "verses" },
+      { type: "normal", avgSpeed: 12.4, sessionCount: 10, unit: "pages" },
     ]);
 
     const ctx = makeCtx();
@@ -128,16 +134,16 @@ describe("speedHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Moyenne globale : 140 versets/h");
+    expect(msg).toContain("Moyenne globale : 12.4 pages/h");
     expect(msg).not.toContain("Moyenne 7 derniers jours");
-    expect(msg).toContain("Moyenne 30 derniers jours : 140 versets/h");
+    expect(msg).toContain("Moyenne 30 derniers jours : 12.4 pages/h");
   });
 
   it("gere le cas sans records : toutes sessions < 60s", async () => {
     vi.mocked(getSpeedAverages).mockResolvedValue({
-      global: 200,
-      last7Days: 200,
-      last30Days: 200,
+      global: 18.0,
+      last7Days: 18.0,
+      last30Days: 18.0,
     });
     vi.mocked(getBestSpeedSession).mockResolvedValue(null);
     vi.mocked(getLongestSession).mockResolvedValue({
@@ -145,7 +151,7 @@ describe("speedHandler", () => {
       durationSeconds: 45,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 200, sessionCount: 5, unit: "verses" },
+      { type: "normal", avgSpeed: 18, sessionCount: 5, unit: "pages" },
     ]);
 
     const ctx = makeCtx();
@@ -153,7 +159,7 @@ describe("speedHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Moyenne globale : 200 versets/h");
+    expect(msg).toContain("Moyenne globale : 18.0 pages/h");
     expect(msg).not.toContain("Meilleure session");
     expect(msg).toContain("Plus longue session");
   });

@@ -232,11 +232,11 @@ export const ar: Locale = {
 
   speed: {
     title: "-- سرعة القراءة --",
-    globalAverage: (speed) => `المتوسط العام: ${speed} آية/س`,
-    last7Days: (speed) => `متوسط آخر 7 أيام: ${speed} آية/س`,
-    last30Days: (speed) => `متوسط آخر 30 يوم: ${speed} آية/س`,
+    globalAverage: (speed) => `المتوسط العام: ${speed} صفحة/س`,
+    last7Days: (speed) => `متوسط آخر 7 أيام: ${speed} صفحة/س`,
+    last30Days: (speed) => `متوسط آخر 30 يوم: ${speed} صفحة/س`,
     bestSession: (id, speed, date) =>
-      `أفضل جلسة: #${id} (${speed} آية/س) - ${date}`,
+      `أفضل جلسة: #${id} (${speed} صفحة/س) - ${date}`,
     longestSession: (id, duration, date) =>
       `أطول جلسة: #${id} (${duration}) - ${date}`,
     byType: "حسب النوع:",
