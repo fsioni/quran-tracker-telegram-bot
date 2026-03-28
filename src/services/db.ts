@@ -273,16 +273,29 @@ export async function insertBatch(
 export async function getHistory(
   db: D1Database,
   limit = 10,
-  type?: SessionType
+  type?: SessionType,
+  offset = 0
 ): Promise<Session[]> {
   const query = type
-    ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT ?"
-    : "SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?";
+    ? "SELECT * FROM sessions WHERE type = ? ORDER BY started_at DESC LIMIT ? OFFSET ?"
+    : "SELECT * FROM sessions ORDER BY started_at DESC LIMIT ? OFFSET ?";
   const stmt = type
-    ? db.prepare(query).bind(type, limit)
-    : db.prepare(query).bind(limit);
+    ? db.prepare(query).bind(type, limit, offset)
+    : db.prepare(query).bind(limit, offset);
   const { results } = await stmt.all<SessionRow>();
   return results.map(mapRow);
+}
+
+export async function getSessionCount(
+  db: D1Database,
+  type?: SessionType
+): Promise<number> {
+  const query = type
+    ? "SELECT COUNT(*) AS count FROM sessions WHERE type = ?"
+    : "SELECT COUNT(*) AS count FROM sessions";
+  const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
+  const row = await stmt.first<{ count: number }>();
+  return row?.count ?? 0;
 }
 
 // --- Kahf functions ---
