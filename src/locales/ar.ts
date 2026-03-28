@@ -35,6 +35,7 @@ export const ar: Locale = {
     timeShort: (hour, minute) => `${hour}:${minute}`,
     versesPerHourCompact: (n) => `${n}آ/س`,
     pagesPerHourCompact: (n) => `${n}ص/س`,
+    pagesCompact: (n) => `${n}ص`,
     hours: "س",
     minutes: "د",
     seconds: "ث",

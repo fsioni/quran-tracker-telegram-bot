@@ -346,7 +346,7 @@ export function formatHistoryLine(
   let speedSuffix = "";
   if (session.pageStart != null && session.pageEnd != null) {
     const pageCount = session.pageEnd - session.pageStart + 1;
-    pagesSuffix = `, ${pageCount}p`;
+    pagesSuffix = `, ${t.fmt.pagesCompact(pageCount)}`;
     if (session.durationSeconds > 0) {
       const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = `, ${t.fmt.pagesPerHourCompact(pagesPerHour.toFixed(1))}`;

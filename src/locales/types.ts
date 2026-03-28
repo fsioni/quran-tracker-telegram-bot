@@ -88,6 +88,7 @@ export interface Locale {
     timeShort: (hour: string, minute: string) => string;
     versesPerHourCompact: (n: number) => string;
     pagesPerHourCompact: (n: string) => string;
+    pagesCompact: (n: number) => string;
     hours: string;
     minutes: string;
     seconds: string;
