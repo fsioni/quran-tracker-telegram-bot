@@ -1,4 +1,4 @@
-import { TOTAL_PAGES } from "../data/pages";
+import { effectivePageCount, TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
@@ -287,9 +287,12 @@ export function formatSessionConfirmation(
   let speedSuffix = "";
   if (session.durationSeconds > 0) {
     if (session.pageStart != null && session.pageEnd != null) {
-      const pagesPerHour =
-        (session.pageEnd - session.pageStart + 1) /
-        (session.durationSeconds / 3600);
+      const pageCount = effectivePageCount(
+        session.pageStart,
+        session.pageEnd,
+        session.type
+      );
+      const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = ` (${t.session.pagesPerHour(pagesPerHour.toFixed(1))})`;
     } else {
       const versetsPerHour = Math.round(
@@ -349,8 +352,13 @@ export function formatHistoryLine(
   let pagesSuffix = "";
   let speedSuffix = "";
   if (session.pageStart != null && session.pageEnd != null) {
-    const pageCount = session.pageEnd - session.pageStart + 1;
-    pagesSuffix = `, ${t.fmt.pagesCompact(pageCount)}`;
+    const pageCount = effectivePageCount(
+      session.pageStart,
+      session.pageEnd,
+      session.type
+    );
+    const displayCount = Math.round(pageCount * 10) / 10;
+    pagesSuffix = `, ${t.fmt.pagesCompact(displayCount)}`;
     if (session.durationSeconds > 0) {
       const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = `, ${t.fmt.pagesPerHourCompact(pagesPerHour.toFixed(1))}`;
@@ -687,9 +695,9 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
   if (data.bestSession || data.longestSession) {
     lines.push("");
     if (data.bestSession) {
-      const { pageStart, pageEnd, durationSeconds } = data.bestSession;
+      const { pageStart, pageEnd, durationSeconds, type } = data.bestSession;
       if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
-        const pages = pageEnd - pageStart + 1;
+        const pages = effectivePageCount(pageStart, pageEnd, type);
         const speedStr = formatSpeedOneDecimal(
           pages / (durationSeconds / 3600)
         );

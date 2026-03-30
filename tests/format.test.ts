@@ -1058,6 +1058,58 @@ describe("formatHistoryLine with type tags", () => {
   });
 });
 
+// --- formatHistoryLine with Kahf partial page ---
+
+describe("formatHistoryLine with Kahf partial page", () => {
+  it("adjusts page count and speed for kahf session starting at page 293", () => {
+    const result = formatHistoryLine(
+      {
+        id: 99,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: 3600,
+        surahStart: 18,
+        ayahStart: 1,
+        surahEnd: 18,
+        ayahEnd: 110,
+        ayahCount: 110,
+        type: "kahf",
+        pageStart: 293,
+        pageEnd: 295,
+      },
+      fr
+    );
+    // 3 raw pages -> 2.4 effective (293 weighted 0.4)
+    // 2.4 pages / 1h = 2.4 p/h
+    expect(result).toBe(
+      "[K] #99 | 10/03 13h30 | 1h0m | Al-Kahf 18:1-110 (110v, 2.4p, 2.4p/h)"
+    );
+  });
+
+  it("does not adjust for kahf session not starting at page 293", () => {
+    const result = formatHistoryLine(
+      {
+        id: 100,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: 3600,
+        surahStart: 18,
+        ayahStart: 10,
+        surahEnd: 18,
+        ayahEnd: 50,
+        ayahCount: 41,
+        type: "kahf",
+        pageStart: 294,
+        pageEnd: 296,
+      },
+      fr
+    );
+    // 3 raw pages, no adjustment
+    // 3 pages / 1h = 3.0 p/h
+    expect(result).toBe(
+      "[K] #100 | 10/03 13h30 | 1h0m | Al-Kahf 18:10-50 (41v, 3p, 3.0p/h)"
+    );
+  });
+});
+
 // --- formatSessionConfirmation with type ---
 
 describe("formatSessionConfirmation with type", () => {

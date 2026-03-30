@@ -1,10 +1,14 @@
 import { DEFAULT_TZ } from "../config";
+import { KAHF_FIRST_PAGE_WEIGHT, KAHF_PAGE_START } from "../data/pages";
 import { err, ok, type Result } from "../types";
 
 // --- SQL fragments ---
 
-const PAGE_STATS_SQL =
-  "COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0)";
+const KAHF_PAGE_ADJ = 1 - KAHF_FIRST_PAGE_WEIGHT;
+const KAHF_PAGE_ADJ_SQL = `CASE WHEN type = 'kahf' AND page_start = ${KAHF_PAGE_START} THEN ${KAHF_PAGE_ADJ} ELSE 0.0 END`;
+const ADJ_PAGE_COUNT_SQL = `page_end - page_start + 1 - (${KAHF_PAGE_ADJ_SQL})`;
+
+const PAGE_STATS_SQL = `COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END), 0)`;
 const PAGE_SECONDS_SQL =
   "COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0)";
 
@@ -524,7 +528,7 @@ export async function getWeekPages(
   const { start, end } = getWeekBounds(baseDay);
   const row = await db
     .prepare(
-      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages
+      `SELECT COALESCE(SUM(${ADJ_PAGE_COUNT_SQL}), 0) AS total_pages
        FROM sessions
        WHERE page_start IS NOT NULL AND page_end IS NOT NULL
          AND substr(started_at, 1, 10) BETWEEN ? AND ?`
@@ -626,7 +630,7 @@ export async function getRecentPace(
   const startDate = addDays(today, -(days - 1));
   const row = await db
     .prepare(
-      `SELECT COALESCE(SUM(page_end - page_start + 1), 0) AS total_pages,
+      `SELECT COALESCE(SUM(${ADJ_PAGE_COUNT_SQL}), 0) AS total_pages,
               MIN(started_at) AS first_started_at
        FROM sessions
        WHERE type = 'normal'
@@ -661,11 +665,11 @@ export async function getSpeedAverages(
   const row = await db
     .prepare(
       `SELECT
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_7d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_7d,
         SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_7d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_30d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_30d,
         SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_30d
       FROM sessions`
     )
@@ -709,7 +713,7 @@ export async function getBestSpeedSession(
        WHERE duration_seconds >= 60
          AND page_start IS NOT NULL
          AND page_end IS NOT NULL
-       ORDER BY CAST(page_end - page_start + 1 AS REAL) / duration_seconds DESC
+       ORDER BY CAST(${ADJ_PAGE_COUNT_SQL} AS REAL) / duration_seconds DESC
        LIMIT 1`
     )
     .first<SessionRow>();
@@ -734,7 +738,7 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
     .prepare(
       `SELECT type,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN 1 ELSE 0 END) as session_count
       FROM sessions
       GROUP BY type`

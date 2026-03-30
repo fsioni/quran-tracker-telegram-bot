@@ -823,6 +823,89 @@ describe("getPeriodStats", () => {
   });
 });
 
+// --- Kahf partial page adjustment in stats ---
+
+describe("Kahf partial page adjustment", () => {
+  it("adjusts pages for kahf session starting at page 293 in getGlobalStats", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          type: "kahf",
+          pageStart: 293,
+          pageEnd: 293,
+          durationSeconds: 600,
+        })
+      )
+    );
+
+    const stats = unwrap(await getGlobalStats(db));
+    // 1 raw page -> 0.4 effective
+    expect(stats.totalPages).toBeCloseTo(0.4);
+  });
+
+  it("adjusts pages for kahf multi-page session in getPeriodStats", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    const { start } = getWeekBounds(today);
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${start} 10:00:00`,
+          type: "kahf",
+          pageStart: 293,
+          pageEnd: 295,
+          durationSeconds: 1200,
+        })
+      )
+    );
+
+    const stats = unwrap(await getPeriodStats(db, "week", "America/Cancun"));
+    // 3 raw pages -> 2.4 effective
+    expect(stats.pages).toBeCloseTo(2.4);
+  });
+
+  it("does not adjust pages for normal session at page 293", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          type: "normal",
+          pageStart: 293,
+          pageEnd: 295,
+          durationSeconds: 600,
+        })
+      )
+    );
+
+    const stats = unwrap(await getGlobalStats(db));
+    expect(stats.totalPages).toBe(3);
+  });
+
+  it("does not adjust pages for kahf session not starting at 293", async () => {
+    const today = getTodayInTimezone("America/Cancun");
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          type: "kahf",
+          pageStart: 294,
+          pageEnd: 296,
+          durationSeconds: 600,
+        })
+      )
+    );
+
+    const stats = unwrap(await getGlobalStats(db));
+    expect(stats.totalPages).toBe(3);
+  });
+});
+
 // --- calculateStreak ---
 
 describe("calculateStreak", () => {
