@@ -6,6 +6,7 @@ import {
   startHandler,
 } from "./handlers/config";
 import { debugHandler } from "./handlers/debug";
+import { editHandler } from "./handlers/edit";
 import { extraHandler } from "./handlers/extra";
 import { graphHandler } from "./handlers/graph";
 import { importHandler } from "./handlers/import";
@@ -106,6 +107,7 @@ export function createBot(
   bot.command("graph", graphHandler);
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
+  bot.command("edit", editHandler);
   bot.command("config", configHandler);
   bot.command("prayer", prayerHandler);
   bot.command("debug", debugHandler);
