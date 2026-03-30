@@ -257,6 +257,20 @@ export async function deleteSessionById(
   return row ? mapRow(row) : null;
 }
 
+export async function updateSessionDuration(
+  db: D1Database,
+  id: number,
+  durationSeconds: number
+): Promise<Session | null> {
+  const row = await db
+    .prepare(
+      "UPDATE sessions SET duration_seconds = ? WHERE id = ? RETURNING *"
+    )
+    .bind(durationSeconds, id)
+    .first<SessionRow>();
+  return row ? mapRow(row) : null;
+}
+
 export async function insertBatch(
   db: D1Database,
   sessions: InsertSessionData[]

@@ -18,6 +18,7 @@ export const fr: Locale = {
     progress: "Progression dans le Coran",
     undo: "Annuler la dernière session",
     delete: "Supprimer une session",
+    edit: "Modifier la durée d'une session",
     speed: "Vitesse de lecture",
     graph: "Graphique d'évolution de la vitesse",
     config: "Configurer ville, pays, fuseau horaire, langue",
@@ -92,6 +93,7 @@ export const fr: Locale = {
     extra: "/extra 300 5m ou /extra 2:77-83 8m",
     kahf: "/kahf 5m ou /kahf 3 15m",
     import: "/import\n10/03, 13h30 - 8m53 - 2:77-83",
+    edit: "/edit 42 15m",
   },
 
   session: {
@@ -311,6 +313,14 @@ export const fr: Locale = {
     overflowPages: (start, end, max) =>
       `dépassement: pages ${start}-${end} (max ${max})`,
     internalError: "erreur interne lors du traitement de la réponse",
+  },
+
+  edit: {
+    missingArgs: "ID et durée manquants",
+    invalidId: (input) => `ID invalide '${input}'`,
+    sessionNotFound: (id) => `la session #${id} n'existe pas`,
+    sessionEdited: (id, range, oldDuration, newDuration) =>
+      `Session #${id} modifiée.\n${range}\n${oldDuration} -> ${newDuration}`,
   },
 
   manage: {

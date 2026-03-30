@@ -19,6 +19,7 @@ export const ar: Locale = {
     progress: "التقدم في القرآن",
     undo: "التراجع عن آخر جلسة",
     delete: "حذف جلسة",
+    edit: "تعديل مدة جلسة",
     speed: "سرعة القراءة",
     graph: "رسم بياني لتطور السرعة",
     config: "إعداد المدينة، البلد، المنطقة الزمنية، اللغة",
@@ -91,6 +92,7 @@ export const ar: Locale = {
     extra: "/extra 300 5m أو /extra 2:77-83 8m",
     kahf: "/kahf 5m أو /kahf 3 15m",
     import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
+    edit: "/edit 42 15m",
   },
 
   session: {
@@ -305,6 +307,14 @@ export const ar: Locale = {
     overflowPages: (start, end, max) =>
       `تجاوز: الصفحات ${start}-${end} (الحد الأقصى ${max})`,
     internalError: "خطأ داخلي أثناء معالجة الاستجابة",
+  },
+
+  edit: {
+    missingArgs: "المعرف والمدة مفقودان",
+    invalidId: (input) => `معرف غير صالح '${input}'`,
+    sessionNotFound: (id) => `الجلسة #${id} غير موجودة`,
+    sessionEdited: (id, range, oldDuration, newDuration) =>
+      `تم تعديل الجلسة #${id}.\n${range}\n${oldDuration} -> ${newDuration}`,
   },
 
   manage: {

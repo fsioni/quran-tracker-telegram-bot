@@ -18,6 +18,7 @@ export const en: Locale = {
     progress: "Quran progress",
     undo: "Undo the last session",
     delete: "Delete a session",
+    edit: "Edit a session duration",
     speed: "Reading speed",
     graph: "Speed evolution graph",
     config: "Configure city, country, timezone, language",
@@ -89,6 +90,7 @@ export const en: Locale = {
     extra: "/extra 300 5m or /extra 2:77-83 8m",
     kahf: "/kahf 5m or /kahf 3 15m",
     import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
+    edit: "/edit 42 15m",
   },
 
   session: {
@@ -309,6 +311,14 @@ export const en: Locale = {
     overflowPages: (start, end, max) =>
       `overflow: pages ${start}-${end} (max ${max})`,
     internalError: "internal error while processing response",
+  },
+
+  edit: {
+    missingArgs: "missing ID and duration",
+    invalidId: (input) => `invalid ID '${input}'`,
+    sessionNotFound: (id) => `session #${id} does not exist`,
+    sessionEdited: (id, range, oldDuration, newDuration) =>
+      `Session #${id} edited.\n${range}\n${oldDuration} -> ${newDuration}`,
   },
 
   manage: {

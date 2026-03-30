@@ -15,6 +15,7 @@ export interface Locale {
     progress: string;
     undo: string;
     delete: string;
+    edit: string;
     speed: string;
     graph: string;
     config: string;
@@ -58,6 +59,19 @@ export interface Locale {
     statsError: string;
   };
 
+  // Edit session duration
+  edit: {
+    missingArgs: string;
+    invalidId: (input: string) => string;
+    sessionNotFound: (id: number) => string;
+    sessionEdited: (
+      id: number,
+      range: string,
+      oldDuration: string,
+      newDuration: string
+    ) => string;
+  };
+
   // Error/example prefixes
   error: string;
 
@@ -81,6 +95,7 @@ export interface Locale {
     extra: string;
     kahf: string;
     import: string;
+    edit: string;
   };
 
   // Common formatting helpers
