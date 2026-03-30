@@ -93,10 +93,18 @@ interface ScheduledContext {
   tz: string;
 }
 
+async function computeNextKahfPage(
+  db: D1Database,
+  tz: string
+): Promise<number | undefined> {
+  const sessions = await getKahfSessionsThisWeek(db, tz);
+  return getNextKahfPage(calculateKahfPagesRead(sessions));
+}
+
 async function sendPrayerReminders(
   sctx: ScheduledContext,
   cache: PrayerCacheRow,
-  nextKahfPage?: number
+  isFriday: boolean
 ): Promise<void> {
   const duePrayers = getDueReminders(cache, sctx.nowHHMM);
   if (duePrayers.length === 0) {
@@ -116,6 +124,9 @@ async function sendPrayerReminders(
         return { sessions: 0, ayahs: 0, seconds: 0 };
       })();
 
+  const nextKahfPage = isFriday
+    ? await computeNextKahfPage(sctx.db, sctx.tz)
+    : undefined;
   const nextPage = nextKahfPage ?? getNextPage(lastSession?.pageEnd ?? null);
 
   const message = formatReminder(
@@ -148,8 +159,7 @@ async function sendPrayerReminders(
 
 async function sendKahfReminder(
   sctx: ScheduledContext,
-  cache: PrayerCacheRow,
-  nextKahfPage?: number
+  cache: PrayerCacheRow
 ): Promise<void> {
   const kahfReminderLast = await getConfig(sctx.db, "kahf_reminder_last");
   if (
@@ -159,7 +169,10 @@ async function sendKahfReminder(
     return;
   }
 
-  const kahfStats = await getKahfStats(sctx.db);
+  const [kahfStats, nextKahfPage] = await Promise.all([
+    getKahfStats(sctx.db),
+    computeNextKahfPage(sctx.db, sctx.tz),
+  ]);
   const kahfMsg = formatKahfReminder(
     {
       lastDate: kahfStats.lastDate ?? undefined,
@@ -266,15 +279,10 @@ export async function handleScheduled(
   };
 
   const dayOfWeek = getDayOfWeek(tz);
-  let nextKahfPage: number | undefined;
-  if (dayOfWeek === 5) {
-    const kahfSessions = await getKahfSessionsThisWeek(sctx.db, sctx.tz);
-    const pagesRead = calculateKahfPagesRead(kahfSessions);
-    nextKahfPage = getNextKahfPage(pagesRead);
-  }
-  await sendPrayerReminders(sctx, cache, nextKahfPage);
-  if (dayOfWeek === 5) {
-    await sendKahfReminder(sctx, cache, nextKahfPage);
+  const isFriday = dayOfWeek === 5;
+  await sendPrayerReminders(sctx, cache, isFriday);
+  if (isFriday) {
+    await sendKahfReminder(sctx, cache);
   }
   if (dayOfWeek === 0) {
     await sendWeeklyRecap(sctx);
