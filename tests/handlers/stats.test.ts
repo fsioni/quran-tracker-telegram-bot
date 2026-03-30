@@ -285,7 +285,7 @@ describe("statsHandler", () => {
     vi.clearAllMocks();
     vi.mocked(getPreviousWeekStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 0, ayahs: 0, seconds: 0 },
+      value: { sessions: 0, ayahs: 0, pages: 0, pageSeconds: 0, seconds: 0 },
     });
   });
 
@@ -295,6 +295,8 @@ describe("statsHandler", () => {
       value: {
         totalSessions: 10,
         totalAyahs: 342,
+        totalPages: 20,
+        totalPageSeconds: 15_780,
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
@@ -303,11 +305,23 @@ describe("statsHandler", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 3, ayahs: 45, seconds: 2280 },
+        value: {
+          sessions: 3,
+          ayahs: 45,
+          pages: 3,
+          pageSeconds: 2280,
+          seconds: 2280,
+        },
       }) // week
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 7, ayahs: 187, seconds: 8100 },
+        value: {
+          sessions: 7,
+          ayahs: 187,
+          pages: 10,
+          pageSeconds: 8100,
+          seconds: 8100,
+        },
       }); // month
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 5,
@@ -320,6 +334,7 @@ describe("statsHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
+    expect(msg).not.toContain("NaN");
     expect(msg).toContain("-- Stats globales --");
     expect(msg).toContain("Versets lus : 342");
     expect(msg).toContain("Streak actuel : 5 jours");
@@ -336,6 +351,8 @@ describe("statsHandler", () => {
       value: {
         totalSessions: 0,
         totalAyahs: 0,
+        totalPages: 0,
+        totalPageSeconds: 0,
         totalSeconds: 0,
         avgAyahsPerSession: 0,
         avgSecondsPerSession: 0,
@@ -343,7 +360,7 @@ describe("statsHandler", () => {
     });
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 0, ayahs: 0, seconds: 0 },
+      value: { sessions: 0, ayahs: 0, pages: 0, pageSeconds: 0, seconds: 0 },
     });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 0,
@@ -368,6 +385,8 @@ describe("statsHandler", () => {
       value: {
         totalSessions: 10,
         totalAyahs: 342,
+        totalPages: 20,
+        totalPageSeconds: 15_780,
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
@@ -376,11 +395,23 @@ describe("statsHandler", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 3, ayahs: 120, seconds: 2700 },
+        value: {
+          sessions: 3,
+          ayahs: 120,
+          pages: 6,
+          pageSeconds: 2700,
+          seconds: 2700,
+        },
       })
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 7, ayahs: 340, seconds: 8100 },
+        value: {
+          sessions: 7,
+          ayahs: 340,
+          pages: 10,
+          pageSeconds: 8100,
+          seconds: 8100,
+        },
       });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 5,
@@ -389,7 +420,13 @@ describe("statsHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getPreviousWeekStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 3, ayahs: 100, seconds: 2520 },
+      value: {
+        sessions: 3,
+        ayahs: 100,
+        pages: 5,
+        pageSeconds: 2520,
+        seconds: 2520,
+      },
     });
 
     const ctx = makeCtx();
@@ -397,7 +434,8 @@ describe("statsHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Vitesse : 160 versets/h");
+    expect(msg).not.toContain("NaN");
+    expect(msg).toContain("Vitesse : 8.0 pages/h");
     expect(msg).toContain("vs semaine dernière");
   });
 
@@ -407,6 +445,8 @@ describe("statsHandler", () => {
       value: {
         totalSessions: 10,
         totalAyahs: 342,
+        totalPages: 20,
+        totalPageSeconds: 15_780,
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
@@ -415,11 +455,23 @@ describe("statsHandler", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 3, ayahs: 120, seconds: 2700 },
+        value: {
+          sessions: 3,
+          ayahs: 120,
+          pages: 6,
+          pageSeconds: 2700,
+          seconds: 2700,
+        },
       })
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 7, ayahs: 340, seconds: 8100 },
+        value: {
+          sessions: 7,
+          ayahs: 340,
+          pages: 10,
+          pageSeconds: 8100,
+          seconds: 8100,
+        },
       });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 5,
@@ -436,7 +488,8 @@ describe("statsHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Vitesse : 160 versets/h");
+    expect(msg).not.toContain("NaN");
+    expect(msg).toContain("Vitesse : 8.0 pages/h");
     expect(msg).not.toContain("vs semaine dernière");
   });
 });

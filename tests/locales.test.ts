@@ -186,12 +186,18 @@ describe("locale completeness", () => {
       formatStats(
         {
           totalAyahs: 300,
+          totalPageSeconds: 5000,
+          totalPages: 15,
           totalSeconds: 5000,
           currentStreak: 5,
           bestStreak: 10,
           weekAyahs: 50,
+          weekPageSeconds: 1000,
+          weekPages: 3,
           weekSeconds: 1000,
           monthAyahs: 200,
+          monthPageSeconds: 4000,
+          monthPages: 10,
           monthSeconds: 4000,
         },
         t
@@ -318,12 +324,18 @@ describe("format functions match snapshots", () => {
       formatStats(
         {
           totalAyahs: 300,
+          totalPageSeconds: 5000,
+          totalPages: 15,
           totalSeconds: 5000,
           currentStreak: 5,
           bestStreak: 10,
           weekAyahs: 50,
+          weekPageSeconds: 1000,
+          weekPages: 3,
           weekSeconds: 1000,
           monthAyahs: 200,
+          monthPageSeconds: 4000,
+          monthPages: 10,
           monthSeconds: 4000,
         },
         t
