@@ -342,22 +342,23 @@ export function formatHistoryLine(
   };
   const tag = tagMap[tp] ?? "[N]";
 
+  let pagesSuffix = "";
   let speedSuffix = "";
-  if (session.durationSeconds > 0) {
-    if (session.pageStart != null && session.pageEnd != null) {
-      const pagesPerHour =
-        (session.pageEnd - session.pageStart + 1) /
-        (session.durationSeconds / 3600);
+  if (session.pageStart != null && session.pageEnd != null) {
+    const pageCount = session.pageEnd - session.pageStart + 1;
+    pagesSuffix = `, ${t.fmt.pagesCompact(pageCount)}`;
+    if (session.durationSeconds > 0) {
+      const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = `, ${t.fmt.pagesPerHourCompact(pagesPerHour.toFixed(1))}`;
-    } else {
-      const versetsPerHour = Math.round(
-        session.ayahCount / (session.durationSeconds / 3600)
-      );
-      speedSuffix = `, ${t.fmt.versesPerHourCompact(versetsPerHour)}`;
     }
+  } else if (session.durationSeconds > 0) {
+    const versetsPerHour = Math.round(
+      session.ayahCount / (session.durationSeconds / 3600)
+    );
+    speedSuffix = `, ${t.fmt.versesPerHourCompact(versetsPerHour)}`;
   }
 
-  return `${tag} #${session.id} | ${t.fmt.dateShort(day, month)} ${t.fmt.timeShort(hour, minute)} | ${duration} | ${range} (${session.ayahCount}v${speedSuffix})`;
+  return `${tag} #${session.id} | ${t.fmt.dateShort(day, month)} ${t.fmt.timeShort(hour, minute)} | ${duration} | ${range} (${session.ayahCount}v${pagesSuffix}${speedSuffix})`;
 }
 
 export function formatStats(

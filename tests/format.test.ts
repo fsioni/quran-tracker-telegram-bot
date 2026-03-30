@@ -395,7 +395,29 @@ describe("formatHistoryLine", () => {
     );
     // 1 page / (300/3600) h = 12.0 p/h
     expect(result).toBe(
-      "[N] #10 | 10/03 13h30 | 5m | Al-Baqara 2:77-83 (7v, 12.0p/h)"
+      "[N] #10 | 10/03 13h30 | 5m | Al-Baqara 2:77-83 (7v, 1p, 12.0p/h)"
+    );
+  });
+
+  it("shows page count for multiple pages", () => {
+    const result = formatHistoryLine(
+      {
+        id: 11,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: 600,
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+        ayahCount: 7,
+        pageStart: 10,
+        pageEnd: 12,
+      },
+      fr
+    );
+    // 3 pages / (600/3600) h = 18.0 p/h
+    expect(result).toBe(
+      "[N] #11 | 10/03 13h30 | 10m | Al-Baqara 2:77-83 (7v, 3p, 18.0p/h)"
     );
   });
 

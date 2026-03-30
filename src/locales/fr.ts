@@ -34,6 +34,7 @@ export const fr: Locale = {
     timeShort: (hour, minute) => `${hour}h${minute}`,
     versesPerHourCompact: (n) => `${n}v/h`,
     pagesPerHourCompact: (n) => `${n}p/h`,
+    pagesCompact: (n) => `${n}p`,
     hours: "h",
     minutes: "m",
     seconds: "s",
