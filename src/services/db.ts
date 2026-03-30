@@ -66,7 +66,6 @@ export interface TypeSpeed {
   avgSpeed: number;
   sessionCount: number;
   type: SessionType;
-  unit: "pages" | "verses";
 }
 
 export interface PrayerTimes {
@@ -610,12 +609,12 @@ export async function getSpeedAverages(
   const row = await db
     .prepare(
       `SELECT
-        SUM(ayah_count) as total_ayahs,
-        SUM(duration_seconds) as total_seconds,
-        SUM(CASE WHEN started_at >= ? THEN ayah_count ELSE 0 END) as ayahs_7d,
-        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_7d,
-        SUM(CASE WHEN started_at >= ? THEN ayah_count ELSE 0 END) as ayahs_30d,
-        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_30d
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_7d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_7d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_30d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_30d
       FROM sessions`
     )
     .bind(
@@ -625,29 +624,26 @@ export async function getSpeedAverages(
       `${date30d} 00:00:00`
     )
     .first<{
-      total_ayahs: number | null;
+      total_pages: number | null;
       total_seconds: number | null;
-      ayahs_7d: number;
-      seconds_7d: number;
-      ayahs_30d: number;
-      seconds_30d: number;
+      pages_7d: number | null;
+      seconds_7d: number | null;
+      pages_30d: number | null;
+      seconds_30d: number | null;
     }>();
 
   if (!row?.total_seconds) {
     return { global: null, last7Days: null, last30Days: null };
   }
 
-  const global = Math.round(
-    (row.total_ayahs ?? 0) / (row.total_seconds / 3600)
-  );
+  const totalPages = row.total_pages ?? 0;
+  const global = totalPages / (row.total_seconds / 3600);
+  const seconds7d = row.seconds_7d ?? 0;
   const last7Days =
-    row.seconds_7d > 0
-      ? Math.round(row.ayahs_7d / (row.seconds_7d / 3600))
-      : null;
+    seconds7d > 0 ? (row.pages_7d ?? 0) / (seconds7d / 3600) : null;
+  const seconds30d = row.seconds_30d ?? 0;
   const last30Days =
-    row.seconds_30d > 0
-      ? Math.round(row.ayahs_30d / (row.seconds_30d / 3600))
-      : null;
+    seconds30d > 0 ? (row.pages_30d ?? 0) / (seconds30d / 3600) : null;
 
   return { global, last7Days, last30Days };
 }
@@ -659,7 +655,9 @@ export async function getBestSpeedSession(
     .prepare(
       `SELECT * FROM sessions
        WHERE duration_seconds >= 60
-       ORDER BY CAST(ayah_count AS REAL) / duration_seconds DESC
+         AND page_start IS NOT NULL
+         AND page_end IS NOT NULL
+       ORDER BY CAST(page_end - page_start + 1 AS REAL) / duration_seconds DESC
        LIMIT 1`
     )
     .first<SessionRow>();
@@ -683,16 +681,14 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
   const { results } = await db
     .prepare(
       `SELECT type,
-        SUM(ayah_count) as total_ayahs,
-        SUM(duration_seconds) as total_seconds,
-        SUM(CASE WHEN page_start IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
-        COUNT(*) as session_count
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN 1 ELSE 0 END) as session_count
       FROM sessions
       GROUP BY type`
     )
     .all<{
       type: string;
-      total_ayahs: number;
       total_seconds: number;
       total_pages: number;
       session_count: number;
@@ -700,24 +696,11 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
 
   return results
     .filter((r) => r.total_seconds > 0)
-    .map((r) => {
-      if (r.type === "kahf") {
-        return {
-          type: r.type as SessionType,
-          avgSpeed: Number.parseFloat(
-            (r.total_pages / (r.total_seconds / 3600)).toFixed(1)
-          ),
-          sessionCount: r.session_count,
-          unit: "pages" as const,
-        };
-      }
-      return {
-        type: r.type as SessionType,
-        avgSpeed: Math.round(r.total_ayahs / (r.total_seconds / 3600)),
-        sessionCount: r.session_count,
-        unit: "verses" as const,
-      };
-    });
+    .map((r) => ({
+      type: r.type as SessionType,
+      avgSpeed: r.total_pages / (r.total_seconds / 3600),
+      sessionCount: r.session_count,
+    }));
 }
 
 // --- Timer state ---

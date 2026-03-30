@@ -26,6 +26,10 @@ export interface SpeedReportData {
   longestSession: Session | null;
 }
 
+function formatSpeedOneDecimal(speed: number): string {
+  return speed.toFixed(1);
+}
+
 export interface ParsedRange {
   ayahEnd: number;
   ayahStart: number;
@@ -655,30 +659,40 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
   const lines: string[] = [t.speed.title, ""];
 
   if (data.averages.global !== null) {
-    lines.push(t.speed.globalAverage(data.averages.global));
+    lines.push(
+      t.speed.globalAverage(formatSpeedOneDecimal(data.averages.global))
+    );
   }
   if (data.averages.last7Days !== null) {
-    lines.push(t.speed.last7Days(data.averages.last7Days));
+    lines.push(
+      t.speed.last7Days(formatSpeedOneDecimal(data.averages.last7Days))
+    );
   }
   if (data.averages.last30Days !== null) {
-    lines.push(t.speed.last30Days(data.averages.last30Days));
+    lines.push(
+      t.speed.last30Days(formatSpeedOneDecimal(data.averages.last30Days))
+    );
   }
 
   if (data.bestSession || data.longestSession) {
     lines.push("");
     if (data.bestSession) {
-      const speed = Math.round(
-        data.bestSession.ayahCount / (data.bestSession.durationSeconds / 3600)
-      );
-      const day = data.bestSession.startedAt.slice(8, 10);
-      const month = data.bestSession.startedAt.slice(5, 7);
-      lines.push(
-        t.speed.bestSession(
-          data.bestSession.id,
-          speed,
-          t.fmt.dateShort(day, month)
-        )
-      );
+      const { pageStart, pageEnd, durationSeconds } = data.bestSession;
+      if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
+        const pages = pageEnd - pageStart + 1;
+        const speedStr = formatSpeedOneDecimal(
+          pages / (durationSeconds / 3600)
+        );
+        const day = data.bestSession.startedAt.slice(8, 10);
+        const month = data.bestSession.startedAt.slice(5, 7);
+        lines.push(
+          t.speed.bestSession(
+            data.bestSession.id,
+            speedStr,
+            t.fmt.dateShort(day, month)
+          )
+        );
+      }
     }
     if (data.longestSession) {
       const duration = formatDuration(data.longestSession.durationSeconds, t);
@@ -708,10 +722,7 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
     for (const tp of data.byType) {
       const label = typeLabels[tp.type] ?? tp.type;
       const padded = label.padEnd(maxLabelLen);
-      const speedStr =
-        tp.unit === "pages"
-          ? `${tp.avgSpeed} ${t.stats.pagesPerHourShort}`
-          : `${tp.avgSpeed} ${t.stats.versesPerHourShort}`;
+      const speedStr = `${formatSpeedOneDecimal(tp.avgSpeed)} ${t.stats.pagesPerHourShort}`;
       lines.push(
         `  ${padded} : ${speedStr} (${t.speed.sessionsCount(tp.sessionCount)})`
       );

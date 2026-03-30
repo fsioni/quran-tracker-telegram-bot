@@ -243,11 +243,11 @@ export const fr: Locale = {
 
   speed: {
     title: "-- Vitesse de lecture --",
-    globalAverage: (speed) => `Moyenne globale : ${speed} versets/h`,
-    last7Days: (speed) => `Moyenne 7 derniers jours : ${speed} versets/h`,
-    last30Days: (speed) => `Moyenne 30 derniers jours : ${speed} versets/h`,
+    globalAverage: (speed) => `Moyenne globale : ${speed} pages/h`,
+    last7Days: (speed) => `Moyenne 7 derniers jours : ${speed} pages/h`,
+    last30Days: (speed) => `Moyenne 30 derniers jours : ${speed} pages/h`,
     bestSession: (id, speed, date) =>
-      `Meilleure session : #${id} (${speed} versets/h) - ${date}`,
+      `Meilleure session : #${id} (${speed} pages/h) - ${date}`,
     longestSession: (id, duration, date) =>
       `Plus longue session : #${id} (${duration}) - ${date}`,
     byType: "Par type :",

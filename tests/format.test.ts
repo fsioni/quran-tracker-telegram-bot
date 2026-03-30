@@ -1182,11 +1182,13 @@ describe("formatSpeedReport", () => {
   it("formate le rapport complet avec les 3 types", () => {
     const result = formatSpeedReport(
       {
-        averages: { global: 155, last7Days: 162, last30Days: 148 },
+        averages: { global: 15.5, last7Days: 16.2, last30Days: 14.8 },
         bestSession: makeSession({
           id: 42,
           ayahCount: 50,
           durationSeconds: 800,
+          pageStart: 1,
+          pageEnd: 5,
         }),
         longestSession: makeSession({
           id: 38,
@@ -1194,9 +1196,9 @@ describe("formatSpeedReport", () => {
           durationSeconds: 4320,
         }),
         byType: [
-          { type: "normal", avgSpeed: 155, sessionCount: 45, unit: "verses" },
-          { type: "extra", avgSpeed: 180, sessionCount: 12, unit: "verses" },
-          { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
+          { type: "normal", avgSpeed: 15.2, sessionCount: 45 },
+          { type: "extra", avgSpeed: 17.1, sessionCount: 12 },
+          { type: "kahf", avgSpeed: 8.5, sessionCount: 8 },
         ],
       },
       fr
@@ -1206,16 +1208,16 @@ describe("formatSpeedReport", () => {
       [
         "-- Vitesse de lecture --",
         "",
-        "Moyenne globale : 155 versets/h",
-        "Moyenne 7 derniers jours : 162 versets/h",
-        "Moyenne 30 derniers jours : 148 versets/h",
+        "Moyenne globale : 15.5 pages/h",
+        "Moyenne 7 derniers jours : 16.2 pages/h",
+        "Moyenne 30 derniers jours : 14.8 pages/h",
         "",
-        "Meilleure session : #42 (225 versets/h) - 10/03",
+        "Meilleure session : #42 (22.5 pages/h) - 10/03",
         "Plus longue session : #38 (1h12m) - 08/03",
         "",
         "Par type :",
-        "  Normal : 155 versets/h (45 sessions)",
-        "  Extra  : 180 versets/h (12 sessions)",
+        "  Normal : 15.2 pages/h (45 sessions)",
+        "  Extra  : 17.1 pages/h (12 sessions)",
         "  Kahf   : 8.5 pages/h (8 sessions)",
       ].join("\n")
     );
@@ -1224,33 +1226,29 @@ describe("formatSpeedReport", () => {
   it("formate avec seulement 1 type", () => {
     const result = formatSpeedReport(
       {
-        averages: { global: 120, last7Days: null, last30Days: 120 },
+        averages: { global: 12, last7Days: null, last30Days: 12 },
         bestSession: null,
         longestSession: null,
-        byType: [
-          { type: "normal", avgSpeed: 120, sessionCount: 5, unit: "verses" },
-        ],
+        byType: [{ type: "normal", avgSpeed: 12, sessionCount: 5 }],
       },
       fr
     );
 
-    expect(result).toContain("Moyenne globale : 120 versets/h");
+    expect(result).toContain("Moyenne globale : 12.0 pages/h");
     expect(result).not.toContain("Moyenne 7 derniers jours");
-    expect(result).toContain("Moyenne 30 derniers jours : 120 versets/h");
+    expect(result).toContain("Moyenne 30 derniers jours : 12.0 pages/h");
     expect(result).not.toContain("Meilleure session");
     expect(result).not.toContain("Plus longue session");
-    expect(result).toContain("Normal : 120 versets/h (5 sessions)");
+    expect(result).toContain("Normal : 12.0 pages/h (5 sessions)");
   });
 
   it("formate sans records (bestSession/longestSession null)", () => {
     const result = formatSpeedReport(
       {
-        averages: { global: 100, last7Days: 100, last30Days: 100 },
+        averages: { global: 10, last7Days: 10, last30Days: 10 },
         bestSession: null,
         longestSession: null,
-        byType: [
-          { type: "normal", avgSpeed: 100, sessionCount: 3, unit: "verses" },
-        ],
+        byType: [{ type: "normal", avgSpeed: 10, sessionCount: 3 }],
       },
       fr
     );
@@ -1263,11 +1261,13 @@ describe("formatSpeedReport", () => {
   it("formate les dates en DD/MM", () => {
     const result = formatSpeedReport(
       {
-        averages: { global: 100, last7Days: null, last30Days: null },
+        averages: { global: 10, last7Days: null, last30Days: null },
         bestSession: makeSession({
           startedAt: "2026-01-05 09:00:00",
           ayahCount: 30,
           durationSeconds: 600,
+          pageStart: 20,
+          pageEnd: 25,
         }),
         longestSession: makeSession({
           id: 10,
@@ -1286,21 +1286,21 @@ describe("formatSpeedReport", () => {
   it("aligne les labels des types avec padding", () => {
     const result = formatSpeedReport(
       {
-        averages: { global: 100, last7Days: null, last30Days: null },
+        averages: { global: 10, last7Days: null, last30Days: null },
         bestSession: null,
         longestSession: null,
         byType: [
-          { type: "normal", avgSpeed: 100, sessionCount: 10, unit: "verses" },
-          { type: "extra", avgSpeed: 120, sessionCount: 5, unit: "verses" },
-          { type: "kahf", avgSpeed: 8, sessionCount: 3, unit: "pages" },
+          { type: "normal", avgSpeed: 10, sessionCount: 10 },
+          { type: "extra", avgSpeed: 12, sessionCount: 5 },
+          { type: "kahf", avgSpeed: 8, sessionCount: 3 },
         ],
       },
       fr
     );
 
     // "Normal" (6 chars) is the longest, so "Extra" and "Kahf" should be padded
-    expect(result).toContain("  Normal : 100 versets/h (10 sessions)");
-    expect(result).toContain("  Extra  : 120 versets/h (5 sessions)");
-    expect(result).toContain("  Kahf   : 8 pages/h (3 sessions)");
+    expect(result).toContain("  Normal : 10.0 pages/h (10 sessions)");
+    expect(result).toContain("  Extra  : 12.0 pages/h (5 sessions)");
+    expect(result).toContain("  Kahf   : 8.0 pages/h (3 sessions)");
   });
 });
