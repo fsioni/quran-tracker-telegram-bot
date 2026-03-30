@@ -310,7 +310,7 @@ export const ar: Locale = {
   },
 
   edit: {
-    missingArgs: "المعرف والمدة مفقودان",
+    missingArgs: "المعرف أو المدة مفقودان",
     invalidId: (input) => `معرف غير صالح '${input}'`,
     sessionNotFound: (id) => `الجلسة #${id} غير موجودة`,
     sessionEdited: (id, range, oldDuration, newDuration) =>

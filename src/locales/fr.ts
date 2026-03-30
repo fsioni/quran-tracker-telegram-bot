@@ -316,7 +316,7 @@ export const fr: Locale = {
   },
 
   edit: {
-    missingArgs: "ID et durée manquants",
+    missingArgs: "ID ou durée manquants",
     invalidId: (input) => `ID invalide '${input}'`,
     sessionNotFound: (id) => `la session #${id} n'existe pas`,
     sessionEdited: (id, range, oldDuration, newDuration) =>

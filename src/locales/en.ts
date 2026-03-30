@@ -314,7 +314,7 @@ export const en: Locale = {
   },
 
   edit: {
-    missingArgs: "missing ID and duration",
+    missingArgs: "missing ID or duration",
     invalidId: (input) => `invalid ID '${input}'`,
     sessionNotFound: (id) => `session #${id} does not exist`,
     sessionEdited: (id, range, oldDuration, newDuration) =>
