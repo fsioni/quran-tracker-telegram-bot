@@ -619,6 +619,22 @@ export const KAHF_PAGE_START = 293;
 export const KAHF_PAGE_END = 304;
 export const KAHF_TOTAL_PAGES = 12;
 
+/** Fraction of page 293 that is Al-Kahf content (6 lines / 15 lines) */
+export const KAHF_FIRST_PAGE_WEIGHT = 0.4;
+
+/** Effective page count, adjusting for partial Kahf first page */
+export function effectivePageCount(
+  pageStart: number,
+  pageEnd: number,
+  type?: string
+): number {
+  const raw = pageEnd - pageStart + 1;
+  if (type === "kahf" && pageStart === KAHF_PAGE_START) {
+    return raw - (1 - KAHF_FIRST_PAGE_WEIGHT);
+  }
+  return raw;
+}
+
 /**
  * Returns the next page to read from a session's pageEnd.
  * Wraps back to 1 after the last page. Returns 1 if pageEnd is null.

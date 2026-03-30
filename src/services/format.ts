@@ -1,4 +1,4 @@
-import { TOTAL_PAGES } from "../data/pages";
+import { effectivePageCount, TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
@@ -349,8 +349,13 @@ export function formatHistoryLine(
   let pagesSuffix = "";
   let speedSuffix = "";
   if (session.pageStart != null && session.pageEnd != null) {
-    const pageCount = session.pageEnd - session.pageStart + 1;
-    pagesSuffix = `, ${t.fmt.pagesCompact(pageCount)}`;
+    const pageCount = effectivePageCount(
+      session.pageStart,
+      session.pageEnd,
+      session.type
+    );
+    const displayCount = Math.round(pageCount * 10) / 10;
+    pagesSuffix = `, ${t.fmt.pagesCompact(displayCount)}`;
     if (session.durationSeconds > 0) {
       const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = `, ${t.fmt.pagesPerHourCompact(pagesPerHour.toFixed(1))}`;

@@ -1,6 +1,8 @@
 import {
+  effectivePageCount,
   getPageBoundary,
   getPageRange,
+  KAHF_FIRST_PAGE_WEIGHT,
   KAHF_PAGE_END,
   KAHF_PAGE_START,
   KAHF_TOTAL_PAGES,
@@ -65,6 +67,34 @@ describe("Al-Kahf constants", () => {
       expect(boundary).toBeDefined();
       expect(boundary?.surah).toBe(18);
     }
+  });
+});
+
+describe("KAHF_FIRST_PAGE_WEIGHT", () => {
+  it("is 0.4", () => {
+    expect(KAHF_FIRST_PAGE_WEIGHT).toBe(0.4);
+  });
+});
+
+describe("effectivePageCount", () => {
+  it("adjusts kahf session starting at page 293", () => {
+    expect(effectivePageCount(293, 293, "kahf")).toBeCloseTo(0.4);
+  });
+
+  it("adjusts kahf multi-page session starting at 293", () => {
+    expect(effectivePageCount(293, 295, "kahf")).toBeCloseTo(2.4);
+  });
+
+  it("does not adjust kahf session not starting at 293", () => {
+    expect(effectivePageCount(294, 295, "kahf")).toBe(2);
+  });
+
+  it("does not adjust normal session at page 293", () => {
+    expect(effectivePageCount(293, 295, "normal")).toBe(3);
+  });
+
+  it("does not adjust when type is undefined", () => {
+    expect(effectivePageCount(293, 295)).toBe(3);
   });
 });
 
