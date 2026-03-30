@@ -259,6 +259,23 @@ describe("historyPageCallback", () => {
     await historyPageCallback(ctx);
     expect(ctx.answerCallbackQuery).toHaveBeenCalledTimes(1);
   });
+
+  it("hist:0 est rejete par la regex (answerCallbackQuery)", async () => {
+    const ctx = makeCallbackCtx("hist:0");
+    await historyPageCallback(ctx);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledTimes(1);
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+  });
+
+  it("page au-dela de totalPages est clampee a la derniere page", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(25); // 3 pages
+    const ctx = makeCallbackCtx("hist:999");
+    await historyPageCallback(ctx);
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Page 3/3");
+  });
 });
 
 // --- statsHandler ---

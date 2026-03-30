@@ -32,7 +32,7 @@ import {
 } from "../services/format";
 
 export const HISTORY_PAGE_SIZE = 10;
-export const CALLBACK_HISTORY_RE = /^hist:(\d+)(?::(\w+))?$/;
+export const CALLBACK_HISTORY_RE = /^hist:([1-9]\d*)(?::(\w+))?$/;
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -160,21 +160,21 @@ export async function buildHistoryMessage(
   typeFilter: SessionType | undefined,
   t: Locale
 ): Promise<{ text: string; keyboard: InlineKeyboard | undefined }> {
-  const offset = (page - 1) * HISTORY_PAGE_SIZE;
-  const [sessions, count] = await Promise.all([
-    getHistory(db, HISTORY_PAGE_SIZE, typeFilter, offset),
-    getSessionCount(db, typeFilter),
-  ]);
+  const clampedPage = Math.max(1, page);
+  const count = await getSessionCount(db, typeFilter);
 
-  if (sessions.length === 0) {
+  if (count === 0) {
     return { text: t.stats.noSession, keyboard: undefined };
   }
 
   const totalPages = Math.ceil(count / HISTORY_PAGE_SIZE);
+  const safePage = Math.min(clampedPage, totalPages);
+  const offset = (safePage - 1) * HISTORY_PAGE_SIZE;
+  const sessions = await getHistory(db, HISTORY_PAGE_SIZE, typeFilter, offset);
   const lines = sessions.map((s) => formatHistoryLine(s, t));
 
   if (totalPages > 1) {
-    lines.push(t.history.pageIndicator(page, totalPages));
+    lines.push(t.history.pageIndicator(safePage, totalPages));
   }
 
   const text = lines.join("\n");
@@ -183,11 +183,11 @@ export async function buildHistoryMessage(
   if (totalPages > 1) {
     keyboard = new InlineKeyboard();
     const typeSuffix = typeFilter ? `:${typeFilter}` : "";
-    if (page > 1) {
-      keyboard.text(t.history.prev, `hist:${page - 1}${typeSuffix}`);
+    if (safePage > 1) {
+      keyboard.text(t.history.prev, `hist:${safePage - 1}${typeSuffix}`);
     }
-    if (page < totalPages) {
-      keyboard.text(t.history.next, `hist:${page + 1}${typeSuffix}`);
+    if (safePage < totalPages) {
+      keyboard.text(t.history.next, `hist:${safePage + 1}${typeSuffix}`);
     }
   }
 
