@@ -6,15 +6,16 @@ import {
 } from "../../src/services/chart";
 
 describe("computeMovingAverage", () => {
-  it("computes SMA correctly", () => {
+  it("computes SMA correctly with full window", () => {
     const data = [2, 4, 6, 8, 10];
     const result = computeMovingAverage(data, 3);
-    expect(result).toEqual([null, null, 4, 6, 8]);
+    // First two use expanding window, rest use full window
+    expect(result).toEqual([2, 3, 4, 6, 8]);
   });
 
-  it("returns nulls when window > data length", () => {
+  it("uses expanding window when window > data length", () => {
     const result = computeMovingAverage([1, 2], 5);
-    expect(result).toEqual([null, null]);
+    expect(result).toEqual([1, 1.5]);
   });
 
   it("returns empty array for empty input", () => {
@@ -33,7 +34,7 @@ const QUICKCHART_RE = /^https:\/\/quickchart\.io\/chart\?c=/;
 describe("buildSpeedChartUrl", () => {
   const labels = ["01/03", "02/03", "03/03"];
   const speeds = [10, 12, 14];
-  const movingAvg = [null, null, 12];
+  const movingAvg = [10, 11, 12];
 
   it("starts with quickchart.io base URL", () => {
     const url = buildSpeedChartUrl(
