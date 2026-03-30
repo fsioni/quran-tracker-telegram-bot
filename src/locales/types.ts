@@ -205,7 +205,6 @@ export interface Locale {
   // Progress
   progress: {
     label: (read: number, total: number, pct: string) => string;
-    nextPage: (page: number) => string;
     khatmas: (count: number) => string;
     page: string;
   };

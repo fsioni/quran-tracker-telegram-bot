@@ -1,6 +1,6 @@
 // src/handlers/read.ts
 import type { CustomContext } from "../bot";
-import { getPageRange, TOTAL_PAGES } from "../data/pages";
+import { getNextPage, getPageRange, TOTAL_PAGES } from "../data/pages";
 import {
   getKhatmaCount,
   getLastSession,
@@ -29,17 +29,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
 
   // Determine current page from last normal session
   const lastSession = await getLastSession(ctx.db, "normal");
-  let currentPage: number;
-  if (lastSession?.pageEnd) {
-    currentPage = lastSession.pageEnd + 1;
-  } else {
-    currentPage = 1;
-  }
-
-  // If finished the Quran, reset to page 1
-  if (currentPage > TOTAL_PAGES) {
-    currentPage = 1;
-  }
+  const currentPage = getNextPage(lastSession?.pageEnd ?? null);
 
   const pageStart = currentPage;
   const pageEnd = currentPage + count - 1;

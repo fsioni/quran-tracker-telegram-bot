@@ -1,6 +1,6 @@
 // src/handlers/stats.ts
 import type { CustomContext } from "../bot";
-import { TOTAL_PAGES } from "../data/pages";
+import { getNextPage, TOTAL_PAGES } from "../data/pages";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import {
   calculateStreak,
@@ -94,14 +94,8 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  let nextPage: number | null = null;
-  if (lastSession.pageEnd != null) {
-    let n = lastSession.pageEnd + 1;
-    if (n > TOTAL_PAGES) {
-      n = 1;
-    }
-    nextPage = n;
-  }
+  const nextPage =
+    lastSession.pageEnd == null ? null : getNextPage(lastSession.pageEnd);
 
   let msg = formatProgress(
     {

@@ -148,7 +148,6 @@ export const fr: Locale = {
   progress: {
     label: (read, total, pct) =>
       `Progression : ${read} / ${total} versets (${pct}%)`,
-    nextPage: (page) => `Prochaine page : ${page}`,
     khatmas: (count) => `Khatmas : ${count}`,
     page: "Page",
   },

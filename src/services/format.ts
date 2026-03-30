@@ -445,7 +445,7 @@ export function formatProgress(
     `[${bar}] ${pct.toFixed(1)}%`,
   ];
   if (data.nextPage != null) {
-    lines.push(t.progress.nextPage(data.nextPage));
+    lines.push(t.read.nextPage(data.nextPage));
   }
 
   if (data.khatmaCount) {
