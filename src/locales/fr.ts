@@ -19,6 +19,7 @@ export const fr: Locale = {
     undo: "Annuler la dernière session",
     delete: "Supprimer une session",
     speed: "Vitesse de lecture",
+    graph: "Graphique d'evolution de la vitesse",
     config: "Configurer ville, pays, fuseau horaire, langue",
     prayer: "Rafraîchir les horaires de prière",
   },
@@ -213,6 +214,14 @@ export const fr: Locale = {
     "novembre",
     "décembre",
   ],
+
+  graph: {
+    title: (days) => `Vitesse de lecture (${days} jours)`,
+    noData: "Aucune donnee de lecture pour cette periode.",
+    dailyLabel: "Quotidien",
+    trendLabel: "Tendance 7j",
+    error: "Impossible de generer le graphique. Reessaie plus tard.",
+  },
 
   history: {
     next: "Suivant >>",
