@@ -145,13 +145,10 @@ export async function speedHandler(ctx: CustomContext): Promise<void> {
   );
 }
 
+const VALID_SESSION_TYPES = new Set<string>(["normal", "extra", "kahf"]);
+
 function parseTypeFilter(input: string): SessionType | undefined {
-  const validTypes: Record<string, SessionType> = {
-    normal: "normal",
-    extra: "extra",
-    kahf: "kahf",
-  };
-  return validTypes[input];
+  return VALID_SESSION_TYPES.has(input) ? (input as SessionType) : undefined;
 }
 
 export async function buildHistoryMessage(
