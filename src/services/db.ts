@@ -4,7 +4,7 @@ import { err, ok, type Result } from "../types";
 
 // --- SQL fragments ---
 
-const KAHF_PAGE_ADJ = (1 - KAHF_FIRST_PAGE_WEIGHT).toFixed(1);
+const KAHF_PAGE_ADJ = 1 - KAHF_FIRST_PAGE_WEIGHT;
 const KAHF_PAGE_ADJ_SQL = `CASE WHEN type = 'kahf' AND page_start = ${KAHF_PAGE_START} THEN ${KAHF_PAGE_ADJ} ELSE 0.0 END`;
 const ADJ_PAGE_COUNT_SQL = `page_end - page_start + 1 - (${KAHF_PAGE_ADJ_SQL})`;
 

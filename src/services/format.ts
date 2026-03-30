@@ -287,9 +287,12 @@ export function formatSessionConfirmation(
   let speedSuffix = "";
   if (session.durationSeconds > 0) {
     if (session.pageStart != null && session.pageEnd != null) {
-      const pagesPerHour =
-        (session.pageEnd - session.pageStart + 1) /
-        (session.durationSeconds / 3600);
+      const pageCount = effectivePageCount(
+        session.pageStart,
+        session.pageEnd,
+        session.type
+      );
+      const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = ` (${t.session.pagesPerHour(pagesPerHour.toFixed(1))})`;
     } else {
       const versetsPerHour = Math.round(
@@ -692,9 +695,9 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
   if (data.bestSession || data.longestSession) {
     lines.push("");
     if (data.bestSession) {
-      const { pageStart, pageEnd, durationSeconds } = data.bestSession;
+      const { pageStart, pageEnd, durationSeconds, type } = data.bestSession;
       if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
-        const pages = pageEnd - pageStart + 1;
+        const pages = effectivePageCount(pageStart, pageEnd, type);
         const speedStr = formatSpeedOneDecimal(
           pages / (durationSeconds / 3600)
         );
