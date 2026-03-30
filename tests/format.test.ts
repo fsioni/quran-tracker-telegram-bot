@@ -424,14 +424,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780, // 4h23m
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 45,
+        weekPageSeconds: 2280,
         weekPages: 3,
         weekSeconds: 2280, // 38m
         monthAyahs: 187,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100, // 2h15m
       },
@@ -459,14 +462,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 0,
+        totalPageSeconds: 0,
         totalPages: 0,
         totalSeconds: 0,
         currentStreak: 0,
         bestStreak: 0,
         weekAyahs: 0,
+        weekPageSeconds: 0,
         weekPages: 0,
         weekSeconds: 0,
         monthAyahs: 0,
+        monthPageSeconds: 0,
         monthPages: 0,
         monthSeconds: 0,
       },
@@ -481,14 +487,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPageSeconds: 2700,
         weekPages: 5,
         weekSeconds: 2700, // 45m -> 5/2700*3600 = 6.7
         monthAyahs: 340,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100, // 2h15m -> 10/8100*3600 = 4.4
       },
@@ -506,14 +515,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 0,
+        weekPageSeconds: 0,
         weekPages: 0,
         weekSeconds: 0,
         monthAyahs: 0,
+        monthPageSeconds: 0,
         monthPages: 0,
         monthSeconds: 0,
       },
@@ -527,16 +539,20 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPageSeconds: 2700,
         weekPages: 6,
         weekSeconds: 2700, // 8.0 p/h
         monthAyahs: 340,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100,
+        prevWeekPageSeconds: 2520,
         prevWeekPages: 5,
         prevWeekSeconds: 2520, // ~7.1 p/h -> +12%
       },
@@ -549,16 +565,20 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 100,
+        weekPageSeconds: 2520,
         weekPages: 5,
         weekSeconds: 2520, // ~7.1 p/h
         monthAyahs: 340,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100,
+        prevWeekPageSeconds: 2700,
         prevWeekPages: 6,
         prevWeekSeconds: 2700, // 8.0 p/h -> -11%
       },
@@ -571,14 +591,17 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPageSeconds: 2700,
         weekPages: 5,
         weekSeconds: 2700,
         monthAyahs: 340,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100,
       },
@@ -591,16 +614,20 @@ describe("formatStats", () => {
     const result = formatStats(
       {
         totalAyahs: 342,
+        totalPageSeconds: 15_780,
         totalPages: 20,
         totalSeconds: 15_780,
         currentStreak: 5,
         bestStreak: 12,
         weekAyahs: 120,
+        weekPageSeconds: 2700,
         weekPages: 5,
         weekSeconds: 2700,
         monthAyahs: 340,
+        monthPageSeconds: 8100,
         monthPages: 10,
         monthSeconds: 8100,
+        prevWeekPageSeconds: 0,
         prevWeekPages: 0,
         prevWeekSeconds: 0,
       },

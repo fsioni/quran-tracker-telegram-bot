@@ -363,41 +363,48 @@ export function formatHistoryLine(
 export function formatStats(
   data: {
     totalAyahs: number;
+    totalPageSeconds: number;
     totalPages: number;
     totalSeconds: number;
     currentStreak: number;
     bestStreak: number;
     weekAyahs: number;
+    weekPageSeconds: number;
     weekPages: number;
     weekSeconds: number;
     monthAyahs: number;
+    monthPageSeconds: number;
     monthPages: number;
     monthSeconds: number;
+    prevWeekPageSeconds?: number;
     prevWeekPages?: number;
     prevWeekSeconds?: number;
   },
   t: Locale
 ): string {
-  const computeSpeed = (pages: number, seconds: number): number =>
-    seconds > 0 ? (pages / seconds) * 3600 : 0;
+  const computeSpeed = (pages: number, pageSeconds: number): number =>
+    pageSeconds > 0 ? (pages / pageSeconds) * 3600 : 0;
 
   const totalDuration = formatDuration(data.totalSeconds, t);
-  const speed = computeSpeed(data.totalPages, data.totalSeconds);
+  const speed = computeSpeed(data.totalPages, data.totalPageSeconds);
   const weekDuration = formatDuration(data.weekSeconds, t);
   const monthDuration = formatDuration(data.monthSeconds, t);
 
   // Week line with optional speed and trend
   let weekLine = `${t.stats.versesLabel} : ${data.weekAyahs} | ${t.stats.durationLabel} : ${weekDuration}`;
-  if (data.weekSeconds > 0) {
-    const weekSpeed = computeSpeed(data.weekPages, data.weekSeconds);
+  if (data.weekPageSeconds > 0) {
+    const weekSpeed = computeSpeed(data.weekPages, data.weekPageSeconds);
     weekLine += ` | ${t.stats.speedLabel} : ${weekSpeed.toFixed(1)} ${t.stats.pagesPerHourShort}`;
 
     if (
       data.prevWeekPages != null &&
-      data.prevWeekSeconds != null &&
-      data.prevWeekSeconds > 0
+      data.prevWeekPageSeconds != null &&
+      data.prevWeekPageSeconds > 0
     ) {
-      const prevSpeed = computeSpeed(data.prevWeekPages, data.prevWeekSeconds);
+      const prevSpeed = computeSpeed(
+        data.prevWeekPages,
+        data.prevWeekPageSeconds
+      );
       if (prevSpeed > 0) {
         const pct = Math.round(((weekSpeed - prevSpeed) / prevSpeed) * 100);
         const sign = pct >= 0 ? "+" : "";
@@ -408,8 +415,8 @@ export function formatStats(
 
   // Month line with optional speed
   let monthLine = `${t.stats.versesLabel} : ${data.monthAyahs} | ${t.stats.durationLabel} : ${monthDuration}`;
-  if (data.monthSeconds > 0) {
-    const monthSpeed = computeSpeed(data.monthPages, data.monthSeconds);
+  if (data.monthPageSeconds > 0) {
+    const monthSpeed = computeSpeed(data.monthPages, data.monthPageSeconds);
     monthLine += ` | ${t.stats.speedLabel} : ${monthSpeed.toFixed(1)} ${t.stats.pagesPerHourShort}`;
   }
 
