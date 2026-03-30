@@ -2,10 +2,10 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import {
+  getNextKahfPage,
   getNextPage,
   getPageRange,
   KAHF_PAGE_END,
-  KAHF_PAGE_START,
   KAHF_TOTAL_PAGES,
   TOTAL_PAGES,
 } from "../data/pages";
@@ -535,7 +535,11 @@ async function handleKahfResponse(
   }
   const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
   const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
-  const pageStart = KAHF_PAGE_START + pagesAlreadyRead;
+  const pageStart = getNextKahfPage(pagesAlreadyRead);
+  if (pageStart === undefined) {
+    await ctx.reply(t.kahf.alreadyComplete);
+    return;
+  }
   const pageEnd = pageStart + count - 1;
   if (pageEnd > KAHF_PAGE_END) {
     const remaining = KAHF_TOTAL_PAGES - pagesAlreadyRead;

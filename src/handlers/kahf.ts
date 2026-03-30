@@ -1,9 +1,9 @@
 // src/handlers/kahf.ts
 import type { CustomContext } from "../bot";
 import {
+  getNextKahfPage,
   getPageRange,
   KAHF_PAGE_END,
-  KAHF_PAGE_START,
   KAHF_TOTAL_PAGES,
 } from "../data/pages";
 import {
@@ -39,13 +39,11 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
 
   // Check if already finished Al-Kahf this week
-  if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {
+  const pageStart = getNextKahfPage(pagesAlreadyRead);
+  if (pageStart === undefined) {
     await ctx.reply(t.kahf.alreadyComplete);
     return;
   }
-
-  // Calculate page range
-  const pageStart = KAHF_PAGE_START + pagesAlreadyRead;
   const pageEnd = pageStart + count - 1;
 
   // Check if pageEnd exceeds Al-Kahf

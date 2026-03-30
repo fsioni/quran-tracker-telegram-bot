@@ -156,16 +156,13 @@ export const fr: Locale = {
 
   reminder: {
     title: "Rappel lecture du Coran",
-    lastSession: (date, surahName, ayah) =>
-      `Dernière session : ${date} - sourate ${surahName} v.${ayah}`,
+    nextPage: (page) => `Prochaine page : ${page}`,
     thisWeek: (sessions, ayahs) =>
       `Cette semaine : ${sessions} ${sessions <= 1 ? "session" : "sessions"}, ${ayahs} versets`,
     streak: (days) =>
       `Série : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
     keepItUp: "Continue comme ça !",
     timeToResume: "C'est le moment de reprendre !",
-    noSession:
-      "Rappel lecture du Coran\n\nAucune session enregistrée. Commence avec /session !",
   },
 
   read: {
@@ -195,6 +192,7 @@ export const fr: Locale = {
     reminderBase: "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.",
     reminderLast: (date, duration) =>
       `Dernière lecture : ${date} en ${duration}`,
+    reminderNextPage: (page) => `Prochaine page : ${page}`,
     alreadyComplete: "Al-Kahf déjà terminée cette semaine !",
     remainingPages: (count, start, end) =>
       `il ne reste que ${count} page(s) d'Al-Kahf cette semaine (page ${start} à ${end})`,

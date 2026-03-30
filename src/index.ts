@@ -1,14 +1,17 @@
 import { Bot, webhookCallback } from "grammy";
 import { createBot } from "./bot";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "./config";
+import { getNextKahfPage, getNextPage } from "./data/pages";
 import { CALLBACK_TIMER_GO } from "./handlers/timer";
 import { getBotCommands, getLocale } from "./locales";
 import type { Locale } from "./locales/types";
 import type { PrayerCacheRow } from "./services/db";
 import {
+  calculateKahfPagesRead,
   calculateStreak,
   cleanOldCache,
   getConfig,
+  getKahfSessionsThisWeek,
   getKahfStats,
   getLastSession,
   getPeriodStats,
@@ -90,9 +93,18 @@ interface ScheduledContext {
   tz: string;
 }
 
+async function computeNextKahfPage(
+  db: D1Database,
+  tz: string
+): Promise<number | undefined> {
+  const sessions = await getKahfSessionsThisWeek(db, tz);
+  return getNextKahfPage(calculateKahfPagesRead(sessions));
+}
+
 async function sendPrayerReminders(
   sctx: ScheduledContext,
-  cache: PrayerCacheRow
+  cache: PrayerCacheRow,
+  isFriday: boolean
 ): Promise<void> {
   const duePrayers = getDueReminders(cache, sctx.nowHHMM);
   if (duePrayers.length === 0) {
@@ -100,7 +112,7 @@ async function sendPrayerReminders(
   }
 
   const [lastSession, weekStatsResult, streak] = await Promise.all([
-    getLastSession(sctx.db),
+    getLastSession(sctx.db, "normal"),
     getPeriodStats(sctx.db, "week", sctx.tz),
     calculateStreak(sctx.db, sctx.tz),
   ]);
@@ -112,19 +124,20 @@ async function sendPrayerReminders(
         return { sessions: 0, ayahs: 0, seconds: 0 };
       })();
 
-  const message = lastSession
-    ? formatReminder(
-        {
-          lastSessionDate: lastSession.startedAt,
-          lastSurahNum: lastSession.surahEnd,
-          lastAyah: lastSession.ayahEnd,
-          weekSessions: weekStats.sessions,
-          weekAyahs: weekStats.ayahs,
-          streak: streak.currentStreak,
-        },
-        sctx.t
-      )
-    : sctx.t.reminder.noSession;
+  const nextKahfPage = isFriday
+    ? await computeNextKahfPage(sctx.db, sctx.tz)
+    : undefined;
+  const nextPage = nextKahfPage ?? getNextPage(lastSession?.pageEnd ?? null);
+
+  const message = formatReminder(
+    {
+      nextPage,
+      weekSessions: weekStats.sessions,
+      weekAyahs: weekStats.ayahs,
+      streak: streak.currentStreak,
+    },
+    sctx.t
+  );
 
   const goKeyboard = {
     inline_keyboard: [
@@ -156,11 +169,15 @@ async function sendKahfReminder(
     return;
   }
 
-  const kahfStats = await getKahfStats(sctx.db);
+  const [kahfStats, nextKahfPage] = await Promise.all([
+    getKahfStats(sctx.db),
+    computeNextKahfPage(sctx.db, sctx.tz),
+  ]);
   const kahfMsg = formatKahfReminder(
     {
       lastDate: kahfStats.lastDate ?? undefined,
       lastDuration: kahfStats.lastDuration ?? undefined,
+      nextKahfPage,
     },
     sctx.t
   );
@@ -261,10 +278,10 @@ export async function handleScheduled(
     t,
   };
 
-  await sendPrayerReminders(sctx, cache);
-
   const dayOfWeek = getDayOfWeek(tz);
-  if (dayOfWeek === 5) {
+  const isFriday = dayOfWeek === 5;
+  await sendPrayerReminders(sctx, cache, isFriday);
+  if (isFriday) {
     await sendKahfReminder(sctx, cache);
   }
   if (dayOfWeek === 0) {
