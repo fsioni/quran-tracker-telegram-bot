@@ -670,7 +670,7 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
       `SELECT type,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
-        COUNT(*) as session_count
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN 1 ELSE 0 END) as session_count
       FROM sessions
       GROUP BY type`
     )

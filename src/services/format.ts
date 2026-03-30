@@ -679,7 +679,9 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
       const { pageStart, pageEnd, durationSeconds } = data.bestSession;
       if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
         const pages = pageEnd - pageStart + 1;
-        const speedStr = (pages / (durationSeconds / 3600)).toFixed(1);
+        const speedStr = formatSpeedOneDecimal(
+          pages / (durationSeconds / 3600)
+        );
         const day = data.bestSession.startedAt.slice(8, 10);
         const month = data.bestSession.startedAt.slice(5, 7);
         lines.push(
