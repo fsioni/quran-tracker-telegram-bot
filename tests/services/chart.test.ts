@@ -27,14 +27,39 @@ describe("computeMovingAverage", () => {
     const result = computeMovingAverage(data, 1);
     expect(result).toEqual([5, 10, 15]);
   });
+
+  it("throws on window <= 0", () => {
+    expect(() => computeMovingAverage([1, 2, 3], 0)).toThrow(
+      "window must be positive"
+    );
+    expect(() => computeMovingAverage([1, 2, 3], -1)).toThrow(
+      "window must be positive"
+    );
+  });
+
+  it("skips null values in the window", () => {
+    const data: (number | null)[] = [10, null, null, 20];
+    const result = computeMovingAverage(data, 3);
+    // i=0: avg(10) = 10
+    // i=1: avg(10) = 10  (null skipped)
+    // i=2: avg(10) = 10  (nulls skipped)
+    // i=3: avg(20) + window looks back 3 -> [null, null, 20] -> avg(20) = 20
+    expect(result).toEqual([10, 10, 10, 20]);
+  });
+
+  it("returns null for window of all nulls", () => {
+    const data: (number | null)[] = [null, null, null];
+    const result = computeMovingAverage(data, 2);
+    expect(result).toEqual([null, null, null]);
+  });
 });
 
 const QUICKCHART_RE = /^https:\/\/quickchart\.io\/chart\?c=/;
 
 describe("buildSpeedChartUrl", () => {
   const labels = ["01/03", "02/03", "03/03"];
-  const speeds = [10, 12, 14];
-  const movingAvg = [10, 11, 12];
+  const speeds: (number | null)[] = [10, null, 14];
+  const movingAvg: (number | null)[] = [10, 10, 12];
 
   it("starts with quickchart.io base URL", () => {
     const url = buildSpeedChartUrl(

@@ -2,6 +2,8 @@
 import type { CustomContext } from "../bot";
 import { buildSpeedChartUrl, computeMovingAverage } from "../services/chart";
 import {
+  addDays,
+  type DailySpeedPoint,
   getDailySpeedData,
   getTimezone,
   getTodayInTimezone,
@@ -10,6 +12,28 @@ import {
 const DEFAULT_DAYS = 30;
 const MIN_DAYS = 7;
 const MAX_DAYS = 180;
+
+/** Fill calendar gaps so the moving average is truly calendar-based. */
+function fillDateGaps(data: DailySpeedPoint[]): {
+  days: string[];
+  speeds: (number | null)[];
+} {
+  if (data.length === 0) {
+    return { days: [], speeds: [] };
+  }
+  const speedMap = new Map(data.map((d) => [d.day, d.speed]));
+  const days: string[] = [];
+  const speeds: (number | null)[] = [];
+  const last = data.at(-1) as DailySpeedPoint;
+  let current = data[0].day;
+  const end = last.day;
+  while (current <= end) {
+    days.push(current);
+    speeds.push(speedMap.get(current) ?? null);
+    current = addDays(current, 1);
+  }
+  return { days, speeds };
+}
 
 export async function graphHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -33,10 +57,13 @@ export async function graphHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const labels = data.map((d) =>
-    t.fmt.dateShort(d.day.slice(8, 10), d.day.slice(5, 7))
+  const filled = fillDateGaps(data);
+  const labels = filled.days.map((d) =>
+    t.fmt.dateShort(d.slice(8, 10), d.slice(5, 7))
   );
-  const speeds = data.map((d) => Math.round(d.speed * 10) / 10);
+  const speeds = filled.speeds.map((s) =>
+    s === null ? null : Math.round(s * 10) / 10
+  );
   const movingAvg = computeMovingAverage(speeds, 7);
 
   const url = buildSpeedChartUrl(

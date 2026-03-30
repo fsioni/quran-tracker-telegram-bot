@@ -2,24 +2,34 @@
 
 const QUICKCHART_BASE = "https://quickchart.io/chart";
 
-export function computeMovingAverage(data: number[], window: number): number[] {
-  if (data.length === 0 || window <= 0) {
+export function computeMovingAverage(
+  data: (number | null)[],
+  window: number
+): (number | null)[] {
+  if (data.length === 0) {
     return [];
+  }
+  if (window <= 0) {
+    throw new Error("window must be positive");
   }
   return data.map((_, i) => {
     const start = Math.max(0, i - window + 1);
     let sum = 0;
+    let count = 0;
     for (let j = start; j <= i; j++) {
-      sum += data[j];
+      if (data[j] !== null) {
+        sum += data[j];
+        count++;
+      }
     }
-    return sum / (i - start + 1);
+    return count > 0 ? sum / count : null;
   });
 }
 
 export function buildSpeedChartUrl(
   labels: string[],
-  dailySpeeds: number[],
-  movingAvg: number[],
+  dailySpeeds: (number | null)[],
+  movingAvg: (number | null)[],
   title: string,
   dailyLabel: string,
   trendLabel: string,

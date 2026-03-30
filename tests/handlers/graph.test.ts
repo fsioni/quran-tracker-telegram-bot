@@ -106,6 +106,24 @@ describe("graphHandler", () => {
     );
   });
 
+  it("remplit les gaps calendaires entre les jours avec sessions", async () => {
+    // Data with a 2-day gap (03-12 and 03-13 missing)
+    vi.mocked(getDailySpeedData).mockResolvedValue([
+      { day: "2026-03-10", speed: 12.0 },
+      { day: "2026-03-11", speed: 14.0 },
+      { day: "2026-03-14", speed: 13.0 },
+    ]);
+    const ctx = makeCtx();
+    await graphHandler(ctx);
+    expect(ctx.replyWithPhoto).toHaveBeenCalledOnce();
+    const url = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
+    const cParam = new URL(url).searchParams.get("c");
+    const config = JSON.parse(cParam as string);
+    // Should have 5 labels (10, 11, 12, 13, 14) with nulls for gaps
+    expect(config.data.labels).toHaveLength(5);
+    expect(config.data.datasets[0].data).toEqual([12, 14, null, null, 13]);
+  });
+
   it("fallback texte si l'envoi de photo echoue", async () => {
     vi.mocked(getDailySpeedData).mockResolvedValue(MOCK_DATA);
     const ctx = makeCtx();
