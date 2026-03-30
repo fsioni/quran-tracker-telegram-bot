@@ -22,7 +22,7 @@ exports[`format functions match snapshots > ar: format snapshots 3`] = `
 exports[`format functions match snapshots > ar: format snapshots 4`] = `
 "التقدم: 300 / 6236 آية (4.8%)
 [#-------------------] 4.8%
-آخر موضع: سورة البقرة (2)، الآية 100"
+الصفحة التالية: 42"
 `;
 
 exports[`format functions match snapshots > ar: format snapshots 5`] = `
@@ -102,7 +102,7 @@ Verses : 200 | Duration : 1h6m40 | Speed : 180 verses/h"
 exports[`format functions match snapshots > en: format snapshots 4`] = `
 "Progress: 300 / 6236 verses (4.8%)
 [#-------------------] 4.8%
-Last position: surah Al-Baqara (2), verse 100"
+Next page: 42"
 `;
 
 exports[`format functions match snapshots > en: format snapshots 5`] = `
@@ -182,7 +182,7 @@ Versets : 200 | Durée : 1h6m40 | Vitesse : 180 versets/h"
 exports[`format functions match snapshots > fr: format snapshots 4`] = `
 "Progression : 300 / 6236 versets (4.8%)
 [#-------------------] 4.8%
-Dernier point : sourate Al-Baqara (2), verset 100"
+Prochaine page : 42"
 `;
 
 exports[`format functions match snapshots > fr: format snapshots 5`] = `

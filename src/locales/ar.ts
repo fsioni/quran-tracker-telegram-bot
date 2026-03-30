@@ -146,8 +146,6 @@ export const ar: Locale = {
 
   progress: {
     label: (read, total, pct) => `التقدم: ${read} / ${total} آية (${pct}%)`,
-    lastPosition: (surahName, surahNum, ayah) =>
-      `آخر موضع: سورة ${surahName} (${surahNum})، الآية ${ayah}`,
     khatmas: (count) => `الختمات: ${count}`,
     page: "صفحة",
   },

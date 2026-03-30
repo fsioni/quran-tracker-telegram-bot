@@ -619,6 +619,17 @@ export const KAHF_PAGE_START = 293;
 export const KAHF_PAGE_END = 304;
 export const KAHF_TOTAL_PAGES = 12;
 
+/**
+ * Returns the next page to read from a session's pageEnd.
+ * Wraps back to 1 after the last page. Returns 1 if pageEnd is null.
+ */
+export function getNextPage(pageEnd: number | null): number {
+  if (pageEnd == null) {
+    return 1;
+  }
+  return pageEnd >= TOTAL_PAGES ? 1 : pageEnd + 1;
+}
+
 export function getPageBoundary(page: number): PageBoundary | undefined {
   if (page < 1 || page > TOTAL_PAGES) {
     return undefined;

@@ -589,13 +589,12 @@ describe("formatStats", () => {
 // --- formatProgress ---
 
 describe("formatProgress", () => {
-  it("formate la progression avec barre et dernier point", () => {
+  it("formate la progression avec barre et prochaine page", () => {
     const result = formatProgress(
       {
         totalAyahsRead: 342,
         totalAyahs: 6236,
-        lastSurah: 3,
-        lastAyah: 10,
+        nextPage: 11,
       },
       fr
     );
@@ -604,7 +603,7 @@ describe("formatProgress", () => {
       [
         "Progression : 342 / 6236 versets (5.5%)",
         "[#-------------------] 5.5%",
-        "Dernier point : sourate Al-Imran (3), verset 10",
+        "Prochaine page : 11",
       ].join("\n")
     );
   });
@@ -614,13 +613,13 @@ describe("formatProgress", () => {
       {
         totalAyahsRead: 0,
         totalAyahs: 6236,
-        lastSurah: 1,
-        lastAyah: 1,
+        nextPage: null,
       },
       fr
     );
     expect(result).toContain("0 / 6236 versets (0.0%)");
     expect(result).toContain("[--------------------]");
+    expect(result).not.toContain("Prochaine page");
   });
 
   it("formate ~40% de progression", () => {
@@ -628,16 +627,13 @@ describe("formatProgress", () => {
       {
         totalAyahsRead: 2494,
         totalAyahs: 6236,
-        lastSurah: 2,
-        lastAyah: 83,
+        nextPage: 12,
       },
       fr
     );
     expect(result).toContain("2494 / 6236 versets (40.0%)");
     expect(result).toContain("[########------------] 40.0%");
-    expect(result).toContain(
-      "Dernier point : sourate Al-Baqara (2), verset 83"
-    );
+    expect(result).toContain("Prochaine page : 12");
   });
 });
 
@@ -1108,8 +1104,7 @@ describe("formatProgress with khatmaCount", () => {
       {
         totalAyahsRead: 342,
         totalAyahs: 6236,
-        lastSurah: 3,
-        lastAyah: 10,
+        nextPage: 5,
         khatmaCount: 2,
       },
       fr
@@ -1122,8 +1117,7 @@ describe("formatProgress with khatmaCount", () => {
       {
         totalAyahsRead: 342,
         totalAyahs: 6236,
-        lastSurah: 3,
-        lastAyah: 10,
+        nextPage: 5,
         khatmaCount: 0,
       },
       fr
@@ -1136,8 +1130,7 @@ describe("formatProgress with khatmaCount", () => {
       {
         totalAyahsRead: 342,
         totalAyahs: 6236,
-        lastSurah: 3,
-        lastAyah: 10,
+        nextPage: 5,
       },
       fr
     );

@@ -203,8 +203,7 @@ describe("locale completeness", () => {
         {
           totalAyahsRead: 300,
           totalAyahs: 6236,
-          lastSurah: 2,
-          lastAyah: 100,
+          nextPage: 42,
         },
         t
       )
@@ -336,8 +335,7 @@ describe("format functions match snapshots", () => {
         {
           totalAyahsRead: 300,
           totalAyahs: 6236,
-          lastSurah: 2,
-          lastAyah: 100,
+          nextPage: 42,
         },
         t
       )

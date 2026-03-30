@@ -2,6 +2,7 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import {
+  getNextPage,
   getPageRange,
   KAHF_PAGE_END,
   KAHF_PAGE_START,
@@ -334,8 +335,7 @@ async function executeTimerGoNormalPage(
   }
 
   const lastSession = await getLastSession(db, "normal");
-  const currentPage = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
-  if (currentPage > TOTAL_PAGES) {
+  if (lastSession?.pageEnd === TOTAL_PAGES) {
     await send(t.timer.quranFinished);
     return;
   }
@@ -598,7 +598,7 @@ export async function timerResponseHandler(
     switch (state.type) {
       case "normal_page": {
         const lastSession = await getLastSession(ctx.db, "normal");
-        const pageStart = lastSession?.pageEnd ? lastSession.pageEnd + 1 : 1;
+        const pageStart = getNextPage(lastSession?.pageEnd ?? null);
         return handlePageResponse(
           ctx,
           state,

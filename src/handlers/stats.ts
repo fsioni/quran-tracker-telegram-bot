@@ -1,7 +1,7 @@
 // src/handlers/stats.ts
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
-import { TOTAL_PAGES } from "../data/pages";
+import { getNextPage, TOTAL_PAGES } from "../data/pages";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import {
@@ -100,12 +100,14 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
+  const nextPage =
+    lastSession.pageEnd == null ? null : getNextPage(lastSession.pageEnd);
+
   let msg = formatProgress(
     {
       totalAyahsRead: globalResult.value.totalAyahs,
       totalAyahs: TOTAL_AYAH_COUNT,
-      lastSurah: lastSession.surahEnd,
-      lastAyah: lastSession.ayahEnd,
+      nextPage,
       khatmaCount,
     },
     t
