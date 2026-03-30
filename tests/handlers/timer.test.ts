@@ -1136,10 +1136,10 @@ describe("pagesOtherCallback", () => {
       .calls[0][0] as string;
     expect(msg).toContain("Session arrêtée");
     expect(msg).toContain("pages");
-    // Pas de reply_markup -> boutons retires
+    // Le reply_markup doit etre explicitement vide pour retirer les boutons
     const editCalls = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
       .calls[0];
-    expect(editCalls.length).toBe(1); // juste le texte, pas d'options
+    expect(editCalls[1]).toHaveProperty("reply_markup");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 

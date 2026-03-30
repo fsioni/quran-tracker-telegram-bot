@@ -618,7 +618,6 @@ async function dispatchPageResponse(
   input: string
 ): Promise<void> {
   const t = ctx.locale;
-  const tz = await getTimezone(ctx.db);
 
   switch (state.type) {
     case "normal_page": {
@@ -663,8 +662,10 @@ async function dispatchPageResponse(
         (s) => formatSessionConfirmation({ ...s, type: "extra" }, t)
       );
     }
-    case "kahf":
+    case "kahf": {
+      const tz = await getTimezone(ctx.db);
       return handleKahfResponse(ctx, state, input, tz);
+    }
     default:
       break;
   }
@@ -692,7 +693,9 @@ export async function pagesCountCallback(ctx: CustomContext): Promise<void> {
     state.durationSeconds ?? 0,
     t
   );
-  await ctx.editMessageText(`${question}\n\n${count}`);
+  await ctx.editMessageText(`${question}\n\n${count}`, {
+    reply_markup: new InlineKeyboard(),
+  });
   await ctx.answerCallbackQuery();
 
   return dispatchPageResponse(ctx, state, String(count));
@@ -712,7 +715,9 @@ export async function pagesOtherCallback(ctx: CustomContext): Promise<void> {
     state.durationSeconds ?? 0,
     t
   );
-  await ctx.editMessageText(question);
+  await ctx.editMessageText(question, {
+    reply_markup: new InlineKeyboard(),
+  });
   await ctx.answerCallbackQuery();
 }
 
