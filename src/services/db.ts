@@ -66,7 +66,6 @@ export interface TypeSpeed {
   avgSpeed: number;
   sessionCount: number;
   type: SessionType;
-  unit: "pages";
 }
 
 export interface PrayerTimes {
@@ -598,11 +597,11 @@ export async function getSpeedAverages(
     .prepare(
       `SELECT
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
-        SUM(duration_seconds) as total_seconds,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
         SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_7d,
-        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_7d,
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_7d,
         SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as pages_30d,
-        SUM(CASE WHEN started_at >= ? THEN duration_seconds ELSE 0 END) as seconds_30d
+        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_30d
       FROM sessions`
     )
     .bind(
@@ -625,21 +624,13 @@ export async function getSpeedAverages(
   }
 
   const totalPages = row.total_pages ?? 0;
-  const global = Number.parseFloat(
-    (totalPages / (row.total_seconds / 3600)).toFixed(1)
-  );
+  const global = totalPages / (row.total_seconds / 3600);
   const seconds7d = row.seconds_7d ?? 0;
   const last7Days =
-    seconds7d > 0
-      ? Number.parseFloat(((row.pages_7d ?? 0) / (seconds7d / 3600)).toFixed(1))
-      : null;
+    seconds7d > 0 ? (row.pages_7d ?? 0) / (seconds7d / 3600) : null;
   const seconds30d = row.seconds_30d ?? 0;
   const last30Days =
-    seconds30d > 0
-      ? Number.parseFloat(
-          ((row.pages_30d ?? 0) / (seconds30d / 3600)).toFixed(1)
-        )
-      : null;
+    seconds30d > 0 ? (row.pages_30d ?? 0) / (seconds30d / 3600) : null;
 
   return { global, last7Days, last30Days };
 }
@@ -677,7 +668,7 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
   const { results } = await db
     .prepare(
       `SELECT type,
-        SUM(duration_seconds) as total_seconds,
+        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
         SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END) as total_pages,
         COUNT(*) as session_count
       FROM sessions
@@ -694,11 +685,8 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
     .filter((r) => r.total_seconds > 0)
     .map((r) => ({
       type: r.type as SessionType,
-      avgSpeed: Number.parseFloat(
-        (r.total_pages / (r.total_seconds / 3600)).toFixed(1)
-      ),
+      avgSpeed: r.total_pages / (r.total_seconds / 3600),
       sessionCount: r.session_count,
-      unit: "pages" as const,
     }));
 }
 

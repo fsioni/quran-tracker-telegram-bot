@@ -75,9 +75,9 @@ describe("speedHandler", () => {
       durationSeconds: 4320,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 15.2, sessionCount: 45, unit: "pages" },
-      { type: "extra", avgSpeed: 17.1, sessionCount: 12, unit: "pages" },
-      { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
+      { type: "normal", avgSpeed: 15.2, sessionCount: 45 },
+      { type: "extra", avgSpeed: 17.1, sessionCount: 12 },
+      { type: "kahf", avgSpeed: 8.5, sessionCount: 8 },
     ]);
 
     const ctx = makeCtx();
@@ -126,7 +126,7 @@ describe("speedHandler", () => {
     });
     vi.mocked(getLongestSession).mockResolvedValue(MOCK_SESSION);
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 12.4, sessionCount: 10, unit: "pages" },
+      { type: "normal", avgSpeed: 12.4, sessionCount: 10 },
     ]);
 
     const ctx = makeCtx();
@@ -151,7 +151,7 @@ describe("speedHandler", () => {
       durationSeconds: 45,
     });
     vi.mocked(getSpeedByType).mockResolvedValue([
-      { type: "normal", avgSpeed: 18, sessionCount: 5, unit: "pages" },
+      { type: "normal", avgSpeed: 18, sessionCount: 5 },
     ]);
 
     const ctx = makeCtx();

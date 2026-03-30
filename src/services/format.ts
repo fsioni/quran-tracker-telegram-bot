@@ -719,7 +719,7 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
     for (const tp of data.byType) {
       const label = typeLabels[tp.type] ?? tp.type;
       const padded = label.padEnd(maxLabelLen);
-      const speedStr = `${tp.avgSpeed} ${t.stats.pagesPerHourShort}`;
+      const speedStr = `${formatSpeedOneDecimal(tp.avgSpeed)} ${t.stats.pagesPerHourShort}`;
       lines.push(
         `  ${padded} : ${speedStr} (${t.speed.sessionsCount(tp.sessionCount)})`
       );

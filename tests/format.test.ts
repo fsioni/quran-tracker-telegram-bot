@@ -1181,9 +1181,9 @@ describe("formatSpeedReport", () => {
           durationSeconds: 4320,
         }),
         byType: [
-          { type: "normal", avgSpeed: 15.2, sessionCount: 45, unit: "pages" },
-          { type: "extra", avgSpeed: 17.1, sessionCount: 12, unit: "pages" },
-          { type: "kahf", avgSpeed: 8.5, sessionCount: 8, unit: "pages" },
+          { type: "normal", avgSpeed: 15.2, sessionCount: 45 },
+          { type: "extra", avgSpeed: 17.1, sessionCount: 12 },
+          { type: "kahf", avgSpeed: 8.5, sessionCount: 8 },
         ],
       },
       fr
@@ -1214,9 +1214,7 @@ describe("formatSpeedReport", () => {
         averages: { global: 12, last7Days: null, last30Days: 12 },
         bestSession: null,
         longestSession: null,
-        byType: [
-          { type: "normal", avgSpeed: 12, sessionCount: 5, unit: "pages" },
-        ],
+        byType: [{ type: "normal", avgSpeed: 12, sessionCount: 5 }],
       },
       fr
     );
@@ -1226,7 +1224,7 @@ describe("formatSpeedReport", () => {
     expect(result).toContain("Moyenne 30 derniers jours : 12.0 pages/h");
     expect(result).not.toContain("Meilleure session");
     expect(result).not.toContain("Plus longue session");
-    expect(result).toContain("Normal : 12 pages/h (5 sessions)");
+    expect(result).toContain("Normal : 12.0 pages/h (5 sessions)");
   });
 
   it("formate sans records (bestSession/longestSession null)", () => {
@@ -1235,9 +1233,7 @@ describe("formatSpeedReport", () => {
         averages: { global: 10, last7Days: 10, last30Days: 10 },
         bestSession: null,
         longestSession: null,
-        byType: [
-          { type: "normal", avgSpeed: 10, sessionCount: 3, unit: "pages" },
-        ],
+        byType: [{ type: "normal", avgSpeed: 10, sessionCount: 3 }],
       },
       fr
     );
@@ -1279,17 +1275,17 @@ describe("formatSpeedReport", () => {
         bestSession: null,
         longestSession: null,
         byType: [
-          { type: "normal", avgSpeed: 10, sessionCount: 10, unit: "pages" },
-          { type: "extra", avgSpeed: 12, sessionCount: 5, unit: "pages" },
-          { type: "kahf", avgSpeed: 8, sessionCount: 3, unit: "pages" },
+          { type: "normal", avgSpeed: 10, sessionCount: 10 },
+          { type: "extra", avgSpeed: 12, sessionCount: 5 },
+          { type: "kahf", avgSpeed: 8, sessionCount: 3 },
         ],
       },
       fr
     );
 
     // "Normal" (6 chars) is the longest, so "Extra" and "Kahf" should be padded
-    expect(result).toContain("  Normal : 10 pages/h (10 sessions)");
-    expect(result).toContain("  Extra  : 12 pages/h (5 sessions)");
-    expect(result).toContain("  Kahf   : 8 pages/h (3 sessions)");
+    expect(result).toContain("  Normal : 10.0 pages/h (10 sessions)");
+    expect(result).toContain("  Extra  : 12.0 pages/h (5 sessions)");
+    expect(result).toContain("  Kahf   : 8.0 pages/h (3 sessions)");
   });
 });
