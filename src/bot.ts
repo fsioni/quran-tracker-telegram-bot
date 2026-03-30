@@ -21,7 +21,9 @@ import { prayerHandler } from "./handlers/prayer";
 import { readHandler } from "./handlers/read";
 import { sessionHandler } from "./handlers/session";
 import {
+  CALLBACK_HISTORY_RE,
   historyHandler,
+  historyPageCallback,
   progressHandler,
   speedHandler,
   statsHandler,
@@ -110,6 +112,7 @@ export function createBot(
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
   bot.callbackQuery(CALLBACK_LANG_SET_RE, langSetCallback);
+  bot.callbackQuery(CALLBACK_HISTORY_RE, historyPageCallback);
 
   // Error handler global
   bot.catch((err) => {

@@ -22,6 +22,7 @@ import {
   getPreviousWeekStats,
   getRecentPace,
   getSessionById,
+  getSessionCount,
   getStatsByType,
   getTodayInTimezone,
   getWeekBounds,
@@ -408,6 +409,60 @@ describe("getHistory", () => {
 
     const allHistory = await getHistory(db);
     expect(allHistory).toHaveLength(3);
+  });
+});
+
+// --- getSessionCount ---
+
+describe("getSessionCount", () => {
+  it("returns 0 when no sessions exist", async () => {
+    expect(await getSessionCount(db)).toBe(0);
+  });
+
+  it("returns total count without type filter", async () => {
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 08:00:00", type: "extra" })
+      )
+    );
+    expect(await getSessionCount(db)).toBe(3);
+  });
+
+  it("returns filtered count when type is provided", async () => {
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-09 08:00:00", type: "normal" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-10 08:00:00", type: "kahf" })
+      )
+    );
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({ startedAt: "2026-03-11 08:00:00", type: "kahf" })
+      )
+    );
+    expect(await getSessionCount(db, "kahf")).toBe(2);
+    expect(await getSessionCount(db, "normal")).toBe(1);
+    expect(await getSessionCount(db, "extra")).toBe(0);
   });
 });
 

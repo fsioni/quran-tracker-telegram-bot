@@ -2,7 +2,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import {
+  HISTORY_PAGE_SIZE,
   historyHandler,
+  historyPageCallback,
   progressHandler,
   statsHandler,
 } from "../../src/handlers/stats";
@@ -15,6 +17,7 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   return {
     ...actual,
     getHistory: vi.fn(),
+    getSessionCount: vi.fn(),
     getGlobalStats: vi.fn(),
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
@@ -37,6 +40,7 @@ import {
   getPeriodStats,
   getPreviousWeekStats,
   getRecentPace,
+  getSessionCount,
   getTimezone,
   getTodayInTimezone,
 } from "../../src/services/db";
@@ -45,6 +49,16 @@ function makeCtx(match = ""): CustomContext {
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
+    db: {} as D1Database,
+    locale: fr,
+  } as unknown as CustomContext;
+}
+
+function makeCallbackCtx(data: string): CustomContext {
+  return {
+    callbackQuery: { data },
+    editMessageText: vi.fn().mockResolvedValue(undefined),
+    answerCallbackQuery: vi.fn().mockResolvedValue(undefined),
     db: {} as D1Database,
     locale: fr,
   } as unknown as CustomContext;
@@ -70,13 +84,18 @@ const MOCK_SESSION: Session = {
 describe("historyHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getSessionCount).mockResolvedValue(1);
   });
 
   it("repond 'Aucune session' si historique vide", async () => {
     vi.mocked(getHistory).mockResolvedValue([]);
+    vi.mocked(getSessionCount).mockResolvedValue(0);
     const ctx = makeCtx();
     await historyHandler(ctx);
-    expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
+    expect(ctx.reply).toHaveBeenCalledWith(
+      "Aucune session enregistrée.",
+      undefined
+    );
   });
 
   it("affiche une session formatee avec tag type", async () => {
@@ -101,12 +120,14 @@ describe("historyHandler", () => {
       ayahCount: 17,
     };
     vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION, session2]);
+    vi.mocked(getSessionCount).mockResolvedValue(2);
     const ctx = makeCtx();
     await historyHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("#42");
     expect(msg).toContain("#41");
+    // 2 session lines, no page indicator (count <= PAGE_SIZE)
     expect(msg.split("\n")).toHaveLength(2);
   });
 
@@ -121,7 +142,12 @@ describe("historyHandler", () => {
     vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
     const ctx = makeCtx();
     await historyHandler(ctx);
-    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, undefined);
+    expect(getHistory).toHaveBeenCalledWith(
+      ctx.db,
+      HISTORY_PAGE_SIZE,
+      undefined,
+      0
+    );
   });
 
   it("filtre par type 'extra' quand ctx.match = 'extra'", async () => {
@@ -129,7 +155,12 @@ describe("historyHandler", () => {
     vi.mocked(getHistory).mockResolvedValue([extraSession]);
     const ctx = makeCtx("extra");
     await historyHandler(ctx);
-    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, "extra");
+    expect(getHistory).toHaveBeenCalledWith(
+      ctx.db,
+      HISTORY_PAGE_SIZE,
+      "extra",
+      0
+    );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("[E]");
@@ -140,10 +171,110 @@ describe("historyHandler", () => {
     vi.mocked(getHistory).mockResolvedValue([kahfSession]);
     const ctx = makeCtx("kahf");
     await historyHandler(ctx);
-    expect(getHistory).toHaveBeenCalledWith(ctx.db, 10, "kahf");
+    expect(getHistory).toHaveBeenCalledWith(
+      ctx.db,
+      HISTORY_PAGE_SIZE,
+      "kahf",
+      0
+    );
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("[K]");
+  });
+
+  it("pas de keyboard si <= 10 sessions", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(5);
+    const ctx = makeCtx();
+    await historyHandler(ctx);
+    expect(ctx.reply).toHaveBeenCalledWith(expect.any(String), undefined);
+  });
+
+  it("affiche keyboard Suivant si > 10 sessions", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(25);
+    const ctx = makeCtx();
+    await historyHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Page 1/3");
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toBeDefined();
+    expect(opts.reply_markup).toBeDefined();
+  });
+});
+
+// --- historyPageCallback ---
+
+describe("historyPageCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("page 2 affiche Precedent et Suivant", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(25);
+    const ctx = makeCallbackCtx("hist:2");
+    await historyPageCallback(ctx);
+    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledTimes(1);
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Page 2/3");
+    expect(getHistory).toHaveBeenCalledWith(
+      ctx.db,
+      HISTORY_PAGE_SIZE,
+      undefined,
+      10
+    );
+  });
+
+  it("derniere page n'a que le bouton Precedent", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(25);
+    const ctx = makeCallbackCtx("hist:3");
+    await historyPageCallback(ctx);
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Page 3/3");
+  });
+
+  it("preserve le filtre type dans le callback", async () => {
+    vi.mocked(getHistory).mockResolvedValue([
+      { ...MOCK_SESSION, type: "kahf" },
+    ]);
+    vi.mocked(getSessionCount).mockResolvedValue(25);
+    const ctx = makeCallbackCtx("hist:2:kahf");
+    await historyPageCallback(ctx);
+    expect(getHistory).toHaveBeenCalledWith(
+      ctx.db,
+      HISTORY_PAGE_SIZE,
+      "kahf",
+      10
+    );
+  });
+
+  it("answerCallbackQuery si data invalide", async () => {
+    const ctx = makeCallbackCtx("invalid");
+    await historyPageCallback(ctx);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it("hist:0 est rejete par la regex (answerCallbackQuery)", async () => {
+    const ctx = makeCallbackCtx("hist:0");
+    await historyPageCallback(ctx);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalledTimes(1);
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+  });
+
+  it("page au-dela de totalPages est clampee a la derniere page", async () => {
+    vi.mocked(getHistory).mockResolvedValue([MOCK_SESSION]);
+    vi.mocked(getSessionCount).mockResolvedValue(25); // 3 pages
+    const ctx = makeCallbackCtx("hist:999");
+    await historyPageCallback(ctx);
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Page 3/3");
   });
 });
 

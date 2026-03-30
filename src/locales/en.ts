@@ -209,6 +209,12 @@ export const en: Locale = {
     "December",
   ],
 
+  history: {
+    next: "Next >>",
+    prev: "<< Previous",
+    pageIndicator: (current, total) => `Page ${current}/${total}`,
+  },
+
   estimation: {
     notEnoughData:
       "Not enough recent data to estimate (read regularly to see a projection)",

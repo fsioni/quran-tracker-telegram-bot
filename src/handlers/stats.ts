@@ -1,7 +1,9 @@
 // src/handlers/stats.ts
+import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import { TOTAL_PAGES } from "../data/pages";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
+import type { Locale } from "../locales/types";
 import {
   calculateStreak,
   getBestSpeedSession,
@@ -13,6 +15,7 @@ import {
   getPeriodStats,
   getPreviousWeekStats,
   getRecentPace,
+  getSessionCount,
   getSpeedAverages,
   getSpeedByType,
   getTimezone,
@@ -27,6 +30,9 @@ import {
   formatSpeedReport,
   formatStats,
 } from "../services/format";
+
+export const HISTORY_PAGE_SIZE = 10;
+export const CALLBACK_HISTORY_RE = /^hist:([1-9]\d*)(?::(\w+))?$/;
 
 export async function statsHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -139,23 +145,92 @@ export async function speedHandler(ctx: CustomContext): Promise<void> {
   );
 }
 
+const VALID_SESSION_TYPES = new Set<string>(["normal", "extra", "kahf"]);
+
+function parseTypeFilter(input: string): SessionType | undefined {
+  return VALID_SESSION_TYPES.has(input) ? (input as SessionType) : undefined;
+}
+
+export async function buildHistoryMessage(
+  db: D1Database,
+  page: number,
+  typeFilter: SessionType | undefined,
+  t: Locale
+): Promise<{ text: string; keyboard: InlineKeyboard | undefined }> {
+  const clampedPage = Math.max(1, page);
+  const count = await getSessionCount(db, typeFilter);
+
+  if (count === 0) {
+    return { text: t.stats.noSession, keyboard: undefined };
+  }
+
+  const totalPages = Math.ceil(count / HISTORY_PAGE_SIZE);
+  const safePage = Math.min(clampedPage, totalPages);
+  const offset = (safePage - 1) * HISTORY_PAGE_SIZE;
+  const sessions = await getHistory(db, HISTORY_PAGE_SIZE, typeFilter, offset);
+  const lines = sessions.map((s) => formatHistoryLine(s, t));
+
+  if (totalPages > 1) {
+    lines.push(t.history.pageIndicator(safePage, totalPages));
+  }
+
+  const text = lines.join("\n");
+
+  let keyboard: InlineKeyboard | undefined;
+  if (totalPages > 1) {
+    keyboard = new InlineKeyboard();
+    const typeSuffix = typeFilter ? `:${typeFilter}` : "";
+    if (safePage > 1) {
+      keyboard.text(t.history.prev, `hist:${safePage - 1}${typeSuffix}`);
+    }
+    if (safePage < totalPages) {
+      keyboard.text(t.history.next, `hist:${safePage + 1}${typeSuffix}`);
+    }
+  }
+
+  return { text, keyboard };
+}
+
 export async function historyHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim().toLowerCase();
-  const validTypes: Record<string, SessionType> = {
-    normal: "normal",
-    extra: "extra",
-    kahf: "kahf",
-  };
-  const typeFilter = validTypes[input];
+  const typeFilter = parseTypeFilter(input);
 
-  const sessions = await getHistory(ctx.db, 10, typeFilter);
+  const { text, keyboard } = await buildHistoryMessage(
+    ctx.db,
+    1,
+    typeFilter,
+    t
+  );
+  await ctx.reply(text, keyboard ? { reply_markup: keyboard } : undefined);
+}
 
-  if (sessions.length === 0) {
-    await ctx.reply(t.stats.noSession);
+export async function historyPageCallback(ctx: CustomContext): Promise<void> {
+  const data = ctx.callbackQuery?.data;
+  if (!data) {
+    await ctx.answerCallbackQuery();
     return;
   }
 
-  const lines = sessions.map((s) => formatHistoryLine(s, t));
-  await ctx.reply(lines.join("\n"));
+  const match = CALLBACK_HISTORY_RE.exec(data);
+  if (!match) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const page = Number.parseInt(match[1], 10);
+  const typeFilter = parseTypeFilter(match[2] ?? "");
+  const t = ctx.locale;
+
+  const { text, keyboard } = await buildHistoryMessage(
+    ctx.db,
+    page,
+    typeFilter,
+    t
+  );
+  await ctx.editMessageText(
+    text,
+    keyboard ? { reply_markup: keyboard } : undefined
+  );
+  await ctx.answerCallbackQuery();
 }

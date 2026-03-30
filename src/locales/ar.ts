@@ -212,6 +212,12 @@ export const ar: Locale = {
     "ديسمبر",
   ],
 
+  history: {
+    next: "التالي >>",
+    prev: "<< السابق",
+    pageIndicator: (current, total) => `صفحة ${current}/${total}`,
+  },
+
   estimation: {
     notEnoughData: "لا توجد بيانات كافية للتقدير (اقرأ بانتظام لرؤية التوقعات)",
     monthsRemaining: (pace, months) =>

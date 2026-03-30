@@ -93,6 +93,13 @@ export interface Locale {
     seconds: string;
   };
 
+  // History pagination
+  history: {
+    next: string;
+    prev: string;
+    pageIndicator: (current: number, total: number) => string;
+  };
+
   // Import
   import: {
     noData: string;
