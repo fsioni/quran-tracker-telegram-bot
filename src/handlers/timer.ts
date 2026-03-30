@@ -53,6 +53,9 @@ export const CALLBACK_TIMER_CONFIRM_RE = /^timer_confirm_stop$/;
 export const CALLBACK_TIMER_CANCEL_RE = /^timer_cancel_stop$/;
 export const CALLBACK_TIMER_STOP_RE = /^timer_stop$/;
 export const CALLBACK_TIMER_GO_RE = /^timer_go$/;
+export const CALLBACK_PAGES_RE = /^pages:(\d+)$/;
+const CALLBACK_PAGES_OTHER = "pages:other";
+export const CALLBACK_PAGES_OTHER_RE = /^pages:other$/;
 
 // --- Parsed argument types ---
 
@@ -189,6 +192,23 @@ function argsToJson(parsed: ParsedGoArgs): string {
   return "{}";
 }
 
+// --- Page inline keyboard helpers ---
+
+function isPageBasedType(type: TimerType): boolean {
+  return type === "normal_page" || type === "extra_page" || type === "kahf";
+}
+
+function buildPageCountKeyboard(t: Locale): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  for (let i = 1; i <= 5; i++) {
+    kb.text(String(i), `pages:${i}`);
+  }
+  kb.row();
+  kb.text(t.timer.other, CALLBACK_PAGES_OTHER);
+  kb.text(t.manage.cancel, CALLBACK_TIMER_CANCEL);
+  return kb;
+}
+
 // --- Shared stop logic ---
 
 type SendFn = (
@@ -207,7 +227,15 @@ async function executeTimerStop(
   }
 
   if (state.awaitingResponse) {
-    await send(getQuestionForType(state.type, state.durationSeconds ?? 0, t));
+    const question = getQuestionForType(
+      state.type,
+      state.durationSeconds ?? 0,
+      t
+    );
+    const opts = isPageBasedType(state.type)
+      ? { reply_markup: buildPageCountKeyboard(t) }
+      : undefined;
+    await send(question, opts);
     return;
   }
 
@@ -230,7 +258,11 @@ async function executeTimerStop(
     durationSeconds,
   });
 
-  await send(getQuestionForType(state.type, durationSeconds, t));
+  const question = getQuestionForType(state.type, durationSeconds, t);
+  const opts = isPageBasedType(state.type)
+    ? { reply_markup: buildPageCountKeyboard(t) }
+    : undefined;
+  await send(question, opts);
 }
 
 // --- /stop handler ---
@@ -297,7 +329,11 @@ export async function confirmTimerStopCallback(
     durationSeconds,
   });
 
-  await ctx.editMessageText(getQuestionForType(state.type, durationSeconds, t));
+  const question = getQuestionForType(state.type, durationSeconds, t);
+  const opts = isPageBasedType(state.type)
+    ? { reply_markup: buildPageCountKeyboard(t) }
+    : undefined;
+  await ctx.editMessageText(question, opts);
   await ctx.answerCallbackQuery();
 }
 
@@ -574,6 +610,112 @@ async function handleKahfResponse(
   }
 }
 
+// --- Shared page dispatch ---
+
+async function dispatchPageResponse(
+  ctx: CustomContext,
+  state: TimerState,
+  input: string
+): Promise<void> {
+  const t = ctx.locale;
+  const tz = await getTimezone(ctx.db);
+
+  switch (state.type) {
+    case "normal_page": {
+      const lastSession = await getLastSession(ctx.db, "normal");
+      const pageStart = getNextPage(lastSession?.pageEnd ?? null);
+      return handlePageResponse(
+        ctx,
+        state,
+        input,
+        "normal",
+        pageStart,
+        TOTAL_PAGES,
+        () =>
+          t.read.remainingPages(
+            TOTAL_PAGES - pageStart + 1,
+            pageStart,
+            TOTAL_PAGES
+          ),
+        (_r, ps, pe, dur) =>
+          formatReadConfirmation(
+            {
+              pageStart: ps,
+              pageEnd: pe,
+              durationSeconds: dur,
+              totalPagesRead: pe,
+              totalPages: TOTAL_PAGES,
+            },
+            t
+          )
+      );
+    }
+    case "extra_page": {
+      const parsedArgs = JSON.parse(state.args);
+      return handlePageResponse(
+        ctx,
+        state,
+        input,
+        "extra",
+        parsedArgs.page,
+        TOTAL_PAGES,
+        (pe) => t.timer.overflowPages(parsedArgs.page, pe, TOTAL_PAGES),
+        (s) => formatSessionConfirmation({ ...s, type: "extra" }, t)
+      );
+    }
+    case "kahf":
+      return handleKahfResponse(ctx, state, input, tz);
+    default:
+      break;
+  }
+}
+
+// --- Callbacks for page count inline buttons ---
+
+export async function pagesCountCallback(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
+  const match = ctx.callbackQuery?.data?.match(CALLBACK_PAGES_RE);
+  if (!match) {
+    return;
+  }
+  const count = Number(match[1]);
+
+  const state = await getTimerState(ctx.db);
+  if (!state?.awaitingResponse) {
+    await ctx.editMessageText(t.timer.notFound);
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const question = getQuestionForType(
+    state.type,
+    state.durationSeconds ?? 0,
+    t
+  );
+  await ctx.editMessageText(`${question}\n\n${count}`);
+  await ctx.answerCallbackQuery();
+
+  return dispatchPageResponse(ctx, state, String(count));
+}
+
+export async function pagesOtherCallback(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
+  const state = await getTimerState(ctx.db);
+  if (!state?.awaitingResponse) {
+    await ctx.editMessageText(t.timer.notFound);
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const question = getQuestionForType(
+    state.type,
+    state.durationSeconds ?? 0,
+    t
+  );
+  await ctx.editMessageText(question);
+  await ctx.answerCallbackQuery();
+}
+
 // --- Middleware: timerResponseHandler ---
 
 export async function timerResponseHandler(
@@ -592,62 +734,19 @@ export async function timerResponseHandler(
 
   const t = ctx.locale;
   const trimmed = text.trim();
-  const tz = await getTimezone(ctx.db);
 
   try {
     switch (state.type) {
-      case "normal_page": {
-        const lastSession = await getLastSession(ctx.db, "normal");
-        const pageStart = getNextPage(lastSession?.pageEnd ?? null);
-        return handlePageResponse(
-          ctx,
-          state,
-          trimmed,
-          "normal",
-          pageStart,
-          TOTAL_PAGES,
-          () =>
-            t.read.remainingPages(
-              TOTAL_PAGES - pageStart + 1,
-              pageStart,
-              TOTAL_PAGES
-            ),
-          (_r, ps, pe, dur) =>
-            formatReadConfirmation(
-              {
-                pageStart: ps,
-                pageEnd: pe,
-                durationSeconds: dur,
-                totalPagesRead: pe,
-                totalPages: TOTAL_PAGES,
-              },
-              t
-            )
-        );
-      }
-
-      case "extra_page": {
-        const parsedArgs = JSON.parse(state.args);
-        return handlePageResponse(
-          ctx,
-          state,
-          trimmed,
-          "extra",
-          parsedArgs.page,
-          TOTAL_PAGES,
-          (pe) => t.timer.overflowPages(parsedArgs.page, pe, TOTAL_PAGES),
-          (s) => formatSessionConfirmation({ ...s, type: "extra" }, t)
-        );
-      }
+      case "normal_page":
+      case "extra_page":
+      case "kahf":
+        return dispatchPageResponse(ctx, state, trimmed);
 
       case "normal_verse":
         return handleVerseResponse(ctx, state, trimmed, "normal");
 
       case "extra_verse":
         return handleVerseResponse(ctx, state, trimmed, "extra");
-
-      case "kahf":
-        return handleKahfResponse(ctx, state, trimmed, tz);
 
       default: {
         const _exhaustive: never = state.type;

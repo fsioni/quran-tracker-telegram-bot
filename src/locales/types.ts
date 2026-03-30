@@ -340,6 +340,7 @@ export interface Locale {
     no: string;
     stop: string;
     go: string;
+    other: string;
     quranFinished: string;
     invalidPageCount: string;
     invalidVerseFormat: string;

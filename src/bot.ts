@@ -29,6 +29,8 @@ import {
   statsHandler,
 } from "./handlers/stats";
 import {
+  CALLBACK_PAGES_OTHER_RE,
+  CALLBACK_PAGES_RE,
   CALLBACK_TIMER_CANCEL_RE,
   CALLBACK_TIMER_CONFIRM_RE,
   CALLBACK_TIMER_GO_RE,
@@ -37,6 +39,8 @@ import {
   confirmTimerStopCallback,
   goHandler,
   goTimerCallback,
+  pagesCountCallback,
+  pagesOtherCallback,
   stopHandler,
   stopTimerCallback,
   timerResponseHandler,
@@ -109,6 +113,8 @@ export function createBot(
   bot.callbackQuery(CALLBACK_TIMER_GO_RE, goTimerCallback);
   bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
+  bot.callbackQuery(CALLBACK_PAGES_RE, pagesCountCallback);
+  bot.callbackQuery(CALLBACK_PAGES_OTHER_RE, pagesOtherCallback);
   bot.callbackQuery(CALLBACK_CONFIRM_RE, confirmDeleteCallback);
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
   bot.callbackQuery(CALLBACK_LANG_SET_RE, langSetCallback);

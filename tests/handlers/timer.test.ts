@@ -6,6 +6,8 @@ import {
   confirmTimerStopCallback,
   goHandler,
   goTimerCallback,
+  pagesCountCallback,
+  pagesOtherCallback,
   stopHandler,
   stopTimerCallback,
   timerResponseHandler,
@@ -893,6 +895,261 @@ describe("goTimerCallback", () => {
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("timer est déjà actif");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+});
+
+function createCallbackContextWithReply(data: string): CustomContext {
+  return {
+    callbackQuery: { data },
+    answerCallbackQuery: vi.fn().mockResolvedValue(undefined),
+    editMessageText: vi.fn().mockResolvedValue(undefined),
+    reply: vi.fn().mockResolvedValue(undefined),
+    db: {} as D1Database,
+    locale: fr,
+  } as unknown as CustomContext;
+}
+
+describe("stopHandler - reply_markup pour types page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockClearTimerState.mockResolvedValue(undefined);
+    mockSetTimerState.mockResolvedValue(undefined);
+  });
+
+  it("/stop normal_page -> reply_markup present", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch, type: "normal_page" })
+    );
+
+    const ctx = createMockContext("");
+    await stopHandler(ctx);
+
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toHaveProperty("reply_markup");
+  });
+
+  it("/stop extra_page -> reply_markup present", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch, type: "extra_page" })
+    );
+
+    const ctx = createMockContext("");
+    await stopHandler(ctx);
+
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toHaveProperty("reply_markup");
+  });
+
+  it("/stop kahf -> reply_markup present", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch, type: "kahf" })
+    );
+
+    const ctx = createMockContext("");
+    await stopHandler(ctx);
+
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toHaveProperty("reply_markup");
+  });
+
+  it("/stop normal_verse -> pas de reply_markup", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch, type: "normal_verse" })
+    );
+
+    const ctx = createMockContext("");
+    await stopHandler(ctx);
+
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toBeUndefined();
+  });
+
+  it("/stop extra_verse -> pas de reply_markup", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch, type: "extra_verse" })
+    );
+
+    const ctx = createMockContext("");
+    await stopHandler(ctx);
+
+    const opts = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opts).toBeUndefined();
+  });
+});
+
+describe("pagesCountCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockClearTimerState.mockResolvedValue(undefined);
+    mockSetTimerState.mockResolvedValue(undefined);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    mockGetLastSession.mockResolvedValue(null);
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+    mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+  });
+
+  it("normal_page: bouton 3 -> insere session avec 3 pages", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "normal_page",
+        args: "{}",
+      })
+    );
+    const session = makeSession({
+      id: 1,
+      pageStart: 1,
+      pageEnd: 3,
+      durationSeconds: 300,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createCallbackContextWithReply("pages:3");
+    await pagesCountCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "normal",
+        pageStart: 1,
+        pageEnd: 3,
+      })
+    );
+    expect(mockClearTimerState).toHaveBeenCalled();
+    expect(ctx.editMessageText).toHaveBeenCalled();
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("extra_page: bouton 2 -> insere session extra", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "extra_page",
+        args: JSON.stringify({ page: 300 }),
+      })
+    );
+    const session = makeSession({
+      id: 1,
+      pageStart: 300,
+      pageEnd: 301,
+      durationSeconds: 300,
+      type: "extra",
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createCallbackContextWithReply("pages:2");
+    await pagesCountCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "extra",
+        pageStart: 300,
+        pageEnd: 301,
+      })
+    );
+    expect(mockClearTimerState).toHaveBeenCalled();
+  });
+
+  it("kahf: bouton 3 -> insere session kahf", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "kahf",
+        args: "{}",
+      })
+    );
+    const session = makeSession({
+      id: 1,
+      pageStart: 293,
+      pageEnd: 295,
+      type: "kahf",
+      durationSeconds: 300,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createCallbackContextWithReply("pages:3");
+    await pagesCountCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "kahf",
+        pageStart: 293,
+        pageEnd: 295,
+      })
+    );
+    expect(mockClearTimerState).toHaveBeenCalled();
+  });
+
+  it("timer introuvable -> message erreur", async () => {
+    mockGetTimerState.mockResolvedValue(null);
+
+    const ctx = createCallbackContextWithReply("pages:3");
+    await pagesCountCallback(ctx);
+
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Timer introuvable.");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+  });
+
+  it("timer non en attente -> message erreur", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ awaitingResponse: false })
+    );
+
+    const ctx = createCallbackContextWithReply("pages:3");
+    await pagesCountCallback(ctx);
+
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Timer introuvable.");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+});
+
+describe("pagesOtherCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retire les boutons et garde la question", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "normal_page",
+      })
+    );
+
+    const ctx = createCallbackContextWithReply("pages:other");
+    await pagesOtherCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Session arrêtée");
+    expect(msg).toContain("pages");
+    // Pas de reply_markup -> boutons retires
+    const editCalls = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    expect(editCalls.length).toBe(1); // juste le texte, pas d'options
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("timer introuvable -> message erreur", async () => {
+    mockGetTimerState.mockResolvedValue(null);
+
+    const ctx = createCallbackContextWithReply("pages:other");
+    await pagesOtherCallback(ctx);
+
+    expect(ctx.editMessageText).toHaveBeenCalledWith("Timer introuvable.");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

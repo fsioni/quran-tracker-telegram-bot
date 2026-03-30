@@ -291,6 +291,7 @@ export const fr: Locale = {
     no: "Non",
     stop: "Stop",
     go: "Go",
+    other: "Autre",
     quranFinished: "Tu as terminé le Coran ! Alhamdulillah !",
     invalidPageCount:
       "nombre de pages invalide. Envoie un nombre (ex: 3) ou /stop cancel pour annuler",

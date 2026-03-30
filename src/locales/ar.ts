@@ -284,6 +284,7 @@ export const ar: Locale = {
     no: "لا",
     stop: "إيقاف",
     go: "ابدأ",
+    other: "اخر",
     quranFinished: "أتممت القرآن الكريم! الحمد لله!",
     invalidPageCount:
       "عدد صفحات غير صالح. أرسل رقما (مثال: 3) أو /stop cancel للإلغاء",
