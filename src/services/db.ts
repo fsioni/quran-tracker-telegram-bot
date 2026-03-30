@@ -1,6 +1,13 @@
 import { DEFAULT_TZ } from "../config";
 import { err, ok, type Result } from "../types";
 
+// --- SQL fragments ---
+
+const PAGE_STATS_SQL =
+  "COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0)";
+const PAGE_SECONDS_SQL =
+  "COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0)";
+
 // --- Row types (D1 snake_case) ---
 
 export type SessionType = "normal" | "extra" | "kahf";
@@ -357,8 +364,8 @@ export async function getGlobalStats(
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
         COALESCE(AVG(duration_seconds), 0) AS avg_seconds,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS total_pages,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0) AS total_page_seconds
+        ${PAGE_STATS_SQL} AS total_pages,
+        ${PAGE_SECONDS_SQL} AS total_page_seconds
       FROM sessions WHERE type = ?`
     : `SELECT
         COALESCE(COUNT(*), 0) AS total_sessions,
@@ -366,8 +373,8 @@ export async function getGlobalStats(
         COALESCE(SUM(duration_seconds), 0) AS total_seconds,
         COALESCE(AVG(ayah_count), 0) AS avg_ayahs,
         COALESCE(AVG(duration_seconds), 0) AS avg_seconds,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS total_pages,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0) AS total_page_seconds
+        ${PAGE_STATS_SQL} AS total_pages,
+        ${PAGE_SECONDS_SQL} AS total_page_seconds
       FROM sessions`;
   const stmt = type ? db.prepare(query).bind(type) : db.prepare(query);
   const row = await stmt.first<{
@@ -416,8 +423,8 @@ export async function getPeriodStats(
         COALESCE(COUNT(*), 0) AS sessions,
         COALESCE(SUM(ayah_count), 0) AS ayahs,
         COALESCE(SUM(duration_seconds), 0) AS seconds,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS pages,
-        COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0) AS page_seconds
+        ${PAGE_STATS_SQL} AS pages,
+        ${PAGE_SECONDS_SQL} AS page_seconds
       FROM sessions
       WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
     )
@@ -459,8 +466,8 @@ export async function getPreviousWeekStats(
           COALESCE(COUNT(*), 0) AS sessions,
           COALESCE(SUM(ayah_count), 0) AS ayahs,
           COALESCE(SUM(duration_seconds), 0) AS seconds,
-          COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN page_end - page_start + 1 ELSE 0 END), 0) AS pages,
-          COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END), 0) AS page_seconds
+          ${PAGE_STATS_SQL} AS pages,
+          ${PAGE_SECONDS_SQL} AS page_seconds
         FROM sessions
         WHERE substr(started_at, 1, 10) BETWEEN ? AND ?`
       )
