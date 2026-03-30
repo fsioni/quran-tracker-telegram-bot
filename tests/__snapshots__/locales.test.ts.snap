@@ -28,7 +28,7 @@ exports[`format functions match snapshots > ar: format snapshots 4`] = `
 exports[`format functions match snapshots > ar: format snapshots 5`] = `
 "تذكير بقراءة القرآن
 
-آخر جلسة: 13/03 - سورة البقرة آ.83
+الصفحة التالية: 42
 هذا الأسبوع: 5 جلسات، 50 آية
 السلسلة: 3 أيام متتالية
 
@@ -108,7 +108,7 @@ Next page: 42"
 exports[`format functions match snapshots > en: format snapshots 5`] = `
 "Quran reading reminder
 
-Last session: 13/03 - surah Al-Baqara v.83
+Next page: 42
 This week: 5 sessions, 50 verses
 Streak: 3 consecutive days
 
@@ -188,7 +188,7 @@ Prochaine page : 42"
 exports[`format functions match snapshots > fr: format snapshots 5`] = `
 "Rappel lecture du Coran
 
-Dernière session : 13/03 - sourate Al-Baqara v.83
+Prochaine page : 42
 Cette semaine : 5 sessions, 50 versets
 Série : 3 jours consécutifs
 

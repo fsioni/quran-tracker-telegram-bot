@@ -480,30 +480,20 @@ export function formatProgress(
 
 export function formatReminder(
   data: {
-    lastSessionDate: string;
-    lastSurahNum: number;
-    lastAyah: number;
+    nextPage: number;
     weekSessions: number;
     weekAyahs: number;
     streak: number;
   },
   t: Locale
 ): string {
-  // Parse "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SSZ" manually
-  const day = data.lastSessionDate.slice(8, 10);
-  const month = data.lastSessionDate.slice(5, 7);
-  const surahName = getSurahName(data.lastSurahNum, t);
   const closing =
     data.streak > 0 ? t.reminder.keepItUp : t.reminder.timeToResume;
 
   return [
     t.reminder.title,
     "",
-    t.reminder.lastSession(
-      t.fmt.dateShort(day, month),
-      surahName,
-      data.lastAyah
-    ),
+    t.reminder.nextPage(data.nextPage),
     t.reminder.thisWeek(data.weekSessions, data.weekAyahs),
     t.reminder.streak(data.streak),
     "",
@@ -599,17 +589,22 @@ export function formatKahfReminder(
   data: {
     lastDate?: string;
     lastDuration?: number;
+    nextKahfPage?: number;
   },
   t: Locale
 ): string {
-  const base = t.kahf.reminderBase;
+  const lines: string[] = [t.kahf.reminderBase];
   if (data.lastDate !== undefined && data.lastDuration !== undefined) {
     const day = data.lastDate.slice(8, 10);
     const month = data.lastDate.slice(5, 7);
     const duration = formatDuration(data.lastDuration, t);
-    return `${base}\n\n${t.kahf.reminderLast(t.fmt.dateShort(day, month), duration)}`;
+    lines.push("");
+    lines.push(t.kahf.reminderLast(t.fmt.dateShort(day, month), duration));
   }
-  return base;
+  if (data.nextKahfPage !== undefined) {
+    lines.push(t.kahf.reminderNextPage(data.nextKahfPage));
+  }
+  return lines.join("\n");
 }
 
 export function formatEstimation(

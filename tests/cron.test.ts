@@ -11,6 +11,8 @@ vi.mock("../src/services/db", async (importOriginal) => {
     getLastSession: vi.fn(),
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
+    calculateKahfPagesRead: vi.fn(),
+    getKahfSessionsThisWeek: vi.fn(),
     getTodayInTimezone: vi.fn(),
     cleanOldCache: vi.fn(),
     getKahfStats: vi.fn(),
@@ -50,9 +52,11 @@ vi.mock("../src/services/weekly-recap", async (importOriginal) => {
 import { handleScheduled } from "../src/index";
 import { fr } from "../src/locales/fr";
 import {
+  calculateKahfPagesRead,
   calculateStreak,
   cleanOldCache,
   getConfig,
+  getKahfSessionsThisWeek,
   getKahfStats,
   getLastSession,
   getPeriodStats,
@@ -180,6 +184,9 @@ describe("handleScheduled", () => {
       ayahEnd: 83,
       ayahCount: 7,
       createdAt: "2026-03-13",
+      pageStart: 10,
+      pageEnd: 12,
+      type: "normal",
     });
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
@@ -193,6 +200,7 @@ describe("handleScheduled", () => {
 
     await handleScheduled(db, "TOKEN");
 
+    expect(getLastSession).toHaveBeenCalledWith(db, "normal");
     expect(fetch).toHaveBeenCalledWith(
       "https://api.telegram.org/botTOKEN/sendMessage",
       expect.objectContaining({
@@ -302,6 +310,7 @@ describe("handleScheduled", () => {
       currentStreak: 0,
       bestStreak: 0,
     });
+    vi.mocked(formatReminder).mockReturnValue("Rappel test");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 500 })
@@ -312,7 +321,7 @@ describe("handleScheduled", () => {
     expect(markPrayerSent).not.toHaveBeenCalled();
   });
 
-  it("envoie message fallback si aucune session", async () => {
+  it("envoie rappel avec nextPage=1 si aucune session", async () => {
     vi.mocked(getConfig).mockImplementation((_, key) => {
       if (key === "chat_id") {
         return "123";
@@ -348,14 +357,13 @@ describe("handleScheduled", () => {
       currentStreak: 0,
       bestStreak: 0,
     });
+    vi.mocked(formatReminder).mockReturnValue("Rappel page 1");
 
     await handleScheduled(db, "TOKEN");
 
-    expect(fetch).toHaveBeenCalledWith(
-      "https://api.telegram.org/botTOKEN/sendMessage",
-      expect.objectContaining({
-        body: expect.stringContaining("Aucune session"),
-      })
+    expect(formatReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ nextPage: 1 }),
+      expect.anything()
     );
   });
 
@@ -415,6 +423,8 @@ describe("handleScheduled", () => {
         lastDuration: null,
         lastDate: null,
       });
+      vi.mocked(getKahfSessionsThisWeek).mockResolvedValue([]);
+      vi.mocked(calculateKahfPagesRead).mockReturnValue(0);
       vi.mocked(formatKahfReminder).mockReturnValue("Rappel Al-Kahf");
 
       await handleScheduled(db, "TOKEN");
@@ -423,6 +433,7 @@ describe("handleScheduled", () => {
         {
           lastDate: undefined,
           lastDuration: undefined,
+          nextKahfPage: 293,
         },
         fr
       );
@@ -580,6 +591,8 @@ describe("handleScheduled", () => {
         lastDuration: 1500,
         lastDate: "2026-03-07",
       });
+      vi.mocked(getKahfSessionsThisWeek).mockResolvedValue([]);
+      vi.mocked(calculateKahfPagesRead).mockReturnValue(3);
       vi.mocked(formatKahfReminder).mockReturnValue(
         "Rappel Al-Kahf avec stats"
       );
@@ -590,6 +603,7 @@ describe("handleScheduled", () => {
         {
           lastDate: "2026-03-07",
           lastDuration: 1500,
+          nextKahfPage: 296,
         },
         fr
       );

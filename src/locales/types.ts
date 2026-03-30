@@ -134,6 +134,7 @@ export interface Locale {
     lastWeekSlower: (duration: string, diff: string) => string;
     reminderBase: string;
     reminderLast: (date: string, duration: string) => string;
+    reminderNextPage: (page: number) => string;
     alreadyComplete: string;
     remainingPages: (count: number, start: number, end: number) => string;
   };
@@ -251,12 +252,11 @@ export interface Locale {
   // Reminder
   reminder: {
     title: string;
-    lastSession: (date: string, surahName: string, ayah: number) => string;
+    nextPage: (page: number) => string;
     thisWeek: (sessions: number, ayahs: number) => string;
     streak: (days: number) => string;
     keepItUp: string;
     timeToResume: string;
-    noSession: string;
   };
 
   // Session confirmation

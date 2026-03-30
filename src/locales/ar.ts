@@ -154,15 +154,13 @@ export const ar: Locale = {
 
   reminder: {
     title: "تذكير بقراءة القرآن",
-    lastSession: (date, surahName, ayah) =>
-      `آخر جلسة: ${date} - سورة ${surahName} آ.${ayah}`,
+    nextPage: (page) => `الصفحة التالية: ${page}`,
     thisWeek: (sessions, ayahs) =>
       `هذا الأسبوع: ${sessions} ${arPlural(sessions, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}، ${ayahs} آية`,
     streak: (days) =>
       `السلسلة: ${days} ${arPlural(days, { one: "يوم متتالي", two: "يومان متتاليان", few: "أيام متتالية", many: "يومًا متتاليًا", other: "أيام متتالية" })}`,
     keepItUp: "استمر على هذا!",
     timeToResume: "حان وقت العودة للقراءة!",
-    noSession: "تذكير بقراءة القرآن\n\nلا توجد جلسات مسجلة. ابدأ بـ /session!",
   },
 
   read: {
@@ -192,6 +190,7 @@ export const ar: Locale = {
       `الأسبوع الماضي: ${duration} (+${diff})`,
     reminderBase: "تذكير: اليوم الجمعة! لا تنس قراءة سورة الكهف.",
     reminderLast: (date, duration) => `آخر قراءة: ${date} في ${duration}`,
+    reminderNextPage: (page) => `الصفحة التالية: ${page}`,
     alreadyComplete: "سورة الكهف مكتملة هذا الأسبوع!",
     remainingPages: (count, start, end) =>
       `لم يتبق سوى ${count} صفحة من الكهف هذا الأسبوع (الصفحة ${start} إلى ${end})`,

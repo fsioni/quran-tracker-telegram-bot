@@ -218,9 +218,7 @@ describe("locale completeness", () => {
     expect(
       formatReminder(
         {
-          lastSessionDate: "2026-03-13 14:00:00",
-          lastSurahNum: 2,
-          lastAyah: 83,
+          nextPage: 42,
           weekSessions: 5,
           weekAyahs: 50,
           streak: 3,
@@ -356,9 +354,7 @@ describe("format functions match snapshots", () => {
     expect(
       formatReminder(
         {
-          lastSessionDate: "2026-03-13 14:00:00",
-          lastSurahNum: 2,
-          lastAyah: 83,
+          nextPage: 42,
           weekSessions: 5,
           weekAyahs: 50,
           streak: 3,

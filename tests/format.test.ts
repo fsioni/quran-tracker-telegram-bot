@@ -713,12 +713,10 @@ describe("formatProgress", () => {
 // --- formatReminder ---
 
 describe("formatReminder", () => {
-  it("formats reminder with streak (DB format)", () => {
+  it("formats reminder with next page and streak", () => {
     const result = formatReminder(
       {
-        lastSessionDate: "2026-03-10 13:30:00",
-        lastSurahNum: 2,
-        lastAyah: 83,
+        nextPage: 42,
         weekSessions: 5,
         weekAyahs: 120,
         streak: 3,
@@ -729,7 +727,7 @@ describe("formatReminder", () => {
       [
         "Rappel lecture du Coran",
         "",
-        "Dernière session : 10/03 - sourate Al-Baqara v.83",
+        "Prochaine page : 42",
         "Cette semaine : 5 sessions, 120 versets",
         "Série : 3 jours consécutifs",
         "",
@@ -741,15 +739,14 @@ describe("formatReminder", () => {
   it("formats reminder without streak", () => {
     const result = formatReminder(
       {
-        lastSessionDate: "2026-03-10 13:30:00",
-        lastSurahNum: 2,
-        lastAyah: 83,
+        nextPage: 1,
         weekSessions: 0,
         weekAyahs: 0,
         streak: 0,
       },
       fr
     );
+    expect(result).toContain("Prochaine page : 1");
     expect(result).toContain("C'est le moment de reprendre !");
   });
 });
@@ -1018,6 +1015,32 @@ describe("formatKahfReminder", () => {
     const result = formatKahfReminder({}, fr);
     expect(result).toBe(
       "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf."
+    );
+  });
+
+  it("formats with next kahf page", () => {
+    const result = formatKahfReminder(
+      {
+        nextKahfPage: 296,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.\nProchaine page : 296"
+    );
+  });
+
+  it("formats with history and next kahf page", () => {
+    const result = formatKahfReminder(
+      {
+        lastDate: "2026-03-07 14:00:00",
+        lastDuration: 1500,
+        nextKahfPage: 296,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Rappel : c'est vendredi ! Pense à lire sourate Al-Kahf.\n\nDernière lecture : 07/03 en 25m\nProchaine page : 296"
     );
   });
 });

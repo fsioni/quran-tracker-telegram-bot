@@ -646,6 +646,14 @@ export function getNextPage(pageEnd: number | null): number {
   return pageEnd >= TOTAL_PAGES ? 1 : pageEnd + 1;
 }
 
+/**
+ * Returns the next Al-Kahf page to read based on pages already read this week.
+ * Returns undefined if Al-Kahf is already complete.
+ */
+export function getNextKahfPage(pagesRead: number): number | undefined {
+  return pagesRead < KAHF_TOTAL_PAGES ? KAHF_PAGE_START + pagesRead : undefined;
+}
+
 export function getPageBoundary(page: number): PageBoundary | undefined {
   if (page < 1 || page > TOTAL_PAGES) {
     return undefined;
