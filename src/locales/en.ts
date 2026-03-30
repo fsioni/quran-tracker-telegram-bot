@@ -19,6 +19,7 @@ export const en: Locale = {
     undo: "Undo the last session",
     delete: "Delete a session",
     speed: "Reading speed",
+    graph: "Speed evolution graph",
     config: "Configure city, country, timezone, language",
     prayer: "Refresh prayer times",
   },
@@ -207,6 +208,14 @@ export const en: Locale = {
     "November",
     "December",
   ],
+
+  graph: {
+    title: (days) => `Reading speed (${days} days)`,
+    noData: "No reading data for this period.",
+    dailyLabel: "Daily",
+    trendLabel: "7-day trend",
+    error: "Unable to generate the graph. Try again later.",
+  },
 
   history: {
     next: "Next >>",

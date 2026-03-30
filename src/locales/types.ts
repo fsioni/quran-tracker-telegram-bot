@@ -16,6 +16,7 @@ export interface Locale {
     undo: string;
     delete: string;
     speed: string;
+    graph: string;
     config: string;
     prayer: string;
   };
@@ -92,6 +93,15 @@ export interface Locale {
     hours: string;
     minutes: string;
     seconds: string;
+  };
+
+  // Graph
+  graph: {
+    title: (days: number) => string;
+    noData: string;
+    dailyLabel: string;
+    trendLabel: string;
+    error: string;
   };
 
   // History pagination

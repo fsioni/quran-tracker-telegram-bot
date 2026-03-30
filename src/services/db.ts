@@ -67,6 +67,11 @@ export interface StreakResult {
   currentStreak: number;
 }
 
+export interface DailySpeedPoint {
+  day: string; // "2026-03-15"
+  speed: number; // pages/h
+}
+
 export interface SpeedAverages {
   global: number | null;
   last7Days: number | null;
@@ -748,6 +753,35 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
       avgSpeed: r.total_pages / (r.total_seconds / 3600),
       sessionCount: r.session_count,
     }));
+}
+
+// --- Daily speed data (for /graph) ---
+
+export async function getDailySpeedData(
+  db: D1Database,
+  today: string,
+  days: number
+): Promise<DailySpeedPoint[]> {
+  const startDate = addDays(today, -(days - 1));
+  const { results } = await db
+    .prepare(
+      `SELECT
+        substr(started_at, 1, 10) AS day,
+        ${PAGE_STATS_SQL} AS total_pages,
+        ${PAGE_SECONDS_SQL} AS total_seconds
+      FROM sessions
+      WHERE substr(started_at, 1, 10) >= ?
+      GROUP BY substr(started_at, 1, 10)
+      HAVING total_pages > 0 AND total_seconds > 0
+      ORDER BY day ASC`
+    )
+    .bind(startDate)
+    .all<{ day: string; total_pages: number; total_seconds: number }>();
+
+  return results.map((r) => ({
+    day: r.day,
+    speed: r.total_pages / (r.total_seconds / 3600),
+  }));
 }
 
 // --- Timer state ---

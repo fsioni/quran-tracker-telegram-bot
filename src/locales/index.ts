@@ -36,6 +36,7 @@ const BOT_COMMANDS: (keyof Locale["commands"])[] = [
   "undo",
   "delete",
   "speed",
+  "graph",
   "config",
   "prayer",
 ];

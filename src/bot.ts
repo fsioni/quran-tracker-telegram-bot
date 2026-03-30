@@ -7,6 +7,7 @@ import {
 } from "./handlers/config";
 import { debugHandler } from "./handlers/debug";
 import { extraHandler } from "./handlers/extra";
+import { graphHandler } from "./handlers/graph";
 import { importHandler } from "./handlers/import";
 import { kahfHandler } from "./handlers/kahf";
 import {
@@ -102,6 +103,7 @@ export function createBot(
   bot.command("stats", statsHandler);
   bot.command("progress", progressHandler);
   bot.command("speed", speedHandler);
+  bot.command("graph", graphHandler);
   bot.command("undo", undoHandler);
   bot.command("delete", deleteHandler);
   bot.command("config", configHandler);
