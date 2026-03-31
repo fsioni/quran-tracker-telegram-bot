@@ -619,8 +619,8 @@ export const KAHF_PAGE_START = 293;
 export const KAHF_PAGE_END = 304;
 export const KAHF_TOTAL_PAGES = 12;
 
-/** Fraction of page 293 that is Al-Kahf content (6 lines / 15 lines) */
-export const KAHF_FIRST_PAGE_WEIGHT = 0.4;
+/** Fraction of page 293 that is Al-Kahf verse content (4 lines / 15 lines, excluding surah title and basmala) */
+export const KAHF_FIRST_PAGE_WEIGHT = 4 / 15;
 
 /** Effective page count, adjusting for partial Kahf first page */
 export function effectivePageCount(

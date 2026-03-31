@@ -842,8 +842,8 @@ describe("Kahf partial page adjustment", () => {
     );
 
     const stats = unwrap(await getGlobalStats(db));
-    // 1 raw page -> 0.4 effective
-    expect(stats.totalPages).toBeCloseTo(0.4);
+    // 1 raw page -> 4/15 effective
+    expect(stats.totalPages).toBeCloseTo(4 / 15);
   });
 
   it("adjusts pages for kahf multi-page session in getPeriodStats", async () => {
@@ -863,8 +863,8 @@ describe("Kahf partial page adjustment", () => {
     );
 
     const stats = unwrap(await getPeriodStats(db, "week", "America/Cancun"));
-    // 3 raw pages -> 2.4 effective
-    expect(stats.pages).toBeCloseTo(2.4);
+    // 3 raw pages -> 2 + 4/15 effective
+    expect(stats.pages).toBeCloseTo(2 + 4 / 15);
   });
 
   it("does not adjust pages for normal session at page 293", async () => {
