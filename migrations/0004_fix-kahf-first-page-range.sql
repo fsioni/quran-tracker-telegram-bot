@@ -6,4 +6,8 @@ UPDATE sessions
 SET surah_start = 18,
     ayah_start = 1,
     ayah_count = ayah_count - 7
-WHERE type = 'kahf' AND page_start = 293 AND surah_start = 17;
+WHERE type = 'kahf'
+  AND page_start = 293
+  AND surah_start = 17
+  AND ayah_start = 105
+  AND ayah_count >= 7;
