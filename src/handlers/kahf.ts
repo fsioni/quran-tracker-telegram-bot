@@ -1,6 +1,7 @@
 // src/handlers/kahf.ts
 import type { CustomContext } from "../bot";
 import {
+  effectivePageCount,
   getNextKahfPage,
   getPageRange,
   KAHF_PAGE_END,
@@ -89,6 +90,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     durationSeconds;
 
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
+  const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
@@ -108,7 +110,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
           isComplete: true,
           lastWeekTotalSeconds:
             lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-          sessionPages: count,
+          sessionPages,
         },
         t
       )
@@ -123,7 +125,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
           weekPagesRead,
           weekTotalSeconds,
           isComplete: false,
-          sessionPages: count,
+          sessionPages,
         },
         t
       )

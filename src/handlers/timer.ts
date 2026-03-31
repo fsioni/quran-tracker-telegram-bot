@@ -2,6 +2,7 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import {
+  effectivePageCount,
   getNextKahfPage,
   getNextPage,
   getPageRange,
@@ -576,6 +577,7 @@ async function handleKahfResponse(
     weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
     (state.durationSeconds ?? 0);
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
+  const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
@@ -591,7 +593,7 @@ async function handleKahfResponse(
           isComplete: true,
           lastWeekTotalSeconds:
             lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-          sessionPages: count,
+          sessionPages,
         },
         t
       )
@@ -606,7 +608,7 @@ async function handleKahfResponse(
           weekPagesRead,
           weekTotalSeconds,
           isComplete: false,
-          sessionPages: count,
+          sessionPages,
         },
         t
       )

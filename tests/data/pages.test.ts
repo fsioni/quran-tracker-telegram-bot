@@ -72,17 +72,17 @@ describe("Al-Kahf constants", () => {
 
 describe("KAHF_FIRST_PAGE_WEIGHT", () => {
   it("is 0.4", () => {
-    expect(KAHF_FIRST_PAGE_WEIGHT).toBe(0.4);
+    expect(KAHF_FIRST_PAGE_WEIGHT).toBeCloseTo(4 / 15);
   });
 });
 
 describe("effectivePageCount", () => {
   it("adjusts kahf session starting at page 293", () => {
-    expect(effectivePageCount(293, 293, "kahf")).toBeCloseTo(0.4);
+    expect(effectivePageCount(293, 293, "kahf")).toBeCloseTo(4 / 15);
   });
 
   it("adjusts kahf multi-page session starting at 293", () => {
-    expect(effectivePageCount(293, 295, "kahf")).toBeCloseTo(2.4);
+    expect(effectivePageCount(293, 295, "kahf")).toBeCloseTo(2 + 4 / 15);
   });
 
   it("does not adjust kahf session not starting at 293", () => {

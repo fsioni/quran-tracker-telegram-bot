@@ -1101,10 +1101,10 @@ describe("formatHistoryLine with Kahf partial page", () => {
       },
       fr
     );
-    // 3 raw pages -> 2.4 effective (293 weighted 0.4)
-    // 2.4 pages / 1h = 2.4 p/h
+    // 3 raw pages -> 2 + 4/15 ≈ 2.267 effective (293 weighted 4/15)
+    // 2.267 pages / 1h ≈ 2.3 p/h
     expect(result).toBe(
-      "[K] #99 | 10/03 13h30 | 1h0m | Al-Kahf 18:1-110 (110v, 2.4p, 2.4p/h)"
+      "[K] #99 | 10/03 13h30 | 1h0m | Al-Kahf 18:1-110 (110v, 2.3p, 2.3p/h)"
     );
   });
 
