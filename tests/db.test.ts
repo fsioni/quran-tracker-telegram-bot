@@ -1149,13 +1149,13 @@ describe("helper functions", () => {
 // --- getRecentPace ---
 
 describe("getRecentPace", () => {
-  it("calculates pace using effective days, not full window", async () => {
+  it("calculates pace using full 14-day window", async () => {
     const today = getTodayInTimezone("America/Cancun");
     const d1 = addDays(today, -1);
     const d2 = addDays(today, -3);
 
     // 3 pages on d1, 5 pages on d2 = 8 pages total
-    // Effective days = from d2 to today = 4 days
+    // Always divided by 14 days
     unwrap(
       await insertSession(
         db,
@@ -1180,7 +1180,7 @@ describe("getRecentPace", () => {
     );
 
     const pace = await getRecentPace(db, "America/Cancun");
-    expect(pace).toBeCloseTo(8 / 4);
+    expect(pace).toBeCloseTo(8 / 14);
   });
 
   it("uses full window when history spans all 14 days", async () => {
