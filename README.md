@@ -34,7 +34,9 @@ A Telegram bot for tracking Quran reading sessions with automatic prayer time re
 | `/stats` | Reading statistics |
 | `/progress` | Quran completion progress |
 | `/speed` | Reading speed analytics |
+| `/graph` | Speed evolution graph |
 | `/undo` | Undo the last session |
+| `/edit <id> <duration>` | Edit a session duration |
 | `/delete <id>` | Delete a session by ID |
 | `/config [key] [value]` | Configure city, country, timezone, language |
 | `/prayer` | Refresh prayer times |
