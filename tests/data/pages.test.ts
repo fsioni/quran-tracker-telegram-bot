@@ -174,4 +174,28 @@ describe("getPageRange", () => {
   it("returns undefined for invalid end page", () => {
     expect(getPageRange(1, 605)).toBeUndefined();
   });
+
+  it("overrides start to 18:1 for kahf type at page 293", () => {
+    const range = getPageRange(293, 293, "kahf");
+    expect(range).toBeDefined();
+    expect(range?.surahStart).toBe(18);
+    expect(range?.ayahStart).toBe(1);
+    expect(range?.surahEnd).toBe(18);
+    expect(range?.ayahEnd).toBe(4);
+    expect(range?.ayahCount).toBe(4);
+  });
+
+  it("does not override start without kahf type at page 293", () => {
+    const range = getPageRange(293, 293);
+    expect(range).toBeDefined();
+    expect(range?.surahStart).toBe(17);
+    expect(range?.ayahStart).toBe(105);
+  });
+
+  it("does not override start for kahf type at non-first page", () => {
+    const range = getPageRange(294, 295, "kahf");
+    expect(range).toBeDefined();
+    expect(range?.surahStart).toBe(18);
+    expect(range?.ayahStart).toBe(5);
+  });
 });

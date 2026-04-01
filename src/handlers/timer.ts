@@ -549,7 +549,7 @@ async function handleKahfResponse(
     );
     return;
   }
-  const rangeData = getPageRange(pageStart, pageEnd);
+  const rangeData = getPageRange(pageStart, pageEnd, "kahf");
   if (!rangeData) {
     await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;

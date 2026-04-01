@@ -57,7 +57,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   }
 
   // Get page range data (surah/ayah info)
-  const rangeData = getPageRange(pageStart, pageEnd);
+  const rangeData = getPageRange(pageStart, pageEnd, "kahf");
   if (!rangeData) {
     await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
