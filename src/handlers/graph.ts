@@ -1,6 +1,10 @@
 // src/handlers/graph.ts
 import type { CustomContext } from "../bot";
-import { buildSpeedChartUrl, computeMovingAverage } from "../services/chart";
+import {
+  buildPageChartUrl,
+  buildSpeedChartUrl,
+  computeMovingAverage,
+} from "../services/chart";
 import {
   addDays,
   type DailySpeedPoint,
@@ -13,26 +17,30 @@ const DEFAULT_DAYS = 30;
 const MIN_DAYS = 7;
 const MAX_DAYS = 180;
 
-/** Fill calendar gaps so the moving average is truly calendar-based. */
+/** Fill calendar gaps so charts are truly calendar-based. */
 function fillDateGaps(data: DailySpeedPoint[]): {
   days: string[];
+  pages: (number | null)[];
   speeds: (number | null)[];
 } {
   if (data.length === 0) {
-    return { days: [], speeds: [] };
+    return { days: [], pages: [], speeds: [] };
   }
   const speedMap = new Map(data.map((d) => [d.day, d.speed]));
+  const pagesMap = new Map(data.map((d) => [d.day, d.pages]));
   const days: string[] = [];
   const speeds: (number | null)[] = [];
+  const pages: (number | null)[] = [];
   const last = data.at(-1) as DailySpeedPoint;
   let current = data[0].day;
   const end = last.day;
   while (current <= end) {
     days.push(current);
     speeds.push(speedMap.get(current) ?? null);
+    pages.push(pagesMap.get(current) ?? null);
     current = addDays(current, 1);
   }
-  return { days, speeds };
+  return { days, pages, speeds };
 }
 
 export async function graphHandler(ctx: CustomContext): Promise<void> {
@@ -64,20 +72,34 @@ export async function graphHandler(ctx: CustomContext): Promise<void> {
   const speeds = filled.speeds.map((s) =>
     s === null ? null : Math.round(s * 10) / 10
   );
-  const movingAvg = computeMovingAverage(speeds, 7);
+  const dailyPages = filled.pages.map((p) =>
+    p === null ? null : Math.round(p * 10) / 10
+  );
+  const speedMovingAvg = computeMovingAverage(speeds, 7);
+  const pagesMovingAvg = computeMovingAverage(dailyPages, 7);
 
-  const url = buildSpeedChartUrl(
+  const speedUrl = buildSpeedChartUrl(
     labels,
     speeds,
-    movingAvg,
+    speedMovingAvg,
     t.graph.title(days),
     t.graph.dailyLabel,
     t.graph.trendLabel,
     t.stats.pagesPerHourShort
   );
 
+  const pagesUrl = buildPageChartUrl(
+    labels,
+    dailyPages,
+    pagesMovingAvg,
+    t.graph.pagesTitle(days),
+    t.graph.pagesLabel,
+    t.graph.trendLabel
+  );
+
   try {
-    await ctx.replyWithPhoto(url);
+    await ctx.replyWithPhoto(speedUrl);
+    await ctx.replyWithPhoto(pagesUrl);
   } catch {
     await ctx.reply(t.graph.error);
   }

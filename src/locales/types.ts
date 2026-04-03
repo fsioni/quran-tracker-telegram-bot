@@ -113,8 +113,10 @@ export interface Locale {
   // Graph
   graph: {
     title: (days: number) => string;
+    pagesTitle: (days: number) => string;
     noData: string;
     dailyLabel: string;
+    pagesLabel: string;
     trendLabel: string;
     error: string;
   };

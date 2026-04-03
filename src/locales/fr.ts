@@ -20,7 +20,7 @@ export const fr: Locale = {
     delete: "Supprimer une session",
     edit: "Modifier la durée d'une session",
     speed: "Vitesse de lecture",
-    graph: "Graphique d'évolution de la vitesse",
+    graph: "Graphiques de lecture (vitesse & pages)",
     config: "Configurer ville, pays, fuseau horaire, langue",
     prayer: "Rafraîchir les horaires de prière",
   },
@@ -217,8 +217,10 @@ export const fr: Locale = {
 
   graph: {
     title: (days) => `Vitesse de lecture (${days} jours)`,
+    pagesTitle: (days) => `Pages lues (${days} jours)`,
     noData: "Aucune donnée de lecture pour cette période.",
     dailyLabel: "Quotidien",
+    pagesLabel: "Pages/jour",
     trendLabel: "Tendance 7j",
     error: "Impossible de générer le graphique. Réessaie plus tard.",
   },
