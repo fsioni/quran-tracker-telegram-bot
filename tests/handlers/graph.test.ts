@@ -29,14 +29,14 @@ function makeCtx(match = ""): CustomContext {
 const QUICKCHART_RE = /^https:\/\/quickchart\.io\/chart\?c=/;
 
 const MOCK_DATA: DailySpeedPoint[] = [
-  { day: "2026-03-10", speed: 12.5 },
-  { day: "2026-03-11", speed: 14.2 },
-  { day: "2026-03-12", speed: 10.8 },
-  { day: "2026-03-13", speed: 15.0 },
-  { day: "2026-03-14", speed: 13.3 },
-  { day: "2026-03-15", speed: 11.7 },
-  { day: "2026-03-16", speed: 16.1 },
-  { day: "2026-03-17", speed: 14.5 },
+  { day: "2026-03-10", pages: 5, speed: 12.5 },
+  { day: "2026-03-11", pages: 7, speed: 14.2 },
+  { day: "2026-03-12", pages: 4, speed: 10.8 },
+  { day: "2026-03-13", pages: 8, speed: 15.0 },
+  { day: "2026-03-14", pages: 6, speed: 13.3 },
+  { day: "2026-03-15", pages: 5, speed: 11.7 },
+  { day: "2026-03-16", pages: 9, speed: 16.1 },
+  { day: "2026-03-17", pages: 7, speed: 14.5 },
 ];
 
 describe("graphHandler", () => {
@@ -53,13 +53,24 @@ describe("graphHandler", () => {
     expect(ctx.replyWithPhoto).not.toHaveBeenCalled();
   });
 
-  it("envoie une photo avec l'URL QuickChart quand il y a des donnees", async () => {
+  it("envoie deux photos avec des URLs QuickChart quand il y a des donnees", async () => {
     vi.mocked(getDailySpeedData).mockResolvedValue(MOCK_DATA);
     const ctx = makeCtx();
     await graphHandler(ctx);
-    expect(ctx.replyWithPhoto).toHaveBeenCalledOnce();
-    const url = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
-    expect(url).toMatch(QUICKCHART_RE);
+    expect(ctx.replyWithPhoto).toHaveBeenCalledTimes(2);
+    const calls = vi.mocked(ctx.replyWithPhoto).mock.calls;
+    expect(calls[0][0] as string).toMatch(QUICKCHART_RE);
+    expect(calls[1][0] as string).toMatch(QUICKCHART_RE);
+  });
+
+  it("la deuxieme photo est un graphique en barres (pages/jour)", async () => {
+    vi.mocked(getDailySpeedData).mockResolvedValue(MOCK_DATA);
+    const ctx = makeCtx();
+    await graphHandler(ctx);
+    const pagesUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[1][0] as string;
+    const cParam = new URL(pagesUrl).searchParams.get("c");
+    const config = JSON.parse(cParam as string);
+    expect(config.type).toBe("bar");
   });
 
   it("parse l'argument custom /graph 90", async () => {
@@ -109,19 +120,26 @@ describe("graphHandler", () => {
   it("remplit les gaps calendaires entre les jours avec sessions", async () => {
     // Data with a 2-day gap (03-12 and 03-13 missing)
     vi.mocked(getDailySpeedData).mockResolvedValue([
-      { day: "2026-03-10", speed: 12.0 },
-      { day: "2026-03-11", speed: 14.0 },
-      { day: "2026-03-14", speed: 13.0 },
+      { day: "2026-03-10", pages: 5, speed: 12.0 },
+      { day: "2026-03-11", pages: 7, speed: 14.0 },
+      { day: "2026-03-14", pages: 6, speed: 13.0 },
     ]);
     const ctx = makeCtx();
     await graphHandler(ctx);
-    expect(ctx.replyWithPhoto).toHaveBeenCalledOnce();
-    const url = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
-    const cParam = new URL(url).searchParams.get("c");
-    const config = JSON.parse(cParam as string);
+    expect(ctx.replyWithPhoto).toHaveBeenCalledTimes(2);
+    // Check speed chart (first photo)
+    const speedUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
+    const speedCParam = new URL(speedUrl).searchParams.get("c");
+    const speedConfig = JSON.parse(speedCParam as string);
     // Should have 5 labels (10, 11, 12, 13, 14) with nulls for gaps
-    expect(config.data.labels).toHaveLength(5);
-    expect(config.data.datasets[0].data).toEqual([12, 14, null, null, 13]);
+    expect(speedConfig.data.labels).toHaveLength(5);
+    expect(speedConfig.data.datasets[0].data).toEqual([12, 14, null, null, 13]);
+    // Check pages chart (second photo)
+    const pagesUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[1][0] as string;
+    const pagesCParam = new URL(pagesUrl).searchParams.get("c");
+    const pagesConfig = JSON.parse(pagesCParam as string);
+    expect(pagesConfig.data.labels).toHaveLength(5);
+    expect(pagesConfig.data.datasets[0].data).toEqual([5, 7, null, null, 6]);
   });
 
   it("fallback texte si l'envoi de photo echoue", async () => {

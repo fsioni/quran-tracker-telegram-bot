@@ -89,3 +89,60 @@ export function buildSpeedChartUrl(
   const json = JSON.stringify(config);
   return `${QUICKCHART_BASE}?c=${encodeURIComponent(json)}&w=800&h=400&bkg=%231e1e2e`;
 }
+
+export function buildPageChartUrl(
+  labels: string[],
+  dailyPages: (number | null)[],
+  movingAvg: (number | null)[],
+  title: string,
+  dailyLabel: string,
+  trendLabel: string
+): string {
+  const config = {
+    type: "bar" as const,
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "bar" as const,
+          label: dailyLabel,
+          data: dailyPages,
+          backgroundColor: "rgba(166,227,161,0.5)",
+          borderColor: "rgba(166,227,161,0.8)",
+          borderWidth: 1,
+        },
+        {
+          type: "line" as const,
+          label: trendLabel,
+          data: movingAvg,
+          borderColor: "#a6e3a1",
+          borderWidth: 3,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      title: { display: true, text: title, fontColor: "#cdd6f4", fontSize: 16 },
+      legend: { labels: { fontColor: "#cdd6f4" } },
+      scales: {
+        xAxes: [
+          {
+            ticks: { fontColor: "#a6adc8" },
+            gridLines: { color: "rgba(166,173,200,0.2)" },
+          },
+        ],
+        yAxes: [
+          {
+            ticks: { fontColor: "#a6adc8", beginAtZero: true },
+            gridLines: { color: "rgba(166,173,200,0.2)" },
+          },
+        ],
+      },
+    },
+  };
+
+  const json = JSON.stringify(config);
+  return `${QUICKCHART_BASE}?c=${encodeURIComponent(json)}&w=800&h=400&bkg=%231e1e2e`;
+}
