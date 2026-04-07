@@ -73,6 +73,7 @@ export interface StreakResult {
 
 export interface DailySpeedPoint {
   day: string; // "2026-03-15"
+  pages: number; // total pages that day
   speed: number; // pages/h
 }
 
@@ -786,6 +787,7 @@ export async function getDailySpeedData(
 
   return results.map((r) => ({
     day: r.day,
+    pages: r.total_pages,
     speed: r.total_pages / (r.total_seconds / 3600),
   }));
 }

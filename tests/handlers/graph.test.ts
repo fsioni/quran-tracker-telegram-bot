@@ -29,14 +29,14 @@ function makeCtx(match = ""): CustomContext {
 const QUICKCHART_RE = /^https:\/\/quickchart\.io\/chart\?c=/;
 
 const MOCK_DATA: DailySpeedPoint[] = [
-  { day: "2026-03-10", speed: 12.5 },
-  { day: "2026-03-11", speed: 14.2 },
-  { day: "2026-03-12", speed: 10.8 },
-  { day: "2026-03-13", speed: 15.0 },
-  { day: "2026-03-14", speed: 13.3 },
-  { day: "2026-03-15", speed: 11.7 },
-  { day: "2026-03-16", speed: 16.1 },
-  { day: "2026-03-17", speed: 14.5 },
+  { day: "2026-03-10", speed: 12.5, pages: 5 },
+  { day: "2026-03-11", speed: 14.2, pages: 7 },
+  { day: "2026-03-12", speed: 10.8, pages: 4 },
+  { day: "2026-03-13", speed: 15.0, pages: 8 },
+  { day: "2026-03-14", speed: 13.3, pages: 6 },
+  { day: "2026-03-15", speed: 11.7, pages: 3 },
+  { day: "2026-03-16", speed: 16.1, pages: 9 },
+  { day: "2026-03-17", speed: 14.5, pages: 6 },
 ];
 
 describe("graphHandler", () => {
@@ -53,13 +53,25 @@ describe("graphHandler", () => {
     expect(ctx.replyWithPhoto).not.toHaveBeenCalled();
   });
 
-  it("envoie une photo avec l'URL QuickChart quand il y a des donnees", async () => {
+  it("envoie 2 photos avec l'URL QuickChart quand il y a des donnees", async () => {
     vi.mocked(getDailySpeedData).mockResolvedValue(MOCK_DATA);
     const ctx = makeCtx();
     await graphHandler(ctx);
-    expect(ctx.replyWithPhoto).toHaveBeenCalledOnce();
-    const url = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
-    expect(url).toMatch(QUICKCHART_RE);
+    expect(ctx.replyWithPhoto).toHaveBeenCalledTimes(2);
+    const speedUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
+    expect(speedUrl).toMatch(QUICKCHART_RE);
+    const pagesUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[1][0] as string;
+    expect(pagesUrl).toMatch(QUICKCHART_RE);
+  });
+
+  it("le 2e appel contient un bar chart pour les pages", async () => {
+    vi.mocked(getDailySpeedData).mockResolvedValue(MOCK_DATA);
+    const ctx = makeCtx();
+    await graphHandler(ctx);
+    const pagesUrl = vi.mocked(ctx.replyWithPhoto).mock.calls[1][0] as string;
+    const cParam = new URL(pagesUrl).searchParams.get("c");
+    const config = JSON.parse(cParam as string);
+    expect(config.type).toBe("bar");
   });
 
   it("parse l'argument custom /graph 90", async () => {
@@ -109,13 +121,13 @@ describe("graphHandler", () => {
   it("remplit les gaps calendaires entre les jours avec sessions", async () => {
     // Data with a 2-day gap (03-12 and 03-13 missing)
     vi.mocked(getDailySpeedData).mockResolvedValue([
-      { day: "2026-03-10", speed: 12.0 },
-      { day: "2026-03-11", speed: 14.0 },
-      { day: "2026-03-14", speed: 13.0 },
+      { day: "2026-03-10", speed: 12.0, pages: 5 },
+      { day: "2026-03-11", speed: 14.0, pages: 7 },
+      { day: "2026-03-14", speed: 13.0, pages: 6 },
     ]);
     const ctx = makeCtx();
     await graphHandler(ctx);
-    expect(ctx.replyWithPhoto).toHaveBeenCalledOnce();
+    expect(ctx.replyWithPhoto).toHaveBeenCalledTimes(2);
     const url = vi.mocked(ctx.replyWithPhoto).mock.calls[0][0] as string;
     const cParam = new URL(url).searchParams.get("c");
     const config = JSON.parse(cParam as string);
