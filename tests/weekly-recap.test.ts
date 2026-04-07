@@ -314,11 +314,11 @@ describe("formatWeeklyRecap", () => {
     expect(msg).toContain("Sourate Al-Imran (3) terminée !");
   });
 
-  it("arrondit les pages fractionnaires", () => {
+  it("arrondit les pages fractionnaires a 1 decimale", () => {
     const data: WeeklyRecapData = {
       thisWeek: { sessions: 5, ayahs: 100, seconds: 9300 },
       lastWeek: { sessions: 4, ayahs: 80, seconds: 8000 },
-      thisWeekPages: 12.7,
+      thisWeekPages: 12.699999,
       lastWeekPages: 10.3,
       streak: { currentStreak: 8, bestStreak: 15 },
       completedSurahs: [],
@@ -326,9 +326,39 @@ describe("formatWeeklyRecap", () => {
 
     const msg = formatWeeklyRecap(data, fr);
 
-    expect(msg).toContain("Pages lues : 13 (+30%)");
-    expect(msg).not.toMatch(/12\.7/);
-    expect(msg).not.toMatch(/10\.3/);
+    expect(msg).toContain("Pages lues : 12.7 (+23%)");
+    expect(msg).not.toMatch(/12\.699/);
+  });
+
+  it("affiche un nombre entier sans decimale", () => {
+    const data: WeeklyRecapData = {
+      thisWeek: { sessions: 3, ayahs: 50, seconds: 1500 },
+      lastWeek: { sessions: 0, ayahs: 0, seconds: 0 },
+      thisWeekPages: 5,
+      lastWeekPages: 0,
+      streak: { currentStreak: 3, bestStreak: 3 },
+      completedSurahs: [],
+    };
+
+    const msg = formatWeeklyRecap(data, fr);
+
+    expect(msg).toContain("Pages lues : 5");
+    expect(msg).not.toContain("5.0");
+  });
+
+  it("ne masque pas un effort non-nul en zero", () => {
+    const data: WeeklyRecapData = {
+      thisWeek: { sessions: 1, ayahs: 10, seconds: 600 },
+      lastWeek: { sessions: 0, ayahs: 0, seconds: 0 },
+      thisWeekPages: 0.266,
+      lastWeekPages: 0,
+      streak: { currentStreak: 1, bestStreak: 1 },
+      completedSurahs: [],
+    };
+
+    const msg = formatWeeklyRecap(data, fr);
+
+    expect(msg).toContain("Pages lues : 0.3");
   });
 
   it("pas de ligne sourate quand aucune terminée", () => {
