@@ -116,6 +116,8 @@ export interface Locale {
     noData: string;
     dailyLabel: string;
     trendLabel: string;
+    pagesTitle: (days: number) => string;
+    pagesYAxis: string;
     error: string;
   };
 

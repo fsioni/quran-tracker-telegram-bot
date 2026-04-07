@@ -1,6 +1,7 @@
 // tests/services/chart.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  buildPagesChartUrl,
   buildSpeedChartUrl,
   computeMovingAverage,
 } from "../../src/services/chart";
@@ -119,6 +120,75 @@ describe("buildSpeedChartUrl", () => {
       "D",
       "T",
       "pages/h"
+    );
+    expect(url).toContain("bkg=%231e1e2e");
+  });
+});
+
+describe("buildPagesChartUrl", () => {
+  const labels = ["01/03", "02/03", "03/03"];
+  const pages: (number | null)[] = [5, null, 8];
+  const movingAvg: (number | null)[] = [5, 5, 6.5];
+
+  it("starts with quickchart.io base URL", () => {
+    const url = buildPagesChartUrl(
+      labels,
+      pages,
+      movingAvg,
+      "Test Title",
+      "Daily",
+      "Trend",
+      "pages"
+    );
+    expect(url).toMatch(QUICKCHART_RE);
+  });
+
+  it("includes width and height params", () => {
+    const url = buildPagesChartUrl(
+      labels,
+      pages,
+      movingAvg,
+      "Test",
+      "Daily",
+      "Trend",
+      "pages"
+    );
+    expect(url).toContain("w=800");
+    expect(url).toContain("h=400");
+  });
+
+  it("contains valid Chart.js config with bar type", () => {
+    const url = buildPagesChartUrl(
+      labels,
+      pages,
+      movingAvg,
+      "Test Title",
+      "Daily",
+      "Trend",
+      "pages"
+    );
+    const cParam = new URL(url).searchParams.get("c");
+    expect(cParam).toBeTruthy();
+    const config = JSON.parse(cParam as string);
+    expect(config.type).toBe("bar");
+    expect(config.data.labels).toEqual(labels);
+    expect(config.data.datasets).toHaveLength(2);
+    expect(config.data.datasets[0].label).toBe("Daily");
+    expect(config.data.datasets[0].data).toEqual(pages);
+    expect(config.data.datasets[1].type).toBe("line");
+    expect(config.data.datasets[1].label).toBe("Trend");
+    expect(config.data.datasets[1].data).toEqual(movingAvg);
+  });
+
+  it("includes dark background param", () => {
+    const url = buildPagesChartUrl(
+      labels,
+      pages,
+      movingAvg,
+      "Test",
+      "D",
+      "T",
+      "pages"
     );
     expect(url).toContain("bkg=%231e1e2e");
   });

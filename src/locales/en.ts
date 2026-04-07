@@ -20,7 +20,7 @@ export const en: Locale = {
     delete: "Delete a session",
     edit: "Edit a session duration",
     speed: "Reading speed",
-    graph: "Speed evolution graph",
+    graph: "Reading charts (speed & pages)",
     config: "Configure city, country, timezone, language",
     prayer: "Refresh prayer times",
   },
@@ -214,6 +214,8 @@ export const en: Locale = {
     noData: "No reading data for this period.",
     dailyLabel: "Daily",
     trendLabel: "7-day trend",
+    pagesTitle: (days) => `Pages per day (${days} days)`,
+    pagesYAxis: "pages",
     error: "Unable to generate the graph. Try again later.",
   },
 
