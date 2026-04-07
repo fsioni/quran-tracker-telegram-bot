@@ -30,6 +30,10 @@ function formatSpeedOneDecimal(speed: number): string {
   return speed.toFixed(1);
 }
 
+function formatOneDecimalTrimmed(n: number): string {
+  return String(parseFloat(n.toFixed(1)));
+}
+
 export interface ParsedRange {
   ayahEnd: number;
   ayahStart: number;
@@ -777,9 +781,7 @@ export function formatWeeklyRecap(data: WeeklyRecapData, t: Locale): string {
 
   const hasLastWeek = data.lastWeek.sessions > 0;
 
-  const formatPages = (n: number): string =>
-    n % 1 === 0 ? String(n) : parseFloat(n.toFixed(1)).toString();
-  const pagesStr = `${t.recap.pagesRead} : ${formatPages(data.thisWeekPages)}${hasLastWeek ? formatPercentChange(data.thisWeekPages, data.lastWeekPages) : ""}`;
+  const pagesStr = `${t.recap.pagesRead} : ${formatOneDecimalTrimmed(data.thisWeekPages)}${hasLastWeek ? formatPercentChange(data.thisWeekPages, data.lastWeekPages) : ""}`;
   const durationStr = `${t.recap.duration} : ${formatDuration(data.thisWeek.seconds, t)}${hasLastWeek ? formatPercentChange(data.thisWeek.seconds, data.lastWeek.seconds) : ""}`;
   const sessionsStr = `${t.recap.sessions} : ${data.thisWeek.sessions}${hasLastWeek ? formatPercentChange(data.thisWeek.sessions, data.lastWeek.sessions) : ""}`;
   const streakStr = t.recap.streak(data.streak.currentStreak);
