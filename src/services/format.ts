@@ -777,7 +777,9 @@ export function formatWeeklyRecap(data: WeeklyRecapData, t: Locale): string {
 
   const hasLastWeek = data.lastWeek.sessions > 0;
 
-  const pagesStr = `${t.recap.pagesRead} : ${data.thisWeekPages}${hasLastWeek ? formatPercentChange(data.thisWeekPages, data.lastWeekPages) : ""}`;
+  const thisPages = Math.round(data.thisWeekPages);
+  const lastPages = Math.round(data.lastWeekPages);
+  const pagesStr = `${t.recap.pagesRead} : ${thisPages}${hasLastWeek ? formatPercentChange(thisPages, lastPages) : ""}`;
   const durationStr = `${t.recap.duration} : ${formatDuration(data.thisWeek.seconds, t)}${hasLastWeek ? formatPercentChange(data.thisWeek.seconds, data.lastWeek.seconds) : ""}`;
   const sessionsStr = `${t.recap.sessions} : ${data.thisWeek.sessions}${hasLastWeek ? formatPercentChange(data.thisWeek.sessions, data.lastWeek.sessions) : ""}`;
   const streakStr = t.recap.streak(data.streak.currentStreak);

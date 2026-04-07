@@ -314,6 +314,23 @@ describe("formatWeeklyRecap", () => {
     expect(msg).toContain("Sourate Al-Imran (3) terminée !");
   });
 
+  it("arrondit les pages fractionnaires", () => {
+    const data: WeeklyRecapData = {
+      thisWeek: { sessions: 5, ayahs: 100, seconds: 9300 },
+      lastWeek: { sessions: 4, ayahs: 80, seconds: 8000 },
+      thisWeekPages: 12.7,
+      lastWeekPages: 10.3,
+      streak: { currentStreak: 8, bestStreak: 15 },
+      completedSurahs: [],
+    };
+
+    const msg = formatWeeklyRecap(data, fr);
+
+    expect(msg).toContain("Pages lues : 13 (+30%)");
+    expect(msg).not.toMatch(/12\.7/);
+    expect(msg).not.toMatch(/10\.3/);
+  });
+
   it("pas de ligne sourate quand aucune terminée", () => {
     const data: WeeklyRecapData = {
       thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
