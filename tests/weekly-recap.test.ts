@@ -23,6 +23,8 @@ import { formatWeeklyRecap } from "../src/services/format";
 import type { WeeklyRecapData } from "../src/services/weekly-recap";
 import { buildWeeklyRecap } from "../src/services/weekly-recap";
 
+const FRACTIONAL_PAGE_RE = /12\.699/;
+
 describe("buildWeeklyRecap", () => {
   const db = {} as D1Database;
 
@@ -319,7 +321,7 @@ describe("formatWeeklyRecap", () => {
     const data: WeeklyRecapData = {
       thisWeek: { sessions: 5, ayahs: 100, seconds: 9300 },
       lastWeek: { sessions: 4, ayahs: 80, seconds: 8000 },
-      thisWeekPages: 12.699999,
+      thisWeekPages: 12.699_999,
       lastWeekPages: 10.3,
       streak: { currentStreak: 8, bestStreak: 15 },
       completedSurahs: [],
@@ -328,7 +330,7 @@ describe("formatWeeklyRecap", () => {
     const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("Pages lues : 12.7 (+23%)");
-    expect(msg).not.toMatch(/12\.699/);
+    expect(msg).not.toMatch(FRACTIONAL_PAGE_RE);
   });
 
   it("affiche un nombre entier sans decimale", () => {

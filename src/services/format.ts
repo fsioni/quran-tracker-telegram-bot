@@ -27,7 +27,7 @@ function formatSpeedOneDecimal(speed: number): string {
 }
 
 function formatOneDecimalTrimmed(n: number): string {
-  return String(parseFloat(n.toFixed(1)));
+  return String(Number.parseFloat(n.toFixed(1)));
 }
 
 export interface ParsedRange {
