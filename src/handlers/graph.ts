@@ -99,10 +99,8 @@ export async function graphHandler(ctx: CustomContext): Promise<void> {
   );
 
   try {
-    await Promise.all([
-      ctx.replyWithPhoto(speedUrl),
-      ctx.replyWithPhoto(pagesUrl),
-    ]);
+    await ctx.replyWithPhoto(speedUrl);
+    await ctx.replyWithPhoto(pagesUrl);
   } catch {
     await ctx.reply(t.graph.error);
   }
