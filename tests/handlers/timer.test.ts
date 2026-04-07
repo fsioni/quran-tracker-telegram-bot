@@ -13,36 +13,52 @@ import {
   timerResponseHandler,
 } from "../../src/handlers/timer";
 import { fr } from "../../src/locales/fr";
-import type { Session, TimerState } from "../../src/services/db";
+import type { Session, TimerState } from "../../src/services/db/types";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn(), getNowTimestamp: vi.fn() };
+});
+vi.mock("../../src/services/db/kahf", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/kahf")>();
+  return {
+    ...actual,
+    getKahfSessionsThisWeek: vi.fn(),
+    getLastWeekKahfTotal: vi.fn(),
+  };
+});
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
+  return { ...actual, getLastSession: vi.fn(), insertSession: vi.fn() };
+});
+vi.mock("../../src/services/db/timer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/timer")>();
   return {
     ...actual,
     getTimerState: vi.fn(),
     setTimerState: vi.fn(),
     clearTimerState: vi.fn(),
-    getLastSession: vi.fn(),
-    insertSession: vi.fn(),
-    getConfig: vi.fn(),
-    getTimezone: vi.fn(),
-    getNowTimestamp: vi.fn(),
-    getKahfSessionsThisWeek: vi.fn(),
-    getLastWeekKahfTotal: vi.fn(),
   };
 });
 
 import {
-  clearTimerState,
-  getKahfSessionsThisWeek,
-  getLastSession,
-  getLastWeekKahfTotal,
   getNowTimestamp,
-  getTimerState,
   getTimezone,
-  insertSession,
+} from "../../src/services/db/date-helpers";
+import {
+  getKahfSessionsThisWeek,
+  getLastWeekKahfTotal,
+} from "../../src/services/db/kahf";
+import { getLastSession, insertSession } from "../../src/services/db/sessions";
+import {
+  clearTimerState,
+  getTimerState,
   setTimerState,
-} from "../../src/services/db";
+} from "../../src/services/db/timer";
 
 const mockGetTimerState = getTimerState as ReturnType<typeof vi.fn>;
 const mockSetTimerState = setTimerState as ReturnType<typeof vi.fn>;

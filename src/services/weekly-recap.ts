@@ -1,13 +1,13 @@
 import type { Surah } from "../data/surahs";
 import type { Result } from "../types";
 import { err, ok } from "../types";
-import type { PeriodStats, StreakResult } from "./db";
 import {
   calculateStreak,
   getPeriodStats,
   getWeekPages,
   getWeekSessions,
-} from "./db";
+} from "./db/stats";
+import type { PeriodStats, StreakResult } from "./db/types";
 import { getCompletedSurahs } from "./quran";
 
 export interface WeeklyRecapData {

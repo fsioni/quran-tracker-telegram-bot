@@ -1,5 +1,6 @@
 // src/handlers/timer.ts
 import { InlineKeyboard } from "grammy";
+import { MAX_TIMER_SECONDS } from "../config";
 import type { CustomContext } from "../bot";
 import {
   effectivePageCount,
@@ -11,22 +12,24 @@ import {
   TOTAL_PAGES,
 } from "../data/pages";
 import type { Locale } from "../locales/types";
+import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import {
   calculateKahfPagesRead,
-  clearTimerState,
   getKahfSessionsThisWeek,
-  getLastSession,
   getLastWeekKahfTotal,
-  getNowTimestamp,
+} from "../services/db/kahf";
+import { getLastSession, insertSession } from "../services/db/sessions";
+import {
+  clearTimerState,
   getTimerState,
-  getTimezone,
-  insertSession,
-  type Session,
-  type SessionType,
   setTimerState,
-  type TimerState,
-  type TimerType,
-} from "../services/db";
+} from "../services/db/timer";
+import type {
+  Session,
+  SessionType,
+  TimerState,
+  TimerType,
+} from "../services/db/types";
 import {
   formatDuration,
   formatError,
@@ -48,7 +51,6 @@ const CALLBACK_TIMER_CONFIRM = "timer_confirm_stop";
 const CALLBACK_TIMER_CANCEL = "timer_cancel_stop";
 const CALLBACK_TIMER_STOP = "timer_stop";
 export const CALLBACK_TIMER_GO = "timer_go";
-const MAX_TIMER_SECONDS = 4 * 3600;
 
 export const CALLBACK_TIMER_CONFIRM_RE = /^timer_confirm_stop$/;
 export const CALLBACK_TIMER_CANCEL_RE = /^timer_cancel_stop$/;

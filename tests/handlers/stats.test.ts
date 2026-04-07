@@ -9,41 +9,59 @@ import {
   statsHandler,
 } from "../../src/handlers/stats";
 import { fr } from "../../src/locales/fr";
-import type { Session } from "../../src/services/db";
+import type { Session } from "../../src/services/db/types";
 
-// Mock le module db au niveau fichier
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+// Mock les modules db au niveau fichier
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn(), getTodayInTimezone: vi.fn() };
+});
+vi.mock("../../src/services/db/khatma", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/khatma")>();
+  return { ...actual, getKhatmaCount: vi.fn() };
+});
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
   return {
     ...actual,
     getHistory: vi.fn(),
     getSessionCount: vi.fn(),
+    getLastSession: vi.fn(),
+  };
+});
+vi.mock("../../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/stats")>();
+  return {
+    ...actual,
     getGlobalStats: vi.fn(),
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
-    getConfig: vi.fn(),
-    getTimezone: vi.fn(),
-    getLastSession: vi.fn(),
     getRecentPace: vi.fn(),
-    getTodayInTimezone: vi.fn(),
-    getKhatmaCount: vi.fn(),
     getPreviousWeekStats: vi.fn(),
   };
 });
 
 import {
+  getTimezone,
+  getTodayInTimezone,
+} from "../../src/services/db/date-helpers";
+import { getKhatmaCount } from "../../src/services/db/khatma";
+import {
+  getHistory,
+  getLastSession,
+  getSessionCount,
+} from "../../src/services/db/sessions";
+import {
   calculateStreak,
   getGlobalStats,
-  getHistory,
-  getKhatmaCount,
-  getLastSession,
   getPeriodStats,
   getPreviousWeekStats,
   getRecentPace,
-  getSessionCount,
-  getTimezone,
-  getTodayInTimezone,
-} from "../../src/services/db";
+} from "../../src/services/db/stats";
 
 function makeCtx(match = ""): CustomContext {
   return {

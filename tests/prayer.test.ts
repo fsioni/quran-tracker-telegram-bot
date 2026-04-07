@@ -3,7 +3,7 @@ const TIME_FORMAT_RE = /^\d{2}:\d{2}$/;
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fr } from "../src/locales/fr";
-import type { PrayerCacheRow } from "../src/services/db";
+import type { PrayerCacheRow } from "../src/services/db/types";
 import {
   buildAladhanUrl,
   fetchPrayerTimes,

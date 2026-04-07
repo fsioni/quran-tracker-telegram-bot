@@ -2,30 +2,47 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { fr } from "../../src/locales/fr";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+vi.mock("../../src/services/db/config", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/config")>();
+  return { ...actual, getConfig: vi.fn() };
+});
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
   return {
     ...actual,
-    getConfig: vi.fn(),
-    getPrayerCache: vi.fn(),
-    getLastSession: vi.fn(),
-    getGlobalStats: vi.fn(),
     getTimezone: vi.fn(),
     getTodayInTimezone: vi.fn(),
     getNowTimestamp: vi.fn(),
   };
 });
+vi.mock("../../src/services/db/prayer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/prayer")>();
+  return { ...actual, getPrayerCache: vi.fn() };
+});
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
+  return { ...actual, getLastSession: vi.fn() };
+});
+vi.mock("../../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/stats")>();
+  return { ...actual, getGlobalStats: vi.fn() };
+});
 
 import { debugHandler } from "../../src/handlers/debug";
+import { getConfig } from "../../src/services/db/config";
 import {
-  getConfig,
-  getGlobalStats,
-  getLastSession,
   getNowTimestamp,
-  getPrayerCache,
   getTimezone,
   getTodayInTimezone,
-} from "../../src/services/db";
+} from "../../src/services/db/date-helpers";
+import { getPrayerCache } from "../../src/services/db/prayer";
+import { getLastSession } from "../../src/services/db/sessions";
+import { getGlobalStats } from "../../src/services/db/stats";
 
 function createMockContext(): CustomContext {
   return {

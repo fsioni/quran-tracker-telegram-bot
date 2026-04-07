@@ -1,6 +1,6 @@
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
-import type { PrayerCacheRow, PrayerName, PrayerTimes } from "./db";
+import type { PrayerCacheRow, PrayerName, PrayerTimes } from "./db/types";
 
 interface AladhanTimings {
   Asr: string;

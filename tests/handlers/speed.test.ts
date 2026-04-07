@@ -3,13 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { speedHandler } from "../../src/handlers/stats";
 import { fr } from "../../src/locales/fr";
-import type { Session } from "../../src/services/db";
+import type { Session } from "../../src/services/db/types";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn() };
+});
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
   return {
     ...actual,
-    getTimezone: vi.fn(),
     getSpeedAverages: vi.fn(),
     getBestSpeedSession: vi.fn(),
     getLongestSession: vi.fn(),
@@ -17,13 +22,13 @@ vi.mock("../../src/services/db", async (importOriginal) => {
   };
 });
 
+import { getTimezone } from "../../src/services/db/date-helpers";
 import {
   getBestSpeedSession,
   getLongestSession,
   getSpeedAverages,
   getSpeedByType,
-  getTimezone,
-} from "../../src/services/db";
+} from "../../src/services/db/speed";
 
 function makeCtx(): CustomContext {
   return {

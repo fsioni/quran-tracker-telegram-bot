@@ -1,14 +1,9 @@
 // src/handlers/read.ts
 import type { CustomContext } from "../bot";
 import { getNextPage, getPageRange, TOTAL_PAGES } from "../data/pages";
-import {
-  getKhatmaCount,
-  getLastSession,
-  getNowTimestamp,
-  getTimezone,
-  insertKhatma,
-  insertSession,
-} from "../services/db";
+import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
+import { insertKhatma, getKhatmaCount } from "../services/db/khatma";
+import { getLastSession, insertSession } from "../services/db/sessions";
 import {
   appendCompletedSurahs,
   formatError,

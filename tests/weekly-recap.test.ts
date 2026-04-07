@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/services/db")>();
+vi.mock("../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/stats")>();
   return {
     ...actual,
     getPeriodStats: vi.fn(),
@@ -17,7 +18,7 @@ import {
   getPeriodStats,
   getWeekPages,
   getWeekSessions,
-} from "../src/services/db";
+} from "../src/services/db/stats";
 import { formatWeeklyRecap } from "../src/services/format";
 import type { WeeklyRecapData } from "../src/services/weekly-recap";
 import { buildWeeklyRecap } from "../src/services/weekly-recap";

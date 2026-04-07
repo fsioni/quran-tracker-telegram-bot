@@ -1,23 +1,45 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/services/db")>();
+vi.mock("../src/services/db/config", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/config")>();
+  return { ...actual, getConfig: vi.fn(), setConfig: vi.fn() };
+});
+vi.mock("../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/date-helpers")>();
+  return { ...actual, getTodayInTimezone: vi.fn() };
+});
+vi.mock("../src/services/db/kahf", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/kahf")>();
   return {
     ...actual,
-    getConfig: vi.fn(),
+    calculateKahfPagesRead: vi.fn(),
+    getKahfSessionsThisWeek: vi.fn(),
+    getKahfStats: vi.fn(),
+  };
+});
+vi.mock("../src/services/db/prayer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/prayer")>();
+  return {
+    ...actual,
     getPrayerCache: vi.fn(),
     setPrayerCache: vi.fn(),
     markPrayerSent: vi.fn(),
-    getLastSession: vi.fn(),
-    getPeriodStats: vi.fn(),
-    calculateStreak: vi.fn(),
-    calculateKahfPagesRead: vi.fn(),
-    getKahfSessionsThisWeek: vi.fn(),
-    getTodayInTimezone: vi.fn(),
     cleanOldCache: vi.fn(),
-    getKahfStats: vi.fn(),
-    setConfig: vi.fn(),
   };
+});
+vi.mock("../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/sessions")>();
+  return { ...actual, getLastSession: vi.fn() };
+});
+vi.mock("../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/stats")>();
+  return { ...actual, getPeriodStats: vi.fn(), calculateStreak: vi.fn() };
 });
 
 vi.mock("../src/services/prayer", async (importOriginal) => {
@@ -51,21 +73,21 @@ vi.mock("../src/services/weekly-recap", async (importOriginal) => {
 
 import { handleScheduled } from "../src/index";
 import { fr } from "../src/locales/fr";
+import { getConfig, setConfig } from "../src/services/db/config";
+import { getTodayInTimezone } from "../src/services/db/date-helpers";
 import {
   calculateKahfPagesRead,
-  calculateStreak,
-  cleanOldCache,
-  getConfig,
   getKahfSessionsThisWeek,
   getKahfStats,
-  getLastSession,
-  getPeriodStats,
+} from "../src/services/db/kahf";
+import {
+  cleanOldCache,
   getPrayerCache,
-  getTodayInTimezone,
   markPrayerSent,
-  setConfig,
   setPrayerCache,
-} from "../src/services/db";
+} from "../src/services/db/prayer";
+import { getLastSession } from "../src/services/db/sessions";
+import { calculateStreak, getPeriodStats } from "../src/services/db/stats";
 import {
   formatKahfReminder,
   formatReminder,

@@ -1,5 +1,5 @@
 import type { CustomContext } from "../bot";
-import { getSessionById, updateSessionDuration } from "../services/db";
+import { getSessionById, updateSessionDuration } from "../services/db/sessions";
 import {
   formatDuration,
   formatError,

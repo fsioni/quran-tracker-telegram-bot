@@ -1,6 +1,7 @@
 // src/handlers/session.ts
 import type { CustomContext } from "../bot";
-import { getNowTimestamp, getTimezone, insertSession } from "../services/db";
+import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
+import { insertSession } from "../services/db/sessions";
 import {
   appendCompletedSurahs,
   formatError,

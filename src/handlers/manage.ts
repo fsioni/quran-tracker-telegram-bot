@@ -5,7 +5,7 @@ import {
   deleteSessionById,
   getLastSession,
   getSessionById,
-} from "../services/db";
+} from "../services/db/sessions";
 import { formatDuration, formatError, formatRange } from "../services/format";
 
 const CALLBACK_CONFIRM = "delete_confirm";

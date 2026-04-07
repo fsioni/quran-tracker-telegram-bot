@@ -1,10 +1,7 @@
 // src/handlers/import.ts
 import type { CustomContext } from "../bot";
-import {
-  type InsertSessionData,
-  insertBatch,
-  type SessionType,
-} from "../services/db";
+import { insertBatch } from "../services/db/sessions";
+import type { InsertSessionData, SessionType } from "../services/db/types";
 import { formatError, parseImportLine } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
 

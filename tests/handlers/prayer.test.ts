@@ -2,12 +2,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { fr } from "../../src/locales/fr";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+vi.mock("../../src/services/db/config", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/config")>();
+  return { ...actual, getConfig: vi.fn() };
+});
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
   return {
     ...actual,
-    getConfig: vi.fn(),
     getTodayInTimezone: vi.fn().mockReturnValue("2026-03-18"),
+  };
+});
+vi.mock("../../src/services/db/prayer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/prayer")>();
+  return {
+    ...actual,
     deletePrayerCacheForDate: vi.fn(),
     setPrayerCache: vi.fn(),
   };
@@ -18,12 +30,12 @@ vi.mock("../../src/services/prayer", () => ({
 }));
 
 import { prayerHandler } from "../../src/handlers/prayer";
+import { getConfig } from "../../src/services/db/config";
+import { getTodayInTimezone } from "../../src/services/db/date-helpers";
 import {
   deletePrayerCacheForDate,
-  getConfig,
-  getTodayInTimezone,
   setPrayerCache,
-} from "../../src/services/db";
+} from "../../src/services/db/prayer";
 import { fetchPrayerTimes } from "../../src/services/prayer";
 
 function makeCtx(): CustomContext {

@@ -7,14 +7,13 @@ import {
   KAHF_PAGE_END,
   KAHF_TOTAL_PAGES,
 } from "../data/pages";
+import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import {
   calculateKahfPagesRead,
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
-  getNowTimestamp,
-  getTimezone,
-  insertSession,
-} from "../services/db";
+} from "../services/db/kahf";
+import { insertSession } from "../services/db/sessions";
 import {
   formatError,
   formatKahfPageConfirmation,

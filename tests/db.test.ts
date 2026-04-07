@@ -2,37 +2,43 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import type { PrayerTimes, SessionType } from "../src/services/db";
+import { getConfig, setConfig } from "../src/services/db/config";
 import {
   addDays,
-  calculateStreak,
-  cleanOldCache,
-  deleteSessionById,
-  getConfig,
-  getGlobalStats,
-  getHistory,
-  getKahfSessionsThisWeek,
-  getKahfStats,
-  getKhatmaCount,
-  getLastSession,
-  getLastWeekKahfTotal,
   getMonthBounds,
-  getPeriodStats,
-  getPrayerCache,
-  getPreviousWeekStats,
-  getRecentPace,
-  getSessionById,
-  getSessionCount,
-  getStatsByType,
   getTodayInTimezone,
   getWeekBounds,
-  insertBatch,
-  insertKhatma,
-  insertSession,
+} from "../src/services/db/date-helpers";
+import {
+  getKahfSessionsThisWeek,
+  getKahfStats,
+  getLastWeekKahfTotal,
+} from "../src/services/db/kahf";
+import { getKhatmaCount, insertKhatma } from "../src/services/db/khatma";
+import {
+  cleanOldCache,
+  getPrayerCache,
   markPrayerSent,
-  setConfig,
   setPrayerCache,
-} from "../src/services/db";
+} from "../src/services/db/prayer";
+import {
+  deleteSessionById,
+  getHistory,
+  getLastSession,
+  getSessionById,
+  getSessionCount,
+  insertBatch,
+  insertSession,
+} from "../src/services/db/sessions";
+import {
+  calculateStreak,
+  getGlobalStats,
+  getPeriodStats,
+  getPreviousWeekStats,
+  getRecentPace,
+  getStatsByType,
+} from "../src/services/db/stats";
+import type { PrayerTimes, SessionType } from "../src/services/db/types";
 
 const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
 
