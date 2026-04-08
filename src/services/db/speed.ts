@@ -2,6 +2,7 @@ import { addDays, getTodayInTimezone } from "./date-helpers";
 import { mapRow } from "./sessions";
 import {
   ADJ_PAGE_COUNT_SQL,
+  HAS_SPEED_DATA_SQL,
   PAGE_SECONDS_SQL,
   PAGE_STATS_SQL,
 } from "./sql-fragments";
@@ -25,12 +26,12 @@ export async function getSpeedAverages(
   const row = await db
     .prepare(
       `SELECT
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_7d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_7d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_30d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_30d
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_7d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as seconds_7d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_30d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as seconds_30d
       FROM sessions`
     )
     .bind(
@@ -86,6 +87,7 @@ export async function getLongestSession(
   const row = await db
     .prepare(
       `SELECT * FROM sessions
+       WHERE duration_seconds IS NOT NULL
        ORDER BY duration_seconds DESC
        LIMIT 1`
     )
@@ -97,9 +99,9 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
   const { results } = await db
     .prepare(
       `SELECT type,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN 1 ELSE 0 END) as session_count
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN 1 ELSE 0 END) as session_count
       FROM sessions
       GROUP BY type`
     )

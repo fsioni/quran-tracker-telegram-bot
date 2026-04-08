@@ -1,8 +1,9 @@
 // src/handlers/read.ts
+import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import { getNextPage, getPageRange, TOTAL_PAGES } from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
-import { insertKhatma, getKhatmaCount } from "../services/db/khatma";
+import { getKhatmaCount, insertKhatma } from "../services/db/khatma";
 import { getLastSession, insertSession } from "../services/db/sessions";
 import {
   appendCompletedSurahs,
@@ -11,6 +12,9 @@ import {
   formatReadConfirmation,
   parsePageCountAndDuration,
 } from "../services/format";
+
+// Callback data for no-duration read confirmation
+export const CALLBACK_READ_NODUR_CONFIRM_RE = /^ndr_c:(\d+)$/;
 
 export async function readHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -51,10 +55,39 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
+  // No-duration: ask confirmation before inserting
+  if (durationSeconds === null) {
+    const msg =
+      count === 1
+        ? `${t.read.pageSingularRecorded(pageStart)} -- ${t.session.noDurationPrompt}`
+        : `${t.read.pagePluralRecorded(pageStart, pageEnd)} -- ${t.session.noDurationPrompt}`;
+    const keyboard = new InlineKeyboard()
+      .text(t.manage.confirm, `ndr_c:${count}`)
+      .text(t.manage.cancel, "ndr_x");
+    await ctx.reply(msg, { reply_markup: keyboard });
+    return;
+  }
+
+  await insertAndReply(ctx, pageStart, pageEnd, durationSeconds, rangeData);
+}
+
+async function insertAndReply(
+  ctx: CustomContext,
+  pageStart: number,
+  pageEnd: number,
+  durationSeconds: number | null,
+  rangeData: {
+    surahStart: number;
+    ayahStart: number;
+    surahEnd: number;
+    ayahEnd: number;
+    ayahCount: number;
+  }
+): Promise<void> {
+  const t = ctx.locale;
   const tz = await getTimezone(ctx.db);
   const now = getNowTimestamp(tz);
 
-  // Insert session
   const result = await insertSession(ctx.db, {
     startedAt: now,
     durationSeconds,
@@ -106,4 +139,49 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
   );
 
   await ctx.reply(parts.join("\n"));
+}
+
+export async function confirmReadNoDurCallback(
+  ctx: CustomContext
+): Promise<void> {
+  const t = ctx.locale;
+  const data = ctx.callbackQuery?.data;
+  const match = data?.match(CALLBACK_READ_NODUR_CONFIRM_RE);
+  if (!match) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const count = Number.parseInt(match[1], 10);
+
+  // Re-derive page range from current state
+  const lastSession = await getLastSession(ctx.db, "normal");
+  const currentPage = getNextPage(lastSession?.pageEnd ?? null);
+  const pageStart = currentPage;
+  const pageEnd = currentPage + count - 1;
+
+  if (pageEnd > TOTAL_PAGES) {
+    await ctx.editMessageText(
+      formatError(
+        t.read.remainingPages(
+          TOTAL_PAGES - pageStart + 1,
+          pageStart,
+          TOTAL_PAGES
+        ),
+        t
+      )
+    );
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const rangeData = getPageRange(pageStart, pageEnd);
+  if (!rangeData) {
+    await ctx.editMessageText(formatError(t.read.pagesInvalid, t));
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  await insertAndReply(ctx, pageStart, pageEnd, null, rangeData);
+  await ctx.answerCallbackQuery();
 }

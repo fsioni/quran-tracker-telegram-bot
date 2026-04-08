@@ -1,7 +1,7 @@
 CREATE TABLE sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   started_at TEXT NOT NULL,
-  duration_seconds INTEGER NOT NULL,
+  duration_seconds INTEGER,
   page_start INTEGER,
   page_end INTEGER,
   surah_start INTEGER NOT NULL,

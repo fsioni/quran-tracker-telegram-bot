@@ -1,7 +1,7 @@
 // src/handlers/timer.ts
 import { InlineKeyboard } from "grammy";
-import { MAX_TIMER_SECONDS } from "../config";
 import type { CustomContext } from "../bot";
+import { MAX_TIMER_SECONDS } from "../config";
 import {
   effectivePageCount,
   getNextKahfPage,
@@ -576,7 +576,7 @@ async function handleKahfResponse(
 
   const weekPagesRead = pagesAlreadyRead + count;
   const weekTotalSeconds =
-    weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
+    weekSessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0) +
     (state.durationSeconds ?? 0);
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");

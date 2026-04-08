@@ -225,15 +225,17 @@ describe("kahfHandler", () => {
     expect(msg).toContain("Semaine dernière");
   });
 
-  it("erreur: durée manquante", async () => {
+  it("prompt de confirmation sans durée (input vide)", async () => {
     const ctx = createMockContext("");
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as string;
-    expect(msg).toContain("Erreur");
-    expect(msg).toContain("format invalide");
+    const call = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0];
+    const msg = call[0] as string;
+    expect(msg).toContain("Al-Kahf");
+    expect(msg).toContain("sans timer");
+    expect(call[1]).toHaveProperty("reply_markup");
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
   it("passe type='kahf' à insertSession", async () => {

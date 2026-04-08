@@ -86,9 +86,9 @@ export const en: Locale = {
 
   examples: {
     session: "/session 2:77-83 8m53",
-    read: "/read 5m or /read 3 15m",
-    extra: "/extra 300 5m or /extra 2:77-83 8m",
-    kahf: "/kahf 5m or /kahf 3 15m",
+    read: "/read 5m or /read 3 15m or /read 3",
+    extra: "/extra 300 5m or /extra 2:77-83 8m or /extra 300",
+    kahf: "/kahf 5m or /kahf 3 15m or /kahf 3",
     import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
     edit: "/edit 42 15m",
   },
@@ -104,6 +104,8 @@ export const en: Locale = {
     pagesPerHour: (n) => `${n} pages/h`,
     from: "v.",
     to: "to",
+    noDurationPrompt: "Record without timer?",
+    cancelled: "Cancelled.",
     confirmationSameSurah: (
       surahName,
       ayahStart,
@@ -123,6 +125,21 @@ export const en: Locale = {
       speed
     ) =>
       `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses in ${duration}${speed}`,
+    confirmationSameSurahNoDuration: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `surah ${surahName} v.${ayahStart} to v.${ayahEnd} -- ${ayahCount} verses`,
+    confirmationCrossSurahNoDuration: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses`,
   },
 
   stats: {
@@ -167,6 +184,8 @@ export const en: Locale = {
     pageSingularRead: (page, duration) => `Page ${page} read in ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `Pages ${start}-${end} read in ${duration}`,
+    pageSingularRecorded: (page) => `Page ${page} recorded`,
+    pagePluralRecorded: (start, end) => `Pages ${start}-${end} recorded`,
     quranComplete: "Quran complete! Alhamdulillah!",
     nextPage: (page) => `Next page: ${page}`,
     remainingPages: (count, start, end) =>
@@ -178,6 +197,8 @@ export const en: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `Al-Kahf page ${page}/${total} read in ${duration}`,
+    pageReadNoDuration: (page, total) =>
+      `Al-Kahf page ${page}/${total} recorded`,
     thisWeek: (pages, total, duration) =>
       `This week: ${pages}/${total} pages, ${duration} total`,
     complete: (page, total, duration) =>
@@ -321,6 +342,8 @@ export const en: Locale = {
     sessionNotFound: (id) => `session #${id} does not exist`,
     sessionEdited: (id, range, oldDuration, newDuration) =>
       `Session #${id} edited.\n${range}\n${oldDuration} -> ${newDuration}`,
+    durationAdded: (id, range, newDuration) =>
+      `Duration added to session #${id}.\n${range}\n-- -> ${newDuration}`,
   },
 
   manage: {

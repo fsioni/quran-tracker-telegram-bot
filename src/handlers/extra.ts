@@ -1,4 +1,5 @@
 // src/handlers/extra.ts
+import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import { getPageRange } from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
@@ -6,106 +7,153 @@ import { insertSession } from "../services/db/sessions";
 import {
   appendCompletedSurahs,
   formatError,
+  formatRange,
   formatSessionConfirmation,
   parseDuration,
   parsePage,
   parseRange,
 } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
+import { err, ok, type Result } from "../types";
 
 const WHITESPACE_RE = /\s+/;
 const PAGE_OR_RANGE_RE = /^\d+(-\d+)?$/;
+
+// Callback data for no-duration extra confirmation
+export const CALLBACK_EXTRA_NODUR_CONFIRM_RE = /^nde_c:(.+)$/;
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   const input = ((ctx.match as string) || "").trim();
   const parts = input.split(WHITESPACE_RE);
 
-  if (parts.length < 2 || !parts[0]) {
+  if (!parts[0]) {
     await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.extra));
     return;
   }
 
   const [targetStr, durationStr] = parts;
 
-  // Parse duration first to fail fast
-  const durationResult = parseDuration(durationStr, t);
-  if (!durationResult.ok) {
-    await ctx.reply(formatError(durationResult.error, t));
+  // Parse optional duration
+  let durationSeconds: number | null = null;
+  if (durationStr) {
+    const durationResult = parseDuration(durationStr, t);
+    if (!durationResult.ok) {
+      await ctx.reply(formatError(durationResult.error, t));
+      return;
+    }
+    durationSeconds = durationResult.value;
+  }
+
+  // Validate target (page or verse range)
+  const validation = validateTarget(targetStr, t);
+  if (!validation.ok) {
+    await ctx.reply(formatError(validation.error, t, t.examples.extra));
     return;
   }
 
-  let surahStart: number;
-  let ayahStart: number;
-  let surahEnd: number;
-  let ayahEnd: number;
-  let ayahCount: number;
-  let pageStart: number | undefined;
-  let pageEnd: number | undefined;
-
-  // Try page-based first, then verse-based
-  const pageResult = parsePage(targetStr, t);
-  if (pageResult.ok) {
-    pageStart = pageResult.value.pageStart;
-    pageEnd = pageResult.value.pageEnd;
-
-    const rangeData = getPageRange(pageStart, pageEnd);
-    if (!rangeData) {
-      await ctx.reply(formatError(t.read.pagesInvalid, t));
-      return;
-    }
-
-    surahStart = rangeData.surahStart;
-    ayahStart = rangeData.ayahStart;
-    surahEnd = rangeData.surahEnd;
-    ayahEnd = rangeData.ayahEnd;
-    ayahCount = rangeData.ayahCount;
-  } else if (PAGE_OR_RANGE_RE.test(targetStr)) {
-    // Looks like a page number/range but parsePage rejected it (e.g. 0, 605)
-    await ctx.reply(formatError(pageResult.error, t));
-    return;
-  } else {
-    const rangeResult = parseRange(targetStr, t);
-    if (!rangeResult.ok) {
-      await ctx.reply(formatError(t.read.formatInvalid, t, t.examples.extra));
-      return;
-    }
-
-    surahStart = rangeResult.value.surahStart;
-    ayahStart = rangeResult.value.ayahStart;
-    surahEnd = rangeResult.value.surahEnd;
-    ayahEnd = rangeResult.value.ayahEnd;
-
-    const validResult = validateRange(
-      surahStart,
-      ayahStart,
-      surahEnd,
-      ayahEnd,
+  // No-duration: ask confirmation before inserting
+  if (durationSeconds === null) {
+    const range = formatRange(
+      validation.value.surahStart,
+      validation.value.ayahStart,
+      validation.value.surahEnd,
+      validation.value.ayahEnd,
       t
     );
-    if (!validResult.ok) {
-      await ctx.reply(formatError(validResult.error, t));
-      return;
-    }
-
-    ayahCount = calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd);
+    const msg = `${t.session.extraRecorded} ${range} -- ${t.session.noDurationPrompt}`;
+    const keyboard = new InlineKeyboard()
+      .text(t.manage.confirm, `nde_c:${targetStr}`)
+      .text(t.manage.cancel, "nde_x");
+    await ctx.reply(msg, { reply_markup: keyboard });
+    return;
   }
 
-  const tz = await getTimezone(ctx.db);
-  const now = getNowTimestamp(tz);
+  await insertAndReplyExtra(ctx, validation.value, durationSeconds);
+}
 
-  // Insert session with type 'extra'
-  const result = await insertSession(ctx.db, {
-    startedAt: now,
-    durationSeconds: durationResult.value,
+interface ValidatedTarget {
+  ayahCount: number;
+  ayahEnd: number;
+  ayahStart: number;
+  pageEnd?: number;
+  pageStart?: number;
+  surahEnd: number;
+  surahStart: number;
+}
+
+function validateTarget(
+  targetStr: string,
+  t: import("../locales/types").Locale
+): Result<ValidatedTarget> {
+  const pageResult = parsePage(targetStr, t);
+  if (pageResult.ok) {
+    const { pageStart, pageEnd } = pageResult.value;
+    const rangeData = getPageRange(pageStart, pageEnd);
+    if (!rangeData) {
+      return err(t.read.pagesInvalid);
+    }
+    return ok({
+      surahStart: rangeData.surahStart,
+      ayahStart: rangeData.ayahStart,
+      surahEnd: rangeData.surahEnd,
+      ayahEnd: rangeData.ayahEnd,
+      ayahCount: rangeData.ayahCount,
+      pageStart,
+      pageEnd,
+    });
+  }
+
+  if (PAGE_OR_RANGE_RE.test(targetStr)) {
+    return err(pageResult.error);
+  }
+
+  const rangeResult = parseRange(targetStr, t);
+  if (!rangeResult.ok) {
+    return err(t.read.formatInvalid);
+  }
+
+  const { surahStart, ayahStart, surahEnd, ayahEnd } = rangeResult.value;
+  const validResult = validateRange(
     surahStart,
     ayahStart,
     surahEnd,
     ayahEnd,
-    ayahCount,
+    t
+  );
+  if (!validResult.ok) {
+    return err(validResult.error);
+  }
+
+  return ok({
+    surahStart,
+    ayahStart,
+    surahEnd,
+    ayahEnd,
+    ayahCount: calculateAyahCount(surahStart, ayahStart, surahEnd, ayahEnd),
+  });
+}
+
+async function insertAndReplyExtra(
+  ctx: CustomContext,
+  target: ValidatedTarget,
+  durationSeconds: number | null
+): Promise<void> {
+  const t = ctx.locale;
+  const tz = await getTimezone(ctx.db);
+  const now = getNowTimestamp(tz);
+
+  const result = await insertSession(ctx.db, {
+    startedAt: now,
+    durationSeconds,
+    surahStart: target.surahStart,
+    ayahStart: target.ayahStart,
+    surahEnd: target.surahEnd,
+    ayahEnd: target.ayahEnd,
+    ayahCount: target.ayahCount,
     type: "extra",
-    pageStart,
-    pageEnd,
+    pageStart: target.pageStart,
+    pageEnd: target.pageEnd,
   });
   if (!result.ok) {
     await ctx.reply(formatError(result.error, t));
@@ -113,9 +161,36 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   }
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
-
-  // Check for completed surahs
-  appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd, t);
-
+  appendCompletedSurahs(
+    msgParts,
+    target.surahStart,
+    target.ayahStart,
+    target.surahEnd,
+    target.ayahEnd,
+    t
+  );
   await ctx.reply(msgParts.join("\n"));
+}
+
+export async function confirmExtraNoDurCallback(
+  ctx: CustomContext
+): Promise<void> {
+  const t = ctx.locale;
+  const data = ctx.callbackQuery?.data;
+  const match = data?.match(CALLBACK_EXTRA_NODUR_CONFIRM_RE);
+  if (!match) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const targetStr = match[1];
+  const validation = validateTarget(targetStr, t);
+  if (!validation.ok) {
+    await ctx.editMessageText(formatError(validation.error, t));
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  await insertAndReplyExtra(ctx, validation.value, null);
+  await ctx.answerCallbackQuery();
 }

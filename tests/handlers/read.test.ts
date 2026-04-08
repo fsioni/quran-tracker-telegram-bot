@@ -245,15 +245,17 @@ describe("readHandler", () => {
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
-  it("erreur si durée manquante", async () => {
+  it("prompt de confirmation sans durée (input vide)", async () => {
     const ctx = createMockContext("");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as string;
-    expect(msg).toContain("Erreur");
-    expect(msg).toContain("format invalide");
+    const call = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0];
+    const msg = call[0] as string;
+    expect(msg).toContain("enregistree");
+    expect(msg).toContain("sans timer");
+    expect(call[1]).toHaveProperty("reply_markup");
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
   it("erreur si format de durée invalide", async () => {
@@ -264,7 +266,7 @@ describe("readHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("format de durée invalide");
+    expect(msg).toContain("format invalide");
   });
 
   it("passe type='normal' à insertSession", async () => {
