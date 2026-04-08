@@ -16,6 +16,7 @@ import {
   formatKhatmaMessage,
   formatReadConfirmation,
   formatSpeedComparison,
+  insertAfterFirstLine,
   parsePageCountAndDuration,
 } from "../services/format";
 
@@ -99,7 +100,6 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
       t
     );
 
-    // Insert speed comparison after first line
     if (durationSeconds > 0) {
       const avg = await get7DayTypeAvgSpeed(ctx.db, "normal", tz, session.id);
       const currentSpeed =
@@ -110,13 +110,7 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
         avg.pagesPerHour,
         t
       );
-      if (comparison) {
-        const lines = confirmation.split("\n");
-        lines.splice(1, 0, comparison);
-        parts.push(lines.join("\n"));
-      } else {
-        parts.push(confirmation);
-      }
+      parts.push(insertAfterFirstLine(confirmation, comparison));
     } else {
       parts.push(confirmation);
     }

@@ -264,6 +264,15 @@ export function formatDuration(seconds: number, t?: Locale): string {
   return s > 0 ? `${m}${mSuf}${s}` : `${m}${mSuf}`;
 }
 
+export function insertAfterFirstLine(text: string, insertion: string): string {
+  if (!insertion) {
+    return text;
+  }
+  const lines = text.split("\n");
+  lines.splice(1, 0, insertion);
+  return lines.join("\n");
+}
+
 export function formatSpeedComparison(
   currentSpeed: number,
   avgSpeed: number | null,
