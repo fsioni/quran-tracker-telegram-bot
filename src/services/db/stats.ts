@@ -257,6 +257,32 @@ export async function calculateStreak(
   return { currentStreak, bestStreak };
 }
 
+export async function getRecentSecondsPerPage(
+  db: D1Database,
+  tz: string,
+  days = 7
+): Promise<number | null> {
+  const today = getTodayInTimezone(tz);
+  const startDate = addDays(today, -(days - 1));
+  const row = await db
+    .prepare(
+      `SELECT
+        COALESCE(SUM(duration_seconds), 0) AS total_seconds,
+        COALESCE(SUM(${ADJ_PAGE_COUNT_SQL}), 0) AS total_pages
+       FROM sessions
+       WHERE type = 'normal'
+         AND page_start IS NOT NULL
+         AND page_end IS NOT NULL
+         AND started_at >= ?`
+    )
+    .bind(`${startDate} 00:00:00`)
+    .first<{ total_seconds: number; total_pages: number }>();
+  if (!row || row.total_pages === 0) {
+    return null;
+  }
+  return row.total_seconds / row.total_pages;
+}
+
 export async function getRecentPace(
   db: D1Database,
   tz: string,

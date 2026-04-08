@@ -152,6 +152,11 @@ export const ar: Locale = {
     label: (read, total, pct) => `التقدم: ${read} / ${total} آية (${pct}%)`,
     khatmas: (count) => `الختمات: ${count}`,
     page: "صفحة",
+    khatmaTime: (duration) => `وقت القراءة (هذه الختمة): ${duration}`,
+    remainingTime: (duration) => `الوقت المتبقي المقدر: ~${duration}`,
+    noRecentData: "لا توجد بيانات حديثة",
+    completionDate: (day, month, year) =>
+      `تاريخ الانتهاء المتوقع: ${day} ${month} ${year}`,
   },
 
   reminder: {
@@ -227,14 +232,6 @@ export const ar: Locale = {
     next: "التالي >>",
     prev: "<< السابق",
     pageIndicator: (current, total) => `صفحة ${current}/${total}`,
-  },
-
-  estimation: {
-    notEnoughData: "لا توجد بيانات كافية للتقدير (اقرأ بانتظام لرؤية التوقعات)",
-    monthsRemaining: (pace, months) =>
-      `بوتيرتك الحالية (~${pace} صفحة/يوم)، يتبقى حوالي ${months} شهر`,
-    dateEstimate: (pace, day, month, year) =>
-      `بهذه الوتيرة (~${pace} صفحة/يوم)، ستنتهي حوالي ${day} ${month} ${year}`,
   },
 
   khatma: {

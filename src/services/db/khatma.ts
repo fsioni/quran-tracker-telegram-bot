@@ -12,6 +12,21 @@ export async function insertKhatma(
   return { id: row.id, completedAt: row.completed_at };
 }
 
+export async function getKhatmaElapsedSeconds(db: D1Database): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COALESCE(SUM(duration_seconds), 0) AS total_seconds
+       FROM sessions
+       WHERE type = 'normal'
+         AND started_at > COALESCE(
+           (SELECT completed_at FROM khatmas ORDER BY completed_at DESC LIMIT 1),
+           '1970-01-01'
+         )`
+    )
+    .first<{ total_seconds: number }>();
+  return row?.total_seconds ?? 0;
+}
+
 export async function getKhatmaCount(db: D1Database): Promise<number> {
   const row = await db
     .prepare("SELECT COUNT(*) AS count FROM khatmas")

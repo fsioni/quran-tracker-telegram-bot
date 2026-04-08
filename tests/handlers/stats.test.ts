@@ -20,7 +20,11 @@ vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
 vi.mock("../../src/services/db/khatma", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../../src/services/db/khatma")>();
-  return { ...actual, getKhatmaCount: vi.fn() };
+  return {
+    ...actual,
+    getKhatmaCount: vi.fn(),
+    getKhatmaElapsedSeconds: vi.fn(),
+  };
 });
 vi.mock("../../src/services/db/sessions", async (importOriginal) => {
   const actual =
@@ -41,6 +45,7 @@ vi.mock("../../src/services/db/stats", async (importOriginal) => {
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
     getRecentPace: vi.fn(),
+    getRecentSecondsPerPage: vi.fn(),
     getPreviousWeekStats: vi.fn(),
   };
 });
@@ -49,7 +54,10 @@ import {
   getTimezone,
   getTodayInTimezone,
 } from "../../src/services/db/date-helpers";
-import { getKhatmaCount } from "../../src/services/db/khatma";
+import {
+  getKhatmaCount,
+  getKhatmaElapsedSeconds,
+} from "../../src/services/db/khatma";
 import {
   getHistory,
   getLastSession,
@@ -61,6 +69,7 @@ import {
   getPeriodStats,
   getPreviousWeekStats,
   getRecentPace,
+  getRecentSecondsPerPage,
 } from "../../src/services/db/stats";
 
 function makeCtx(match = ""): CustomContext {
@@ -520,7 +529,9 @@ describe("progressHandler", () => {
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
     vi.mocked(getRecentPace).mockResolvedValue(0);
+    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(null);
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
+    vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(0);
   });
 
   it("affiche la progression avec barre sans prochaine page si pageEnd absent", async () => {
@@ -654,7 +665,7 @@ describe("progressHandler", () => {
     expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
-  it("affiche l'estimation quand pageEnd est present et pace > 0", async () => {
+  it("affiche temps khatma et estimation quand donnees recentes disponibles", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -672,6 +683,8 @@ describe("progressHandler", () => {
       pageStart: 41,
       pageEnd: 200,
     });
+    vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(45_300);
+    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(180);
     vi.mocked(getRecentPace).mockResolvedValue(2.5);
 
     const ctx = makeCtx();
@@ -679,11 +692,12 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("À ce rythme (~2.5 pages/jour)");
-    expect(msg).toContain("tu finiras vers le");
+    expect(msg).toContain("Temps de lecture (cette khatma)");
+    expect(msg).toContain("Temps restant estime");
+    expect(msg).toContain("Fin estimee");
   });
 
-  it("affiche 'pas assez de donnees' quand pace est 0", async () => {
+  it("affiche 'pas assez de donnees' quand pas de donnees recentes", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -701,6 +715,7 @@ describe("progressHandler", () => {
       pageStart: 41,
       pageEnd: 200,
     });
+    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(null);
     vi.mocked(getRecentPace).mockResolvedValue(0);
 
     const ctx = makeCtx();
@@ -708,7 +723,7 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Pas assez de données récentes pour estimer");
+    expect(msg).toContain("Pas assez de donnees recentes");
   });
 
   it("n'affiche pas d'estimation quand pageEnd == 604 (termine)", async () => {
@@ -729,7 +744,7 @@ describe("progressHandler", () => {
       pageStart: 603,
       pageEnd: 604,
     });
-    vi.mocked(getRecentPace).mockResolvedValue(2.0);
+    vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(100_000);
 
     const ctx = makeCtx();
     await progressHandler(ctx);
@@ -738,8 +753,9 @@ describe("progressHandler", () => {
       .calls[0][0] as string;
     expect(msg).toContain("Prochaine page : 1");
     expect(msg).toContain("Page : 604 / 604");
-    expect(msg).not.toContain("rythme");
-    expect(msg).not.toContain("finiras");
+    expect(msg).toContain("Temps de lecture (cette khatma)");
+    expect(msg).not.toContain("Temps restant");
+    expect(msg).not.toContain("Fin estimee");
   });
 
   it("n'affiche pas d'estimation quand pageEnd est null", async () => {
@@ -762,8 +778,8 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).not.toContain("rythme");
-    expect(msg).not.toContain("finiras");
+    expect(msg).not.toContain("Temps de lecture");
+    expect(msg).not.toContain("Fin estimee");
   });
 
   it("affiche le nombre de khatmas quand > 0", async () => {
