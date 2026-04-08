@@ -11,7 +11,6 @@ import { fr } from "../src/locales/fr";
 import type { Locale } from "../src/locales/types";
 import {
   formatError,
-  formatEstimation,
   formatHistoryLine,
   formatKahfReminder,
   formatKhatmaMessage,
@@ -248,7 +247,11 @@ describe("locale completeness", () => {
       )
     ).toBeTruthy();
 
-    expect(formatEstimation(2.5, 500, "2026-03-13", t)).toBeTruthy();
+    expect(t.progress.khatmaTime("12h35m")).toBeTruthy();
+    expect(t.progress.remainingTime("25h10m")).toBeTruthy();
+    expect(t.progress.noRecentData).toBeTruthy();
+    expect(t.progress.completionDate(15, "June", 2026)).toBeTruthy();
+
     expect(formatKhatmaMessage(1, t)).toBeTruthy();
     expect(formatKhatmaMessage(3, t)).toBeTruthy();
     expect(
@@ -396,7 +399,6 @@ describe("format functions match snapshots", () => {
       )
     ).toMatchSnapshot();
 
-    expect(formatEstimation(2.5, 500, "2026-03-13", t)).toMatchSnapshot();
     expect(formatKhatmaMessage(1, t)).toMatchSnapshot();
     expect(formatKhatmaMessage(3, t)).toMatchSnapshot();
     expect(

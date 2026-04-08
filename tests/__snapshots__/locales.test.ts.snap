@@ -48,22 +48,20 @@ exports[`format functions match snapshots > ar: format snapshots 8`] = `
 آخر قراءة: 07/03 في 10د"
 `;
 
-exports[`format functions match snapshots > ar: format snapshots 9`] = `"بهذه الوتيرة (~2.5 صفحة/يوم)، ستنتهي حوالي 29 سبتمبر 2026"`;
+exports[`format functions match snapshots > ar: format snapshots 9`] = `"ختمة! أتممت قراءتك الأولى الكاملة للقرآن الكريم. الحمد لله!"`;
 
-exports[`format functions match snapshots > ar: format snapshots 10`] = `"ختمة! أتممت قراءتك الأولى الكاملة للقرآن الكريم. الحمد لله!"`;
+exports[`format functions match snapshots > ar: format snapshots 10`] = `"ختمة! أتممت القراءة رقم 3 للقرآن الكريم. الحمد لله!"`;
 
-exports[`format functions match snapshots > ar: format snapshots 11`] = `"ختمة! أتممت القراءة رقم 3 للقرآن الكريم. الحمد لله!"`;
+exports[`format functions match snapshots > ar: format snapshots 11`] = `"اكتملت سورة Al-Fatiha (1)!"`;
 
-exports[`format functions match snapshots > ar: format snapshots 12`] = `"اكتملت سورة Al-Fatiha (1)!"`;
+exports[`format functions match snapshots > ar: format snapshots 12`] = `"خطأ : test error"`;
 
-exports[`format functions match snapshots > ar: format snapshots 13`] = `"خطأ : test error"`;
-
-exports[`format functions match snapshots > ar: format snapshots 14`] = `
+exports[`format functions match snapshots > ar: format snapshots 13`] = `
 "خطأ : test error
 مثال : /example"
 `;
 
-exports[`format functions match snapshots > ar: format snapshots 15`] = `
+exports[`format functions match snapshots > ar: format snapshots 14`] = `
 "-- سرعة القراءة --
 
 المتوسط العام: 150.0 صفحة/س
@@ -71,7 +69,7 @@ exports[`format functions match snapshots > ar: format snapshots 15`] = `
 متوسط آخر 30 يوم: 140.0 صفحة/س"
 `;
 
-exports[`format functions match snapshots > ar: format snapshots 16`] = `
+exports[`format functions match snapshots > ar: format snapshots 15`] = `
 "-- الملخص الأسبوعي --
 
 الصفحات المقروءة : 12 (+20%)
@@ -128,22 +126,20 @@ exports[`format functions match snapshots > en: format snapshots 8`] = `
 Last reading: 07/03 in 10m"
 `;
 
-exports[`format functions match snapshots > en: format snapshots 9`] = `"At this pace (~2.5 pages/day), you'll finish around September 29, 2026"`;
+exports[`format functions match snapshots > en: format snapshots 9`] = `"Khatma! You have completed your first full reading of the Quran. Alhamdulillah!"`;
 
-exports[`format functions match snapshots > en: format snapshots 10`] = `"Khatma! You have completed your first full reading of the Quran. Alhamdulillah!"`;
+exports[`format functions match snapshots > en: format snapshots 10`] = `"Khatma! You have completed your 3rd full reading of the Quran. Alhamdulillah!"`;
 
-exports[`format functions match snapshots > en: format snapshots 11`] = `"Khatma! You have completed your 3rd full reading of the Quran. Alhamdulillah!"`;
+exports[`format functions match snapshots > en: format snapshots 11`] = `"Surah Al-Fatiha (1) complete!"`;
 
-exports[`format functions match snapshots > en: format snapshots 12`] = `"Surah Al-Fatiha (1) complete!"`;
+exports[`format functions match snapshots > en: format snapshots 12`] = `"Error : test error"`;
 
-exports[`format functions match snapshots > en: format snapshots 13`] = `"Error : test error"`;
-
-exports[`format functions match snapshots > en: format snapshots 14`] = `
+exports[`format functions match snapshots > en: format snapshots 13`] = `
 "Error : test error
 Example : /example"
 `;
 
-exports[`format functions match snapshots > en: format snapshots 15`] = `
+exports[`format functions match snapshots > en: format snapshots 14`] = `
 "-- Reading speed --
 
 Overall average: 150.0 pages/h
@@ -151,7 +147,7 @@ Last 7 days average: 160.0 pages/h
 Last 30 days average: 140.0 pages/h"
 `;
 
-exports[`format functions match snapshots > en: format snapshots 16`] = `
+exports[`format functions match snapshots > en: format snapshots 15`] = `
 "-- Weekly recap --
 
 Pages read : 12 (+20%)
@@ -208,22 +204,20 @@ exports[`format functions match snapshots > fr: format snapshots 8`] = `
 Dernière lecture : 07/03 en 10m"
 `;
 
-exports[`format functions match snapshots > fr: format snapshots 9`] = `"À ce rythme (~2.5 pages/jour), tu finiras vers le 29 septembre 2026"`;
+exports[`format functions match snapshots > fr: format snapshots 9`] = `"Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !"`;
 
-exports[`format functions match snapshots > fr: format snapshots 10`] = `"Khatma ! Tu as terminé ta première lecture complète du Coran. Alhamdulillah !"`;
+exports[`format functions match snapshots > fr: format snapshots 10`] = `"Khatma ! Tu as terminé ta 3e lecture complète du Coran. Alhamdulillah !"`;
 
-exports[`format functions match snapshots > fr: format snapshots 11`] = `"Khatma ! Tu as terminé ta 3e lecture complète du Coran. Alhamdulillah !"`;
+exports[`format functions match snapshots > fr: format snapshots 11`] = `"Sourate Al-Fatiha (1) terminée !"`;
 
-exports[`format functions match snapshots > fr: format snapshots 12`] = `"Sourate Al-Fatiha (1) terminée !"`;
+exports[`format functions match snapshots > fr: format snapshots 12`] = `"Erreur : test error"`;
 
-exports[`format functions match snapshots > fr: format snapshots 13`] = `"Erreur : test error"`;
-
-exports[`format functions match snapshots > fr: format snapshots 14`] = `
+exports[`format functions match snapshots > fr: format snapshots 13`] = `
 "Erreur : test error
 Exemple : /example"
 `;
 
-exports[`format functions match snapshots > fr: format snapshots 15`] = `
+exports[`format functions match snapshots > fr: format snapshots 14`] = `
 "-- Vitesse de lecture --
 
 Moyenne globale : 150.0 pages/h
@@ -231,7 +225,7 @@ Moyenne 7 derniers jours : 160.0 pages/h
 Moyenne 30 derniers jours : 140.0 pages/h"
 `;
 
-exports[`format functions match snapshots > fr: format snapshots 16`] = `
+exports[`format functions match snapshots > fr: format snapshots 15`] = `
 "-- Récap hebdomadaire --
 
 Pages lues : 12 (+20%)

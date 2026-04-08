@@ -154,6 +154,11 @@ export const fr: Locale = {
       `Progression : ${read} / ${total} versets (${pct}%)`,
     khatmas: (count) => `Khatmas : ${count}`,
     page: "Page",
+    khatmaTime: (duration) => `Temps de lecture (cette khatma) : ${duration}`,
+    remainingTime: (duration) => `Temps restant estimé : ~${duration}`,
+    noRecentData: "Pas assez de données récentes",
+    completionDate: (day, month, year) =>
+      `Fin estimée : ${day} ${month} ${year}`,
   },
 
   reminder: {
@@ -229,15 +234,6 @@ export const fr: Locale = {
     next: "Suivant >>",
     prev: "<< Précédent",
     pageIndicator: (current, total) => `Page ${current}/${total}`,
-  },
-
-  estimation: {
-    notEnoughData:
-      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)",
-    monthsRemaining: (pace, months) =>
-      `À ton rythme actuel (~${pace} pages/jour), il te reste environ ${months} mois`,
-    dateEstimate: (pace, day, month, year) =>
-      `À ce rythme (~${pace} pages/jour), tu finiras vers le ${day} ${month} ${year}`,
   },
 
   khatma: {
