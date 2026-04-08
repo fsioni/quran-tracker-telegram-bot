@@ -1,7 +1,7 @@
 // src/handlers/timer.ts
 import { InlineKeyboard } from "grammy";
-import { MAX_TIMER_SECONDS } from "../config";
 import type { CustomContext } from "../bot";
+import { MAX_TIMER_SECONDS } from "../config";
 import {
   effectivePageCount,
   getNextKahfPage,

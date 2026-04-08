@@ -61,6 +61,16 @@ export async function markPrayerSent(
     .run();
 }
 
+export async function markStreakFollowupSent(
+  db: D1Database,
+  date: string
+): Promise<void> {
+  await db
+    .prepare("UPDATE prayer_cache SET streak_followup_sent = 1 WHERE date = ?")
+    .bind(date)
+    .run();
+}
+
 export async function cleanOldCache(
   db: D1Database,
   today: string

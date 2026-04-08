@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "../../types";
+import { getTodayInTimezone } from "./date-helpers";
 import type {
   InsertSessionData,
   Session,
@@ -158,6 +159,20 @@ export async function getHistory(
     : db.prepare(query).bind(limit, offset);
   const { results } = await stmt.all<SessionRow>();
   return results.map(mapRow);
+}
+
+export async function hasSessionToday(
+  db: D1Database,
+  tz: string
+): Promise<boolean> {
+  const today = getTodayInTimezone(tz);
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS count FROM sessions WHERE substr(started_at, 1, 10) = ?"
+    )
+    .bind(today)
+    .first<{ count: number }>();
+  return (row?.count ?? 0) > 0;
 }
 
 export async function getSessionCount(

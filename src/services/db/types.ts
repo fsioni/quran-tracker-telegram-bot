@@ -86,6 +86,7 @@ export type PrayerCacheRow = PrayerTimes & {
   asr_sent: number;
   maghrib_sent: number;
   isha_sent: number;
+  streak_followup_sent: number;
   fetched_at: string;
 };
 

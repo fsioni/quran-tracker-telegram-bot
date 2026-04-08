@@ -28,13 +28,14 @@ vi.mock("../src/services/db/prayer", async (importOriginal) => {
     getPrayerCache: vi.fn(),
     setPrayerCache: vi.fn(),
     markPrayerSent: vi.fn(),
+    markStreakFollowupSent: vi.fn(),
     cleanOldCache: vi.fn(),
   };
 });
 vi.mock("../src/services/db/sessions", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../src/services/db/sessions")>();
-  return { ...actual, getLastSession: vi.fn() };
+  return { ...actual, getLastSession: vi.fn(), hasSessionToday: vi.fn() };
 });
 vi.mock("../src/services/db/stats", async (importOriginal) => {
   const actual =
@@ -47,6 +48,7 @@ vi.mock("../src/services/prayer", async (importOriginal) => {
     await importOriginal<typeof import("../src/services/prayer")>();
   return {
     ...actual,
+    addMinutesToHHMM: vi.fn(),
     fetchPrayerTimes: vi.fn(),
     getDueReminders: vi.fn(),
     getNowInTimezone: vi.fn(),
@@ -60,6 +62,7 @@ vi.mock("../src/services/format", async (importOriginal) => {
   return {
     ...actual,
     formatReminder: vi.fn(),
+    formatStreakFollowup: vi.fn(),
     formatKahfReminder: vi.fn(),
     formatWeeklyRecap: vi.fn(),
   };
@@ -84,16 +87,19 @@ import {
   cleanOldCache,
   getPrayerCache,
   markPrayerSent,
+  markStreakFollowupSent,
   setPrayerCache,
 } from "../src/services/db/prayer";
-import { getLastSession } from "../src/services/db/sessions";
+import { getLastSession, hasSessionToday } from "../src/services/db/sessions";
 import { calculateStreak, getPeriodStats } from "../src/services/db/stats";
 import {
   formatKahfReminder,
   formatReminder,
+  formatStreakFollowup,
   formatWeeklyRecap,
 } from "../src/services/format";
 import {
+  addMinutesToHHMM,
   fetchPrayerTimes,
   getDueReminders,
   getNowInTimezone,
@@ -113,6 +119,10 @@ describe("handleScheduled", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+    // Default: no session today (for streak followup guard)
+    vi.mocked(hasSessionToday).mockResolvedValue(false);
+    // Default: isReminderDue returns false (streak followup won't fire unless explicitly set)
+    vi.mocked(isReminderDue).mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -146,6 +156,7 @@ describe("handleScheduled", () => {
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: "2026-03-14",
     });
     vi.mocked(getNowInTimezone).mockReturnValue("14:00");
@@ -176,6 +187,7 @@ describe("handleScheduled", () => {
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: "2026-03-14",
     });
     vi.mocked(getNowInTimezone).mockReturnValue("12:12");
@@ -287,6 +299,7 @@ describe("handleScheduled", () => {
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: "2026-03-14",
     });
     vi.mocked(getNowInTimezone).mockReturnValue("12:12");
@@ -326,6 +339,7 @@ describe("handleScheduled", () => {
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: "2026-03-14",
     });
     vi.mocked(getNowInTimezone).mockReturnValue("12:12");
@@ -586,6 +600,7 @@ describe("handleScheduled", () => {
         asr_sent: 1,
         maghrib_sent: 1,
         isha_sent: 1,
+        streak_followup_sent: 0,
         fetched_at: date,
       });
       vi.mocked(getNowInTimezone).mockReturnValue(overrides.nowHHMM ?? "21:05");
@@ -661,6 +676,7 @@ describe("handleScheduled", () => {
         asr_sent: 1,
         maghrib_sent: 1,
         isha_sent: 1,
+        streak_followup_sent: 0,
         fetched_at: "2026-03-11",
       });
       vi.mocked(getNowInTimezone).mockReturnValue("21:05");
@@ -685,6 +701,117 @@ describe("handleScheduled", () => {
       await handleScheduled(db, "TOKEN");
 
       expect(buildWeeklyRecap).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Streak followup reminder", () => {
+    function setupFollowupMocks(
+      overrides: {
+        streakFollowupSent?: number;
+        ishaSent?: number;
+        isFollowupDue?: boolean;
+        readToday?: boolean;
+        currentStreak?: number;
+      } = {}
+    ) {
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-14",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 1,
+        dhuhr_sent: 1,
+        asr_sent: 1,
+        maghrib_sent: 1,
+        isha_sent: overrides.ishaSent ?? 1,
+        streak_followup_sent: overrides.streakFollowupSent ?? 0,
+        fetched_at: "2026-03-14",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("21:30");
+      vi.mocked(getDueReminders).mockReturnValue([]);
+      // isReminderDue is called for the followup check
+      vi.mocked(isReminderDue).mockReturnValue(overrides.isFollowupDue ?? true);
+      vi.mocked(addMinutesToHHMM).mockReturnValue("21:30");
+      vi.mocked(hasSessionToday).mockResolvedValue(
+        overrides.readToday ?? false
+      );
+      vi.mocked(calculateStreak).mockResolvedValue({
+        currentStreak: overrides.currentStreak ?? 5,
+        bestStreak: 10,
+      });
+      vi.mocked(formatStreakFollowup).mockReturnValue("Derniere chance");
+    }
+
+    it("envoie le followup quand toutes les conditions sont remplies", async () => {
+      setupFollowupMocks();
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.telegram.org/botTOKEN/sendMessage",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            chat_id: "123",
+            text: "Derniere chance",
+            reply_markup: {
+              inline_keyboard: [[{ text: "Go", callback_data: "timer_go" }]],
+            },
+          }),
+        })
+      );
+      expect(markStreakFollowupSent).toHaveBeenCalledWith(db, "2026-03-14");
+    });
+
+    it("pas de followup si deja envoye", async () => {
+      setupFollowupMocks({ streakFollowupSent: 1 });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).not.toHaveBeenCalled();
+    });
+
+    it("pas de followup si isha pas encore envoye", async () => {
+      setupFollowupMocks({ ishaSent: 0 });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).not.toHaveBeenCalled();
+    });
+
+    it("pas de followup si trop tot", async () => {
+      setupFollowupMocks({ isFollowupDue: false });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).not.toHaveBeenCalled();
+    });
+
+    it("pas de followup si l'utilisateur a lu aujourd'hui", async () => {
+      setupFollowupMocks({ readToday: true });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).not.toHaveBeenCalled();
+    });
+
+    it("pas de followup si streak < 2", async () => {
+      setupFollowupMocks({ currentStreak: 1 });
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(formatStreakFollowup).not.toHaveBeenCalled();
     });
   });
 });

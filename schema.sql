@@ -42,5 +42,6 @@ CREATE TABLE prayer_cache (
   asr_sent INTEGER DEFAULT 0,
   maghrib_sent INTEGER DEFAULT 0,
   isha_sent INTEGER DEFAULT 0,
+  streak_followup_sent INTEGER DEFAULT 0,
   fetched_at TEXT DEFAULT (datetime('now'))
 );

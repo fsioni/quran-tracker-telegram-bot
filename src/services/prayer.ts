@@ -83,6 +83,13 @@ function timeToMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
+export function addMinutesToHHMM(hhmm: string, minutes: number): string {
+  const total = (timeToMinutes(hhmm) + minutes) % (24 * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function isReminderDue(nowHHMM: string, prayerHHMM: string): boolean {
   const diff = timeToMinutes(nowHHMM) - timeToMinutes(prayerHHMM);
   return diff >= 0;
