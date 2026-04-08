@@ -174,6 +174,10 @@ export async function confirmReadNoDurCallback(
   }
 
   const count = Number.parseInt(match[1], 10);
+  if (count < 1) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
 
   // Re-derive page range from current state
   const lastSession = await getLastSession(ctx.db, "normal");
@@ -203,6 +207,7 @@ export async function confirmReadNoDurCallback(
     return;
   }
 
+  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
   await insertAndReply(ctx, pageStart, pageEnd, null, rangeData);
   await ctx.answerCallbackQuery();
 }

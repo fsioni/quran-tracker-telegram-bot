@@ -193,8 +193,8 @@ export const ar: Locale = {
       `تمت قراءة الصفحة ${page} في ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `تمت قراءة الصفحات ${start}-${end} في ${duration}`,
-    pageSingularRecorded: (page) => `تم تسجيل الصفحة ${page}`,
-    pagePluralRecorded: (start, end) => `تم تسجيل الصفحات ${start}-${end}`,
+    pageSingularRecorded: (page) => `الصفحة ${page}`,
+    pagePluralRecorded: (start, end) => `الصفحات ${start}-${end}`,
     quranComplete: "اكتمل القرآن! الحمد لله!",
     nextPage: (page) => `الصفحة التالية: ${page}`,
     remainingPages: (count, start, end) =>
@@ -206,7 +206,7 @@ export const ar: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `تمت قراءة صفحة الكهف ${page}/${total} في ${duration}`,
-    pageReadNoDuration: (page, total) => `تم تسجيل صفحة الكهف ${page}/${total}`,
+    pageReadNoDuration: (page, total) => `صفحة الكهف ${page}/${total}`,
     thisWeek: (pages, total, duration) =>
       `هذا الأسبوع: ${pages}/${total} صفحة، ${duration} إجمالي`,
     complete: (page, total, duration) =>

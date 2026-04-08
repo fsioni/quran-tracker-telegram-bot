@@ -16,7 +16,9 @@ CREATE TABLE sessions_new (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
-INSERT INTO sessions_new
+INSERT INTO sessions_new (id, started_at, duration_seconds, page_start, page_end,
+                          surah_start, ayah_start, surah_end, ayah_end, ayah_count,
+                          type, created_at)
   SELECT id, started_at, duration_seconds, page_start, page_end,
          surah_start, ayah_start, surah_end, ayah_end, ayah_count,
          type, created_at

@@ -216,6 +216,10 @@ export async function confirmKahfNoDurCallback(
   }
 
   const count = Number.parseInt(match[1], 10);
+  if (count < 1) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
   const tz = await getTimezone(ctx.db);
 
   // Re-check kahf state
@@ -244,6 +248,7 @@ export async function confirmKahfNoDurCallback(
     return;
   }
 
+  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
   await insertAndReplyKahf(ctx, {
     count,
     durationSeconds: null,

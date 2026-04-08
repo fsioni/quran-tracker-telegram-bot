@@ -194,8 +194,8 @@ export const fr: Locale = {
     pageSingularRead: (page, duration) => `Page ${page} lue en ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `Pages ${start}-${end} lues en ${duration}`,
-    pageSingularRecorded: (page) => `Page ${page} enregistree`,
-    pagePluralRecorded: (start, end) => `Pages ${start}-${end} enregistrees`,
+    pageSingularRecorded: (page) => `Page ${page}`,
+    pagePluralRecorded: (start, end) => `Pages ${start}-${end}`,
     quranComplete: "Coran terminé ! Alhamdulillah !",
     nextPage: (page) => `Prochaine page : ${page}`,
     remainingPages: (count, start, end) =>
@@ -207,8 +207,7 @@ export const fr: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `Al-Kahf page ${page}/${total} lue en ${duration}`,
-    pageReadNoDuration: (page, total) =>
-      `Al-Kahf page ${page}/${total} enregistree`,
+    pageReadNoDuration: (page, total) => `Al-Kahf page ${page}/${total}`,
     thisWeek: (pages, total, duration) =>
       `Cette semaine : ${pages}/${total} pages, ${duration} au total`,
     complete: (page, total, duration) =>

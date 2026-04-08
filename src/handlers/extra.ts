@@ -2,6 +2,7 @@
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
 import { effectivePageCount, getPageRange } from "../data/pages";
+import type { Locale } from "../locales/types";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import { insertSession } from "../services/db/sessions";
 import { get7DayTypeAvgSpeed } from "../services/db/speed";
@@ -88,7 +89,7 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
       validation.value.ayahEnd,
       t
     );
-    const msg = `${t.session.extraRecorded} ${range} -- ${t.session.noDurationPrompt}`;
+    const msg = `${range} -- ${t.session.noDurationPrompt}`;
     const keyboard = new InlineKeyboard()
       .text(t.manage.confirm, `nde_c:${targetStr}`)
       .text(t.manage.cancel, "nde_x");
@@ -109,10 +110,7 @@ interface ValidatedTarget {
   surahStart: number;
 }
 
-function validateTarget(
-  targetStr: string,
-  t: import("../locales/types").Locale
-): Result<ValidatedTarget> {
+function validateTarget(targetStr: string, t: Locale): Result<ValidatedTarget> {
   const pageResult = parsePage(targetStr, t);
   if (pageResult.ok) {
     const { pageStart, pageEnd } = pageResult.value;
@@ -230,6 +228,7 @@ export async function confirmExtraNoDurCallback(
     return;
   }
 
+  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
   await insertAndReplyExtra(ctx, validation.value, null);
   await ctx.answerCallbackQuery();
 }
