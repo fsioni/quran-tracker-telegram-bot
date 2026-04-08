@@ -141,7 +141,6 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
 
-  // Speed comparison to 7-day average
   await appendSpeedComparison(
     msgParts,
     ctx,

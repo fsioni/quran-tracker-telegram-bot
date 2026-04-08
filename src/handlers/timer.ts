@@ -38,6 +38,7 @@ import {
   formatReadConfirmation,
   formatSessionConfirmation,
   formatSpeedComparison,
+  insertAfterFirstLine,
   parsePage,
   parseVerseStart,
 } from "../services/format";
@@ -465,33 +466,26 @@ async function handlePageResponse(
     return;
   }
 
-  let replyText = formatReply(
+  const replyBase = formatReply(
     result.value,
     pageStart,
     pageEnd,
     durationSeconds
   );
 
-  // Speed comparison to 7-day average
   if (durationSeconds > 0) {
-    const avg = await get7DayTypeAvgSpeed(
-      ctx.db,
-      sessionType,
-      tz,
-      result.value.id
-    );
+    const [avg] = await Promise.all([
+      get7DayTypeAvgSpeed(ctx.db, sessionType, tz, result.value.id),
+      clearTimerState(ctx.db),
+    ]);
     const currentSpeed =
       effectivePageCount(pageStart, pageEnd, sessionType) /
       (durationSeconds / 3600);
     const comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
-    if (comparison) {
-      const lines = replyText.split("\n");
-      lines.splice(1, 0, comparison);
-      replyText = lines.join("\n");
-    }
+    await ctx.reply(insertAfterFirstLine(replyBase, comparison));
+  } else {
+    await Promise.all([clearTimerState(ctx.db), ctx.reply(replyBase)]);
   }
-
-  await Promise.all([clearTimerState(ctx.db), ctx.reply(replyText)]);
 }
 
 async function handleVerseResponse(
@@ -543,31 +537,26 @@ async function handleVerseResponse(
     return;
   }
 
-  let replyText = formatSessionConfirmation(
+  const replyBase = formatSessionConfirmation(
     { ...result.value, type: sessionType },
     t
   );
 
-  // Speed comparison to 7-day average
   if (durationSeconds > 0) {
-    const avg = await get7DayTypeAvgSpeed(
-      ctx.db,
-      sessionType,
-      tz,
-      result.value.id
-    );
+    const [avg] = await Promise.all([
+      get7DayTypeAvgSpeed(ctx.db, sessionType, tz, result.value.id),
+      clearTimerState(ctx.db),
+    ]);
     const currentSpeed = ayahCount / (durationSeconds / 3600);
     const comparison = formatSpeedComparison(
       currentSpeed,
       avg.versesPerHour,
       t
     );
-    if (comparison) {
-      replyText += `\n${comparison}`;
-    }
+    await ctx.reply(comparison ? `${replyBase}\n${comparison}` : replyBase);
+  } else {
+    await Promise.all([clearTimerState(ctx.db), ctx.reply(replyBase)]);
   }
-
-  await Promise.all([clearTimerState(ctx.db), ctx.reply(replyText)]);
 }
 
 // --- Kahf response handler (extracted for complexity) ---
@@ -604,9 +593,10 @@ async function handleKahfResponse(
     await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
   }
+  const durationSec = state.durationSeconds ?? 0;
   const result = await insertSession(ctx.db, {
     startedAt: state.startedAt,
-    durationSeconds: state.durationSeconds ?? 0,
+    durationSeconds: durationSec,
     surahStart: rangeData.surahStart,
     ayahStart: rangeData.ayahStart,
     surahEnd: rangeData.surahEnd,
@@ -620,37 +610,30 @@ async function handleKahfResponse(
     await ctx.reply(formatError(result.error, t));
     return;
   }
-  await clearTimerState(ctx.db);
 
-  const durationSec = state.durationSeconds ?? 0;
   const weekPagesRead = pagesAlreadyRead + count;
   const weekTotalSeconds =
     weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) + durationSec;
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 
-  // Speed comparison to 7-day average
   let comparison = "";
   if (durationSec > 0) {
-    const avg = await get7DayTypeAvgSpeed(ctx.db, "kahf", tz, result.value.id);
+    const [avg] = await Promise.all([
+      get7DayTypeAvgSpeed(ctx.db, "kahf", tz, result.value.id),
+      clearTimerState(ctx.db),
+    ]);
     const currentSpeed = sessionPages / (durationSec / 3600);
     comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
+  } else {
+    await clearTimerState(ctx.db);
   }
-
-  const insertComparison = (text: string): string => {
-    if (!comparison) {
-      return text;
-    }
-    const lines = text.split("\n");
-    lines.splice(1, 0, comparison);
-    return lines.join("\n");
-  };
 
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
     await ctx.reply(
-      insertComparison(
+      insertAfterFirstLine(
         formatKahfPageConfirmation(
           {
             kahfPage: weekPagesRead,
@@ -664,12 +647,13 @@ async function handleKahfResponse(
             sessionPages,
           },
           t
-        )
+        ),
+        comparison
       )
     );
   } else {
     await ctx.reply(
-      insertComparison(
+      insertAfterFirstLine(
         formatKahfPageConfirmation(
           {
             kahfPage: weekPagesRead,
@@ -681,7 +665,8 @@ async function handleKahfResponse(
             sessionPages,
           },
           t
-        )
+        ),
+        comparison
       )
     );
   }
@@ -692,10 +677,10 @@ async function handleKahfResponse(
 async function dispatchPageResponse(
   ctx: CustomContext,
   state: TimerState,
-  input: string
+  input: string,
+  tz: string
 ): Promise<void> {
   const t = ctx.locale;
-  const tz = await getTimezone(ctx.db);
 
   switch (state.type) {
     case "normal_page": {
@@ -777,7 +762,8 @@ export async function pagesCountCallback(ctx: CustomContext): Promise<void> {
   });
   await ctx.answerCallbackQuery();
 
-  return dispatchPageResponse(ctx, state, String(count));
+  const tz = await getTimezone(ctx.db);
+  return dispatchPageResponse(ctx, state, String(count), tz);
 }
 
 export async function pagesOtherCallback(ctx: CustomContext): Promise<void> {
@@ -825,7 +811,7 @@ export async function timerResponseHandler(
       case "normal_page":
       case "extra_page":
       case "kahf":
-        return dispatchPageResponse(ctx, state, trimmed);
+        return dispatchPageResponse(ctx, state, trimmed, tz);
 
       case "normal_verse":
         return handleVerseResponse(ctx, state, trimmed, "normal", tz);

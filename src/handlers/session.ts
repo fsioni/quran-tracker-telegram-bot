@@ -79,7 +79,6 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
 
-  // Speed comparison to 7-day average
   if (durationResult.value > 0) {
     const avg = await get7DayTypeAvgSpeed(
       ctx.db,

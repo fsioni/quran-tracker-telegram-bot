@@ -19,6 +19,7 @@ import {
   formatError,
   formatKahfPageConfirmation,
   formatSpeedComparison,
+  insertAfterFirstLine,
   parsePageCountAndDuration,
 } from "../services/format";
 
@@ -93,22 +94,12 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 
-  // Speed comparison to 7-day average
   let comparison = "";
   if (durationSeconds > 0) {
     const avg = await get7DayTypeAvgSpeed(ctx.db, "kahf", tz, result.value.id);
     const currentSpeed = sessionPages / (durationSeconds / 3600);
     comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
   }
-
-  const insertComparison = (text: string): string => {
-    if (!comparison) {
-      return text;
-    }
-    const lines = text.split("\n");
-    lines.splice(1, 0, comparison);
-    return lines.join("\n");
-  };
 
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
@@ -118,7 +109,7 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
 
     await ctx.reply(
-      insertComparison(
+      insertAfterFirstLine(
         formatKahfPageConfirmation(
           {
             kahfPage: weekPagesRead,
@@ -132,12 +123,13 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
             sessionPages,
           },
           t
-        )
+        ),
+        comparison
       )
     );
   } else {
     await ctx.reply(
-      insertComparison(
+      insertAfterFirstLine(
         formatKahfPageConfirmation(
           {
             kahfPage: weekPagesRead,
@@ -149,7 +141,8 @@ export async function kahfHandler(ctx: CustomContext): Promise<void> {
             sessionPages,
           },
           t
-        )
+        ),
+        comparison
       )
     );
   }
