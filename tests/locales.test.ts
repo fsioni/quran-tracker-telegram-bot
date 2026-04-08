@@ -144,6 +144,11 @@ describe("locale completeness", () => {
     expect(t.khatma.first).toBeTruthy();
     expect(t.khatma.nth(2)).toBeTruthy();
 
+    // Milestone templates
+    expect(t.milestone.surahRemaining(5, "Al-Baqara")).toBeTruthy();
+    expect(t.milestone.juzRemaining(3, 2)).toBeTruthy();
+    expect(t.milestone.khatmaRemaining(10)).toBeTruthy();
+
     // Months
     expect(t.months).toHaveLength(12);
     for (const m of t.months) {

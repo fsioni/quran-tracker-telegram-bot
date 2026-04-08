@@ -7,7 +7,7 @@ import type { Session, SpeedAverages, TypeSpeed } from "./db/types";
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weekly-recap";
 
-function getSurahName(surahNum: number, t: Locale): string {
+export function getSurahName(surahNum: number, t: Locale): string {
   const surah = getSurah(surahNum);
   if (!surah) {
     return t.session.surahFallback(surahNum);

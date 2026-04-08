@@ -2,7 +2,7 @@
 import type { CustomContext } from "../bot";
 import { getNextPage, getPageRange, TOTAL_PAGES } from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
-import { insertKhatma, getKhatmaCount } from "../services/db/khatma";
+import { getKhatmaCount, insertKhatma } from "../services/db/khatma";
 import { getLastSession, insertSession } from "../services/db/sessions";
 import {
   appendCompletedSurahs,
@@ -11,6 +11,7 @@ import {
   formatReadConfirmation,
   parsePageCountAndDuration,
 } from "../services/format";
+import { getMilestoneText } from "../services/milestone";
 
 export async function readHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -104,6 +105,14 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     rangeData.ayahEnd,
     t
   );
+
+  const milestone = getMilestoneText(
+    { surahEnd: rangeData.surahEnd, ayahEnd: rangeData.ayahEnd, pageEnd },
+    t
+  );
+  if (milestone) {
+    parts.push(milestone);
+  }
 
   await ctx.reply(parts.join("\n"));
 }

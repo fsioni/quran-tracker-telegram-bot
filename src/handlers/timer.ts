@@ -1,7 +1,7 @@
 // src/handlers/timer.ts
 import { InlineKeyboard } from "grammy";
-import { MAX_TIMER_SECONDS } from "../config";
 import type { CustomContext } from "../bot";
+import { MAX_TIMER_SECONDS } from "../config";
 import {
   effectivePageCount,
   getNextKahfPage,
@@ -39,6 +39,7 @@ import {
   parsePage,
   parseVerseStart,
 } from "../services/format";
+import { getMilestoneText } from "../services/milestone";
 import {
   calculateAyahCount,
   validateAyah,
@@ -514,12 +515,17 @@ async function handleVerseResponse(
     await ctx.reply(formatError(result.error, t));
     return;
   }
-  await Promise.all([
-    clearTimerState(ctx.db),
-    ctx.reply(
-      formatSessionConfirmation({ ...result.value, type: sessionType }, t)
-    ),
-  ]);
+  let reply = formatSessionConfirmation(
+    { ...result.value, type: sessionType },
+    t
+  );
+  if (sessionType === "normal") {
+    const milestone = getMilestoneText({ surahEnd, ayahEnd }, t);
+    if (milestone) {
+      reply += `\n${milestone}`;
+    }
+  }
+  await Promise.all([clearTimerState(ctx.db), ctx.reply(reply)]);
 }
 
 // --- Kahf response handler (extracted for complexity) ---
@@ -644,8 +650,8 @@ async function dispatchPageResponse(
             pageStart,
             TOTAL_PAGES
           ),
-        (_r, ps, pe, dur) =>
-          formatReadConfirmation(
+        (session, ps, pe, dur) => {
+          const confirmation = formatReadConfirmation(
             {
               pageStart: ps,
               pageEnd: pe,
@@ -654,7 +660,17 @@ async function dispatchPageResponse(
               totalPages: TOTAL_PAGES,
             },
             t
-          )
+          );
+          const milestone = getMilestoneText(
+            {
+              surahEnd: session.surahEnd,
+              ayahEnd: session.ayahEnd,
+              pageEnd: pe,
+            },
+            t
+          );
+          return milestone ? `${confirmation}\n${milestone}` : confirmation;
+        }
       );
     }
     case "extra_page": {
