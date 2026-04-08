@@ -7,5 +7,5 @@ export const ADJ_PAGE_COUNT_SQL = `page_end - page_start + 1 - (${KAHF_PAGE_ADJ_
 export const HAS_SPEED_DATA_SQL =
   "page_start IS NOT NULL AND page_end IS NOT NULL AND duration_seconds IS NOT NULL";
 
-export const PAGE_STATS_SQL = `COALESCE(SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END), 0)`;
+export const PAGE_STATS_SQL = `COALESCE(SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END), 0)`;
 export const PAGE_SECONDS_SQL = `COALESCE(SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END), 0)`;

@@ -27,11 +27,11 @@ export async function get7DayTypeAvgSpeed(
   const row = await db
     .prepare(
       `SELECT
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL}
             THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) AS total_pages,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL}
             THEN duration_seconds ELSE 0 END) AS page_seconds,
-        SUM(ayah_count) AS total_ayahs,
+        SUM(CASE WHEN duration_seconds IS NOT NULL THEN ayah_count ELSE 0 END) AS total_ayahs,
         SUM(duration_seconds) AS total_seconds
       FROM sessions
       WHERE type = ? AND started_at >= ? AND id != ?`

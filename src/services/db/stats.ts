@@ -273,6 +273,7 @@ export async function getRecentPageStats(
        WHERE type = 'normal'
          AND page_start IS NOT NULL
          AND page_end IS NOT NULL
+         AND duration_seconds IS NOT NULL
          AND started_at >= ?`
     )
     .bind(`${startDate} 00:00:00`)
