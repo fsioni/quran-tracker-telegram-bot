@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fr } from "../src/locales/fr";
 import type { PrayerCacheRow } from "../src/services/db/types";
 import {
+  addMinutesToHHMM,
   buildAladhanUrl,
   fetchPrayerTimes,
   getDueReminders,
@@ -205,6 +206,7 @@ const makeCache = (
   asr_sent: 0,
   maghrib_sent: 0,
   isha_sent: 0,
+  streak_followup_sent: 0,
   fetched_at: "2026-03-14 00:00:00",
   ...overrides,
 });
@@ -244,6 +246,24 @@ describe("getDueReminders", () => {
     expect(
       getDueReminders(makeCache({ fajr_sent: 1, dhuhr_sent: 1 }), "20:00")
     ).toEqual(["asr", "maghrib", "isha"]);
+  });
+});
+
+describe("addMinutesToHHMM", () => {
+  it("ajoute 90 minutes a 20:00 -> 21:30", () => {
+    expect(addMinutesToHHMM("20:00", 90)).toBe("21:30");
+  });
+
+  it("gere le passage a minuit", () => {
+    expect(addMinutesToHHMM("23:00", 90)).toBe("00:30");
+  });
+
+  it("gere exactement minuit", () => {
+    expect(addMinutesToHHMM("22:30", 90)).toBe("00:00");
+  });
+
+  it("ajoute 0 minutes", () => {
+    expect(addMinutesToHHMM("12:00", 0)).toBe("12:00");
   });
 });
 

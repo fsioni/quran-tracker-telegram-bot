@@ -169,6 +169,10 @@ export const fr: Locale = {
       `Cette semaine : ${sessions} ${sessions <= 1 ? "session" : "sessions"}, ${ayahs} versets`,
     streak: (days) =>
       `Série : ${days} ${days <= 1 ? "jour consécutif" : "jours consécutifs"}`,
+    streakAtRisk: (days) =>
+      `Ta série de ${days} jours se termine ce soir si tu ne lis pas.`,
+    streakLastChance: (days) =>
+      `Dernière chance de garder ta série de ${days} jours.`,
     keepItUp: "Continue comme ça !",
     timeToResume: "C'est le moment de reprendre !",
   },

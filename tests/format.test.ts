@@ -15,6 +15,7 @@ import {
   formatSpeedComparison,
   formatSpeedReport,
   formatStats,
+  formatStreakFollowup,
   formatSurahsComplete,
   parseDuration,
   parseImportLine,
@@ -745,6 +746,59 @@ describe("formatReminder", () => {
     );
     expect(result).toContain("Prochaine page : 1");
     expect(result).toContain("C'est le moment de reprendre !");
+  });
+
+  it("includes streak-at-risk warning when streakAtRisk=true and streak>=2", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 5,
+        weekAyahs: 120,
+        streak: 5,
+        streakAtRisk: true,
+      },
+      fr
+    );
+    expect(result).toContain(
+      "Ta série de 5 jours se termine ce soir si tu ne lis pas."
+    );
+  });
+
+  it("no streak-at-risk warning when streakAtRisk=false", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 5,
+        weekAyahs: 120,
+        streak: 5,
+        streakAtRisk: false,
+      },
+      fr
+    );
+    expect(result).not.toContain("se termine ce soir");
+  });
+
+  it("no streak-at-risk warning when streak < 2", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 1,
+        weekAyahs: 10,
+        streak: 1,
+        streakAtRisk: true,
+      },
+      fr
+    );
+    expect(result).not.toContain("se termine ce soir");
+  });
+});
+
+// --- formatStreakFollowup ---
+
+describe("formatStreakFollowup", () => {
+  it("formats last chance message", () => {
+    const result = formatStreakFollowup({ streak: 7 }, fr);
+    expect(result).toBe("Dernière chance de garder ta série de 7 jours.");
   });
 });
 

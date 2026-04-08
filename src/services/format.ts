@@ -505,21 +505,35 @@ export function formatReminder(
     weekSessions: number;
     weekAyahs: number;
     streak: number;
+    streakAtRisk?: boolean;
   },
   t: Locale
 ): string {
   const closing =
     data.streak > 0 ? t.reminder.keepItUp : t.reminder.timeToResume;
 
-  return [
+  const lines = [
     t.reminder.title,
     "",
     t.reminder.nextPage(data.nextPage),
     t.reminder.thisWeek(data.weekSessions, data.weekAyahs),
     t.reminder.streak(data.streak),
-    "",
-    closing,
-  ].join("\n");
+  ];
+
+  if (data.streakAtRisk && data.streak >= 2) {
+    lines.push(t.reminder.streakAtRisk(data.streak));
+  }
+
+  lines.push("", closing);
+
+  return lines.join("\n");
+}
+
+export function formatStreakFollowup(
+  data: { streak: number },
+  t: Locale
+): string {
+  return t.reminder.streakLastChance(data.streak);
 }
 
 export function formatReadConfirmation(

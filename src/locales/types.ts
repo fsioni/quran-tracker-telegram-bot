@@ -265,6 +265,8 @@ export interface Locale {
     nextPage: (page: number) => string;
     thisWeek: (sessions: number, ayahs: number) => string;
     streak: (days: number) => string;
+    streakAtRisk: (days: number) => string;
+    streakLastChance: (days: number) => string;
     keepItUp: string;
     timeToResume: string;
   };

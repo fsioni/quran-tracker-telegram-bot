@@ -165,6 +165,10 @@ export const en: Locale = {
       `This week: ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} verses`,
     streak: (days) =>
       `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
+    streakAtRisk: (days) =>
+      `Your ${days}-day streak ends tonight if you don't read.`,
+    streakLastChance: (days) =>
+      `Last chance to keep your ${days}-day streak alive.`,
     keepItUp: "Keep it up!",
     timeToResume: "Time to get back to it!",
   },

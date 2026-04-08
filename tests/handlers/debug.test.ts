@@ -84,6 +84,7 @@ function setupMocks(
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: "2026-03-15T06:00:00",
     });
   }

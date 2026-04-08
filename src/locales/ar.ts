@@ -167,6 +167,10 @@ export const ar: Locale = {
       `هذا الأسبوع: ${sessions} ${arPlural(sessions, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}، ${ayahs} آية`,
     streak: (days) =>
       `السلسلة: ${days} ${arPlural(days, { one: "يوم متتالي", two: "يومان متتاليان", few: "أيام متتالية", many: "يومًا متتاليًا", other: "أيام متتالية" })}`,
+    streakAtRisk: (days) =>
+      `سلسلتك من ${days} ${arPlural(days, { one: "يوم", two: "يومين", few: "أيام", many: "يومًا", other: "أيام" })} تنتهي الليلة إن لم تقرأ.`,
+    streakLastChance: (days) =>
+      `فرصة أخيرة للحفاظ على سلسلتك من ${days} ${arPlural(days, { one: "يوم", two: "يومين", few: "أيام", many: "يومًا", other: "أيام" })}.`,
     keepItUp: "استمر على هذا!",
     timeToResume: "حان وقت العودة للقراءة!",
   },
