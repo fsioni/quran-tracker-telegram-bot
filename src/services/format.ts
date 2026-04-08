@@ -264,6 +264,19 @@ export function formatDuration(seconds: number, t?: Locale): string {
   return s > 0 ? `${m}${mSuf}${s}` : `${m}${mSuf}`;
 }
 
+export function formatSpeedComparison(
+  currentSpeed: number,
+  avgSpeed: number | null,
+  t: Locale
+): string {
+  if (avgSpeed === null || avgSpeed === 0) {
+    return "";
+  }
+  const pctDiff = Math.round(((currentSpeed - avgSpeed) / avgSpeed) * 100);
+  const sign = pctDiff >= 0 ? "+" : "";
+  return t.session.speedComparison(`${sign}${pctDiff}%`);
+}
+
 export function formatSessionConfirmation(
   session: {
     surahStart: number;

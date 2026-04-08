@@ -1,7 +1,7 @@
 // src/handlers/timer.ts
 import { InlineKeyboard } from "grammy";
-import { MAX_TIMER_SECONDS } from "../config";
 import type { CustomContext } from "../bot";
+import { MAX_TIMER_SECONDS } from "../config";
 import {
   effectivePageCount,
   getNextKahfPage,
@@ -19,6 +19,7 @@ import {
   getLastWeekKahfTotal,
 } from "../services/db/kahf";
 import { getLastSession, insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   clearTimerState,
   getTimerState,
@@ -36,6 +37,7 @@ import {
   formatKahfPageConfirmation,
   formatReadConfirmation,
   formatSessionConfirmation,
+  formatSpeedComparison,
   parsePage,
   parseVerseStart,
 } from "../services/format";
@@ -426,7 +428,8 @@ async function handlePageResponse(
     pageStart: number,
     pageEnd: number,
     duration: number
-  ) => string
+  ) => string,
+  tz: string
 ): Promise<void> {
   const t = ctx.locale;
   const count = parsePageCount(trimmed);
@@ -444,9 +447,10 @@ async function handlePageResponse(
     await ctx.reply(formatError(t.read.pagesInvalid, t));
     return;
   }
+  const durationSeconds = state.durationSeconds ?? 0;
   const result = await insertSession(ctx.db, {
     startedAt: state.startedAt,
-    durationSeconds: state.durationSeconds ?? 0,
+    durationSeconds,
     surahStart: rangeData.surahStart,
     ayahStart: rangeData.ayahStart,
     surahEnd: rangeData.surahEnd,
@@ -460,19 +464,42 @@ async function handlePageResponse(
     await ctx.reply(formatError(result.error, t));
     return;
   }
-  await Promise.all([
-    clearTimerState(ctx.db),
-    ctx.reply(
-      formatReply(result.value, pageStart, pageEnd, state.durationSeconds ?? 0)
-    ),
-  ]);
+
+  let replyText = formatReply(
+    result.value,
+    pageStart,
+    pageEnd,
+    durationSeconds
+  );
+
+  // Speed comparison to 7-day average
+  if (durationSeconds > 0) {
+    const avg = await get7DayTypeAvgSpeed(
+      ctx.db,
+      sessionType,
+      tz,
+      result.value.id
+    );
+    const currentSpeed =
+      effectivePageCount(pageStart, pageEnd, sessionType) /
+      (durationSeconds / 3600);
+    const comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
+    if (comparison) {
+      const lines = replyText.split("\n");
+      lines.splice(1, 0, comparison);
+      replyText = lines.join("\n");
+    }
+  }
+
+  await Promise.all([clearTimerState(ctx.db), ctx.reply(replyText)]);
 }
 
 async function handleVerseResponse(
   ctx: CustomContext,
   state: TimerState,
   trimmed: string,
-  sessionType: SessionType
+  sessionType: SessionType,
+  tz: string
 ): Promise<void> {
   const t = ctx.locale;
   const endResult = parseVerseStart(trimmed, t);
@@ -500,9 +527,10 @@ async function handleVerseResponse(
     surahEnd,
     ayahEnd
   );
+  const durationSeconds = state.durationSeconds ?? 0;
   const result = await insertSession(ctx.db, {
     startedAt: state.startedAt,
-    durationSeconds: state.durationSeconds ?? 0,
+    durationSeconds,
     surahStart,
     ayahStart,
     surahEnd,
@@ -514,12 +542,32 @@ async function handleVerseResponse(
     await ctx.reply(formatError(result.error, t));
     return;
   }
-  await Promise.all([
-    clearTimerState(ctx.db),
-    ctx.reply(
-      formatSessionConfirmation({ ...result.value, type: sessionType }, t)
-    ),
-  ]);
+
+  let replyText = formatSessionConfirmation(
+    { ...result.value, type: sessionType },
+    t
+  );
+
+  // Speed comparison to 7-day average
+  if (durationSeconds > 0) {
+    const avg = await get7DayTypeAvgSpeed(
+      ctx.db,
+      sessionType,
+      tz,
+      result.value.id
+    );
+    const currentSpeed = ayahCount / (durationSeconds / 3600);
+    const comparison = formatSpeedComparison(
+      currentSpeed,
+      avg.versesPerHour,
+      t
+    );
+    if (comparison) {
+      replyText += `\n${comparison}`;
+    }
+  }
+
+  await Promise.all([clearTimerState(ctx.db), ctx.reply(replyText)]);
 }
 
 // --- Kahf response handler (extracted for complexity) ---
@@ -574,45 +622,66 @@ async function handleKahfResponse(
   }
   await clearTimerState(ctx.db);
 
+  const durationSec = state.durationSeconds ?? 0;
   const weekPagesRead = pagesAlreadyRead + count;
   const weekTotalSeconds =
-    weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) +
-    (state.durationSeconds ?? 0);
+    weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) + durationSec;
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
+
+  // Speed comparison to 7-day average
+  let comparison = "";
+  if (durationSec > 0) {
+    const avg = await get7DayTypeAvgSpeed(ctx.db, "kahf", tz, result.value.id);
+    const currentSpeed = sessionPages / (durationSec / 3600);
+    comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
+  }
+
+  const insertComparison = (text: string): string => {
+    if (!comparison) {
+      return text;
+    }
+    const lines = text.split("\n");
+    lines.splice(1, 0, comparison);
+    return lines.join("\n");
+  };
 
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
     await ctx.reply(
-      formatKahfPageConfirmation(
-        {
-          kahfPage: weekPagesRead,
-          kahfTotal: KAHF_TOTAL_PAGES,
-          durationSeconds: state.durationSeconds ?? 0,
-          weekPagesRead,
-          weekTotalSeconds,
-          isComplete: true,
-          lastWeekTotalSeconds:
-            lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-          sessionPages,
-        },
-        t
+      insertComparison(
+        formatKahfPageConfirmation(
+          {
+            kahfPage: weekPagesRead,
+            kahfTotal: KAHF_TOTAL_PAGES,
+            durationSeconds: durationSec,
+            weekPagesRead,
+            weekTotalSeconds,
+            isComplete: true,
+            lastWeekTotalSeconds:
+              lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+            sessionPages,
+          },
+          t
+        )
       )
     );
   } else {
     await ctx.reply(
-      formatKahfPageConfirmation(
-        {
-          kahfPage: weekPagesRead,
-          kahfTotal: KAHF_TOTAL_PAGES,
-          durationSeconds: state.durationSeconds ?? 0,
-          weekPagesRead,
-          weekTotalSeconds,
-          isComplete: false,
-          sessionPages,
-        },
-        t
+      insertComparison(
+        formatKahfPageConfirmation(
+          {
+            kahfPage: weekPagesRead,
+            kahfTotal: KAHF_TOTAL_PAGES,
+            durationSeconds: durationSec,
+            weekPagesRead,
+            weekTotalSeconds,
+            isComplete: false,
+            sessionPages,
+          },
+          t
+        )
       )
     );
   }
@@ -626,6 +695,7 @@ async function dispatchPageResponse(
   input: string
 ): Promise<void> {
   const t = ctx.locale;
+  const tz = await getTimezone(ctx.db);
 
   switch (state.type) {
     case "normal_page": {
@@ -654,7 +724,8 @@ async function dispatchPageResponse(
               totalPages: TOTAL_PAGES,
             },
             t
-          )
+          ),
+        tz
       );
     }
     case "extra_page": {
@@ -667,11 +738,11 @@ async function dispatchPageResponse(
         parsedArgs.page,
         TOTAL_PAGES,
         (pe) => t.timer.overflowPages(parsedArgs.page, pe, TOTAL_PAGES),
-        (s) => formatSessionConfirmation({ ...s, type: "extra" }, t)
+        (s) => formatSessionConfirmation({ ...s, type: "extra" }, t),
+        tz
       );
     }
     case "kahf": {
-      const tz = await getTimezone(ctx.db);
       return handleKahfResponse(ctx, state, input, tz);
     }
     default:
@@ -749,6 +820,7 @@ export async function timerResponseHandler(
   const trimmed = text.trim();
 
   try {
+    const tz = await getTimezone(ctx.db);
     switch (state.type) {
       case "normal_page":
       case "extra_page":
@@ -756,10 +828,10 @@ export async function timerResponseHandler(
         return dispatchPageResponse(ctx, state, trimmed);
 
       case "normal_verse":
-        return handleVerseResponse(ctx, state, trimmed, "normal");
+        return handleVerseResponse(ctx, state, trimmed, "normal", tz);
 
       case "extra_verse":
-        return handleVerseResponse(ctx, state, trimmed, "extra");
+        return handleVerseResponse(ctx, state, trimmed, "extra", tz);
 
       default: {
         const _exhaustive: never = state.type;

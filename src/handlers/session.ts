@@ -2,10 +2,12 @@
 import type { CustomContext } from "../bot";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import { insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   appendCompletedSurahs,
   formatError,
   formatSessionConfirmation,
+  formatSpeedComparison,
   parseDuration,
   parseRange,
 } from "../services/format";
@@ -76,6 +78,25 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
   }
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
+
+  // Speed comparison to 7-day average
+  if (durationResult.value > 0) {
+    const avg = await get7DayTypeAvgSpeed(
+      ctx.db,
+      "normal",
+      tz,
+      result.value.id
+    );
+    const currentSpeed = ayahCount / (durationResult.value / 3600);
+    const comparison = formatSpeedComparison(
+      currentSpeed,
+      avg.versesPerHour,
+      t
+    );
+    if (comparison) {
+      msgParts.push(comparison);
+    }
+  }
 
   // Check for completed surahs
   appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd, t);

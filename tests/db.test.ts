@@ -30,6 +30,7 @@ import {
   insertBatch,
   insertSession,
 } from "../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../src/services/db/speed";
 import {
   calculateStreak,
   getGlobalStats,
@@ -1364,5 +1365,138 @@ describe("insertKhatma / getKhatmaCount", () => {
 
     const count = await getKhatmaCount(db);
     expect(count).toBe(3);
+  });
+});
+
+// --- get7DayTypeAvgSpeed ---
+
+describe("get7DayTypeAvgSpeed", () => {
+  it("returns null speeds when no prior sessions exist", async () => {
+    const today = getTodayInTimezone("UTC");
+    const s = unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          type: "normal",
+          pageStart: 1,
+          pageEnd: 3,
+        })
+      )
+    );
+    const avg = await get7DayTypeAvgSpeed(db, "normal", "UTC", s.id);
+    expect(avg.pagesPerHour).toBeNull();
+    expect(avg.versesPerHour).toBeNull();
+  });
+
+  it("computes page speed from prior sessions", async () => {
+    // Use getTodayInTimezone to get a stable "today" for the test
+    const today = getTodayInTimezone("UTC");
+    // Insert a prior session: 2 pages in 1800s = 4 pages/h
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          durationSeconds: 1800,
+          pageStart: 1,
+          pageEnd: 2,
+          type: "normal",
+        })
+      )
+    );
+    // Insert the current session
+    const current = unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 14:00:00`,
+          durationSeconds: 900,
+          pageStart: 3,
+          pageEnd: 5,
+          type: "normal",
+        })
+      )
+    );
+    const avg = await get7DayTypeAvgSpeed(db, "normal", "UTC", current.id);
+    expect(avg.pagesPerHour).toBeCloseTo(4, 1);
+  });
+
+  it("excludes the current session from average", async () => {
+    const today = getTodayInTimezone("UTC");
+    const only = unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          durationSeconds: 1800,
+          pageStart: 1,
+          pageEnd: 2,
+          type: "normal",
+        })
+      )
+    );
+    const avg = await get7DayTypeAvgSpeed(db, "normal", "UTC", only.id);
+    expect(avg.pagesPerHour).toBeNull();
+  });
+
+  it("filters by session type", async () => {
+    const today = getTodayInTimezone("UTC");
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          durationSeconds: 1800,
+          pageStart: 1,
+          pageEnd: 2,
+          type: "extra",
+        })
+      )
+    );
+    const current = unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 14:00:00`,
+          durationSeconds: 900,
+          pageStart: 3,
+          pageEnd: 5,
+          type: "normal",
+        })
+      )
+    );
+    // No normal sessions besides current, so should be null
+    const avg = await get7DayTypeAvgSpeed(db, "normal", "UTC", current.id);
+    expect(avg.pagesPerHour).toBeNull();
+  });
+
+  it("computes verses per hour for verse-only sessions", async () => {
+    const today = getTodayInTimezone("UTC");
+    // 7 ayahs in 1800s = 14 ayahs/h
+    unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 10:00:00`,
+          durationSeconds: 1800,
+          ayahCount: 7,
+          type: "normal",
+        })
+      )
+    );
+    const current = unwrap(
+      await insertSession(
+        db,
+        makeSession({
+          startedAt: `${today} 14:00:00`,
+          durationSeconds: 900,
+          ayahCount: 10,
+          type: "normal",
+        })
+      )
+    );
+    const avg = await get7DayTypeAvgSpeed(db, "normal", "UTC", current.id);
+    expect(avg.versesPerHour).toBeCloseTo(14, 1);
   });
 });

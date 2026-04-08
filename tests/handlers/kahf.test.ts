@@ -24,6 +24,11 @@ vi.mock("../../src/services/db/sessions", async (importOriginal) => {
     await importOriginal<typeof import("../../src/services/db/sessions")>();
   return { ...actual, insertSession: vi.fn() };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
@@ -34,6 +39,7 @@ import {
   getLastWeekKahfTotal,
 } from "../../src/services/db/kahf";
 import { insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
 const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<
@@ -78,6 +84,10 @@ describe("kahfHandler", () => {
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetKahfSessionsThisWeek.mockResolvedValue([]); // no sessions this week
     mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("/kahf 5m -> première page de la semaine (page 293), kahf page 1/12", async () => {

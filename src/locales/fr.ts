@@ -126,6 +126,7 @@ export const fr: Locale = {
       speed
     ) =>
       `sourate ${startName} v.${ayahStart} à sourate ${endName} v.${ayahEnd} -- ${ayahCount} versets en ${duration}${speed}`,
+    speedComparison: (pct) => `${pct} vs votre moy. 7j`,
   },
 
   stats: {

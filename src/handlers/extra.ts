@@ -1,12 +1,14 @@
 // src/handlers/extra.ts
 import type { CustomContext } from "../bot";
-import { getPageRange } from "../data/pages";
+import { effectivePageCount, getPageRange } from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import { insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   appendCompletedSurahs,
   formatError,
   formatSessionConfirmation,
+  formatSpeedComparison,
   parseDuration,
   parsePage,
   parseRange,
@@ -15,6 +17,31 @@ import { calculateAyahCount, validateRange } from "../services/quran";
 
 const WHITESPACE_RE = /\s+/;
 const PAGE_OR_RANGE_RE = /^\d+(-\d+)?$/;
+
+async function appendSpeedComparison(
+  msgParts: string[],
+  ctx: CustomContext,
+  tz: string,
+  sessionId: number,
+  durationSeconds: number,
+  pageStart: number | undefined,
+  pageEnd: number | undefined,
+  ayahCount: number
+): Promise<void> {
+  if (durationSeconds <= 0) {
+    return;
+  }
+  const avg = await get7DayTypeAvgSpeed(ctx.db, "extra", tz, sessionId);
+  const isPageBased = pageStart != null && pageEnd != null;
+  const currentSpeed = isPageBased
+    ? effectivePageCount(pageStart, pageEnd, "extra") / (durationSeconds / 3600)
+    : ayahCount / (durationSeconds / 3600);
+  const avgSpeed = isPageBased ? avg.pagesPerHour : avg.versesPerHour;
+  const comparison = formatSpeedComparison(currentSpeed, avgSpeed, ctx.locale);
+  if (comparison) {
+    msgParts.push(comparison);
+  }
+}
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -113,6 +140,18 @@ export async function extraHandler(ctx: CustomContext): Promise<void> {
   }
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
+
+  // Speed comparison to 7-day average
+  await appendSpeedComparison(
+    msgParts,
+    ctx,
+    tz,
+    result.value.id,
+    durationResult.value,
+    pageStart,
+    pageEnd,
+    ayahCount
+  );
 
   // Check for completed surahs
   appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd, t);
