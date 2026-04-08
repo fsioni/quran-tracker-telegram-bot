@@ -298,6 +298,7 @@ export interface Locale {
       duration: string,
       speed: string
     ) => string;
+    speedComparison: (pct: string) => string;
   };
 
   // Speed report

@@ -125,6 +125,7 @@ export const ar: Locale = {
       speed
     ) =>
       `سورة ${startName} آ.${ayahStart} إلى سورة ${endName} آ.${ayahEnd} -- ${ayahCount} آية في ${duration}${speed}`,
+    speedComparison: (pct) => `${pct} مقارنة بمتوسط 7 أيام`,
   },
 
   stats: {

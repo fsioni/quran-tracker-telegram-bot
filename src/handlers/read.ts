@@ -1,14 +1,22 @@
 // src/handlers/read.ts
 import type { CustomContext } from "../bot";
-import { getNextPage, getPageRange, TOTAL_PAGES } from "../data/pages";
+import {
+  effectivePageCount,
+  getNextPage,
+  getPageRange,
+  TOTAL_PAGES,
+} from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import { getKhatmaCount, insertKhatma } from "../services/db/khatma";
 import { getLastSession, insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   appendCompletedSurahs,
   formatError,
   formatKhatmaMessage,
   formatReadConfirmation,
+  formatSpeedComparison,
+  insertAfterFirstLine,
   parsePageCountAndDuration,
 } from "../services/format";
 
@@ -81,18 +89,31 @@ export async function readHandler(ctx: CustomContext): Promise<void> {
     const khatmaCount = await getKhatmaCount(ctx.db);
     parts.push(formatKhatmaMessage(khatmaCount, t));
   } else {
-    parts.push(
-      formatReadConfirmation(
-        {
-          pageStart: session.pageStart ?? pageStart,
-          pageEnd: session.pageEnd ?? pageEnd,
-          durationSeconds: session.durationSeconds,
-          totalPagesRead: session.pageEnd ?? pageEnd,
-          totalPages: TOTAL_PAGES,
-        },
-        t
-      )
+    const confirmation = formatReadConfirmation(
+      {
+        pageStart: session.pageStart ?? pageStart,
+        pageEnd: session.pageEnd ?? pageEnd,
+        durationSeconds: session.durationSeconds,
+        totalPagesRead: session.pageEnd ?? pageEnd,
+        totalPages: TOTAL_PAGES,
+      },
+      t
     );
+
+    if (durationSeconds > 0) {
+      const avg = await get7DayTypeAvgSpeed(ctx.db, "normal", tz, session.id);
+      const currentSpeed =
+        effectivePageCount(pageStart, pageEnd, "normal") /
+        (durationSeconds / 3600);
+      const comparison = formatSpeedComparison(
+        currentSpeed,
+        avg.pagesPerHour,
+        t
+      );
+      parts.push(insertAfterFirstLine(confirmation, comparison));
+    } else {
+      parts.push(confirmation);
+    }
   }
 
   // Check for completed surahs

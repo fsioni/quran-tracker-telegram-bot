@@ -20,6 +20,11 @@ vi.mock("../../src/services/db/sessions", async (importOriginal) => {
     await importOriginal<typeof import("../../src/services/db/sessions")>();
   return { ...actual, getLastSession: vi.fn(), insertSession: vi.fn() };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
@@ -27,6 +32,7 @@ import {
 } from "../../src/services/db/date-helpers";
 import { getKhatmaCount, insertKhatma } from "../../src/services/db/khatma";
 import { getLastSession, insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 
 const mockGetLastSession = getLastSession as ReturnType<typeof vi.fn>;
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
@@ -70,6 +76,10 @@ describe("readHandler", () => {
       completedAt: "2026-03-15 14:00:00",
     });
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("/read 5m sans session précédente -> enregistre page 1", async () => {

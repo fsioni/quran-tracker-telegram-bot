@@ -12,6 +12,7 @@ import {
   formatReadConfirmation,
   formatReminder,
   formatSessionConfirmation,
+  formatSpeedComparison,
   formatSpeedReport,
   formatStats,
   formatSurahsComplete,
@@ -1390,5 +1391,29 @@ describe("formatSpeedReport", () => {
     expect(result).toContain("  Normal : 10.0 pages/h (10 sessions)");
     expect(result).toContain("  Extra  : 12.0 pages/h (5 sessions)");
     expect(result).toContain("  Kahf   : 8.0 pages/h (3 sessions)");
+  });
+});
+
+// --- formatSpeedComparison ---
+
+describe("formatSpeedComparison", () => {
+  it("returns positive percentage with + prefix", () => {
+    expect(formatSpeedComparison(12.5, 10, fr)).toBe("+25% vs votre moy. 7j");
+  });
+
+  it("returns negative percentage", () => {
+    expect(formatSpeedComparison(9.2, 10, fr)).toBe("-8% vs votre moy. 7j");
+  });
+
+  it("returns +0% when speeds are equal", () => {
+    expect(formatSpeedComparison(10, 10, fr)).toBe("+0% vs votre moy. 7j");
+  });
+
+  it("returns empty string when avgSpeed is null", () => {
+    expect(formatSpeedComparison(10, null, fr)).toBe("");
+  });
+
+  it("returns empty string when avgSpeed is 0", () => {
+    expect(formatSpeedComparison(10, 0, fr)).toBe("");
   });
 });

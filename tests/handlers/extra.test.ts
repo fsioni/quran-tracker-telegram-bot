@@ -15,12 +15,18 @@ vi.mock("../../src/services/db/sessions", async (importOriginal) => {
     await importOriginal<typeof import("../../src/services/db/sessions")>();
   return { ...actual, insertSession: vi.fn() };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
   getTimezone,
 } from "../../src/services/db/date-helpers";
 import { insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
 
@@ -57,6 +63,10 @@ describe("extraHandler", () => {
     vi.clearAllMocks();
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("/extra 300 5m -> page unique, type='extra'", async () => {

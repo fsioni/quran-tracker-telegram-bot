@@ -123,6 +123,7 @@ export const en: Locale = {
       speed
     ) =>
       `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses in ${duration}${speed}`,
+    speedComparison: (pct) => `${pct} vs. your 7-day avg`,
   },
 
   stats: {
