@@ -29,8 +29,9 @@ export function computeMovingAverage(
     let sum = 0;
     let count = 0;
     for (let j = start; j <= i; j++) {
-      if (data[j] !== null) {
-        sum += data[j];
+      const val = data[j];
+      if (val !== null) {
+        sum += val;
         count++;
       }
     }

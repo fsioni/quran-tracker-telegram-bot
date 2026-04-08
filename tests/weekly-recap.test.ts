@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/services/db")>();
+vi.mock("../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/stats")>();
   return {
     ...actual,
     getPeriodStats: vi.fn(),
@@ -17,10 +18,12 @@ import {
   getPeriodStats,
   getWeekPages,
   getWeekSessions,
-} from "../src/services/db";
+} from "../src/services/db/stats";
 import { formatWeeklyRecap } from "../src/services/format";
 import type { WeeklyRecapData } from "../src/services/weekly-recap";
 import { buildWeeklyRecap } from "../src/services/weekly-recap";
+
+const FRACTIONAL_PAGE_RE = /12\.699/;
 
 describe("buildWeeklyRecap", () => {
   const db = {} as D1Database;
@@ -33,11 +36,23 @@ describe("buildWeeklyRecap", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 5, ayahs: 100, seconds: 3000 },
+        value: {
+          sessions: 5,
+          ayahs: 100,
+          seconds: 3000,
+          pages: 0,
+          pageSeconds: 0,
+        },
       })
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 4, ayahs: 80, seconds: 2500 },
+        value: {
+          sessions: 4,
+          ayahs: 80,
+          seconds: 2500,
+          pages: 0,
+          pageSeconds: 0,
+        },
       });
     vi.mocked(getWeekPages)
       .mockResolvedValueOnce({ ok: true, value: 12 })
@@ -73,11 +88,15 @@ describe("buildWeeklyRecap", () => {
       sessions: 5,
       ayahs: 100,
       seconds: 3000,
+      pages: 0,
+      pageSeconds: 0,
     });
     expect(result.value.lastWeek).toEqual({
       sessions: 4,
       ayahs: 80,
       seconds: 2500,
+      pages: 0,
+      pageSeconds: 0,
     });
     expect(result.value.thisWeekPages).toBe(12);
     expect(result.value.lastWeekPages).toBe(10);
@@ -89,7 +108,13 @@ describe("buildWeeklyRecap", () => {
   it("detecte les sourates complètes et deduplique", async () => {
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 2, ayahs: 50, seconds: 1000 },
+      value: {
+        sessions: 2,
+        ayahs: 50,
+        seconds: 1000,
+        pages: 0,
+        pageSeconds: 0,
+      },
     });
     vi.mocked(getWeekPages).mockResolvedValue({ ok: true, value: 5 });
     vi.mocked(calculateStreak).mockResolvedValue({
@@ -144,11 +169,17 @@ describe("buildWeeklyRecap", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 3, ayahs: 50, seconds: 1500 },
+        value: {
+          sessions: 3,
+          ayahs: 50,
+          seconds: 1500,
+          pages: 0,
+          pageSeconds: 0,
+        },
       })
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 0, ayahs: 0, seconds: 0 },
+        value: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
       });
     vi.mocked(getWeekPages)
       .mockResolvedValueOnce({ ok: true, value: 5 })
@@ -169,6 +200,8 @@ describe("buildWeeklyRecap", () => {
       sessions: 0,
       ayahs: 0,
       seconds: 0,
+      pages: 0,
+      pageSeconds: 0,
     });
     expect(result.value.lastWeekPages).toBe(0);
   });
@@ -177,7 +210,13 @@ describe("buildWeeklyRecap", () => {
     vi.mocked(getPeriodStats)
       .mockResolvedValueOnce({
         ok: true,
-        value: { sessions: 3, ayahs: 50, seconds: 1500 },
+        value: {
+          sessions: 3,
+          ayahs: 50,
+          seconds: 1500,
+          pages: 0,
+          pageSeconds: 0,
+        },
       })
       .mockResolvedValueOnce({ ok: false, error: "DB query failed" });
     vi.mocked(getWeekPages)
@@ -201,7 +240,13 @@ describe("buildWeeklyRecap", () => {
   it("propage l'erreur quand getWeekPages echoue", async () => {
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 3, ayahs: 50, seconds: 1500 },
+      value: {
+        sessions: 3,
+        ayahs: 50,
+        seconds: 1500,
+        pages: 0,
+        pageSeconds: 0,
+      },
     });
     vi.mocked(getWeekPages)
       .mockResolvedValueOnce({
@@ -228,8 +273,20 @@ describe("buildWeeklyRecap", () => {
 describe("formatWeeklyRecap", () => {
   it("format correct avec comparaison S-1 positive", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 9300 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 8000 },
+      thisWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 9300,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: {
+        sessions: 4,
+        ayahs: 80,
+        seconds: 8000,
+        pages: 0,
+        pageSeconds: 0,
+      },
       thisWeekPages: 12,
       lastWeekPages: 10,
       streak: { currentStreak: 8, bestStreak: 15 },
@@ -247,8 +304,20 @@ describe("formatWeeklyRecap", () => {
 
   it("format correct avec comparaison S-1 negative", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 3, ayahs: 60, seconds: 5400 },
-      lastWeek: { sessions: 5, ayahs: 100, seconds: 7200 },
+      thisWeek: {
+        sessions: 3,
+        ayahs: 60,
+        seconds: 5400,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 7200,
+        pages: 0,
+        pageSeconds: 0,
+      },
       thisWeekPages: 8,
       lastWeekPages: 12,
       streak: { currentStreak: 2, bestStreak: 10 },
@@ -264,8 +333,14 @@ describe("formatWeeklyRecap", () => {
 
   it("pas de % quand S-1 est vide", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 3, ayahs: 50, seconds: 1500 },
-      lastWeek: { sessions: 0, ayahs: 0, seconds: 0 },
+      thisWeek: {
+        sessions: 3,
+        ayahs: 50,
+        seconds: 1500,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
       thisWeekPages: 5,
       lastWeekPages: 0,
       streak: { currentStreak: 3, bestStreak: 3 },
@@ -282,8 +357,14 @@ describe("formatWeeklyRecap", () => {
 
   it("message special quand S courante est vide", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 0, ayahs: 0, seconds: 0 },
-      lastWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
+      thisWeek: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
+      lastWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 3000,
+        pages: 0,
+        pageSeconds: 0,
+      },
       thisWeekPages: 0,
       lastWeekPages: 10,
       streak: { currentStreak: 0, bestStreak: 5 },
@@ -299,8 +380,20 @@ describe("formatWeeklyRecap", () => {
 
   it("sourates terminées incluses quand presentes", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+      thisWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 3000,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: {
+        sessions: 4,
+        ayahs: 80,
+        seconds: 2500,
+        pages: 0,
+        pageSeconds: 0,
+      },
       thisWeekPages: 12,
       lastWeekPages: 10,
       streak: { currentStreak: 8, bestStreak: 15 },
@@ -316,9 +409,21 @@ describe("formatWeeklyRecap", () => {
 
   it("arrondit les pages fractionnaires a 1 decimale", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 9300 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 8000 },
-      thisWeekPages: 12.699999,
+      thisWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 9300,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: {
+        sessions: 4,
+        ayahs: 80,
+        seconds: 8000,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      thisWeekPages: 12.699_999,
       lastWeekPages: 10.3,
       streak: { currentStreak: 8, bestStreak: 15 },
       completedSurahs: [],
@@ -327,13 +432,19 @@ describe("formatWeeklyRecap", () => {
     const msg = formatWeeklyRecap(data, fr);
 
     expect(msg).toContain("Pages lues : 12.7 (+23%)");
-    expect(msg).not.toMatch(/12\.699/);
+    expect(msg).not.toMatch(FRACTIONAL_PAGE_RE);
   });
 
   it("affiche un nombre entier sans decimale", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 3, ayahs: 50, seconds: 1500 },
-      lastWeek: { sessions: 0, ayahs: 0, seconds: 0 },
+      thisWeek: {
+        sessions: 3,
+        ayahs: 50,
+        seconds: 1500,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
       thisWeekPages: 5,
       lastWeekPages: 0,
       streak: { currentStreak: 3, bestStreak: 3 },
@@ -348,8 +459,14 @@ describe("formatWeeklyRecap", () => {
 
   it("ne masque pas un effort non-nul en zero", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 1, ayahs: 10, seconds: 600 },
-      lastWeek: { sessions: 0, ayahs: 0, seconds: 0 },
+      thisWeek: {
+        sessions: 1,
+        ayahs: 10,
+        seconds: 600,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
       thisWeekPages: 0.266,
       lastWeekPages: 0,
       streak: { currentStreak: 1, bestStreak: 1 },
@@ -363,8 +480,20 @@ describe("formatWeeklyRecap", () => {
 
   it("pas de ligne sourate quand aucune terminée", () => {
     const data: WeeklyRecapData = {
-      thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-      lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+      thisWeek: {
+        sessions: 5,
+        ayahs: 100,
+        seconds: 3000,
+        pages: 0,
+        pageSeconds: 0,
+      },
+      lastWeek: {
+        sessions: 4,
+        ayahs: 80,
+        seconds: 2500,
+        pages: 0,
+        pageSeconds: 0,
+      },
       thisWeekPages: 12,
       lastWeekPages: 10,
       streak: { currentStreak: 8, bestStreak: 15 },

@@ -3,28 +3,37 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { kahfHandler } from "../../src/handlers/kahf";
 import { fr } from "../../src/locales/fr";
-import type { Session } from "../../src/services/db";
+import type { Session } from "../../src/services/db/types";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn(), getNowTimestamp: vi.fn() };
+});
+vi.mock("../../src/services/db/kahf", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/kahf")>();
   return {
     ...actual,
-    insertSession: vi.fn(),
-    getConfig: vi.fn(),
-    getTimezone: vi.fn(),
-    getNowTimestamp: vi.fn(),
     getKahfSessionsThisWeek: vi.fn(),
     getLastWeekKahfTotal: vi.fn(),
   };
 });
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
+  return { ...actual, insertSession: vi.fn() };
+});
 
+import {
+  getNowTimestamp,
+  getTimezone,
+} from "../../src/services/db/date-helpers";
 import {
   getKahfSessionsThisWeek,
   getLastWeekKahfTotal,
-  getNowTimestamp,
-  getTimezone,
-  insertSession,
-} from "../../src/services/db";
+} from "../../src/services/db/kahf";
+import { insertSession } from "../../src/services/db/sessions";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
 const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<

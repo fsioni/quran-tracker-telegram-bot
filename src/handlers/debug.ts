@@ -1,13 +1,13 @@
 import type { CustomContext } from "../bot";
+import { getConfig } from "../services/db/config";
 import {
-  getConfig,
-  getGlobalStats,
-  getLastSession,
   getNowTimestamp,
-  getPrayerCache,
   getTimezone,
   getTodayInTimezone,
-} from "../services/db";
+} from "../services/db/date-helpers";
+import { getPrayerCache } from "../services/db/prayer";
+import { getLastSession } from "../services/db/sessions";
+import { getGlobalStats } from "../services/db/stats";
 import { formatRange } from "../services/format";
 
 export async function debugHandler(ctx: CustomContext): Promise<void> {

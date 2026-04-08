@@ -1,12 +1,12 @@
 import type { CustomContext } from "../bot";
 import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "../config";
-import type { PrayerName } from "../services/db";
+import { getConfig } from "../services/db/config";
+import { getTodayInTimezone } from "../services/db/date-helpers";
 import {
   deletePrayerCacheForDate,
-  getConfig,
-  getTodayInTimezone,
   setPrayerCache,
-} from "../services/db";
+} from "../services/db/prayer";
+import type { PrayerName } from "../services/db/types";
 import { formatError } from "../services/format";
 import { fetchPrayerTimes } from "../services/prayer";
 

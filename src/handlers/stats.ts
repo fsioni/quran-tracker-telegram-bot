@@ -4,24 +4,27 @@ import type { CustomContext } from "../bot";
 import { getNextPage, TOTAL_PAGES } from "../data/pages";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import type { Locale } from "../locales/types";
+import { getTimezone, getTodayInTimezone } from "../services/db/date-helpers";
+import { getKhatmaCount } from "../services/db/khatma";
+import {
+  getHistory,
+  getLastSession,
+  getSessionCount,
+} from "../services/db/sessions";
+import {
+  getBestSpeedSession,
+  getLongestSession,
+  getSpeedAverages,
+  getSpeedByType,
+} from "../services/db/speed";
 import {
   calculateStreak,
-  getBestSpeedSession,
   getGlobalStats,
-  getHistory,
-  getKhatmaCount,
-  getLastSession,
-  getLongestSession,
   getPeriodStats,
   getPreviousWeekStats,
   getRecentPace,
-  getSessionCount,
-  getSpeedAverages,
-  getSpeedByType,
-  getTimezone,
-  getTodayInTimezone,
-  type SessionType,
-} from "../services/db";
+} from "../services/db/stats";
+import type { SessionType } from "../services/db/types";
 import {
   formatError,
   formatEstimation,

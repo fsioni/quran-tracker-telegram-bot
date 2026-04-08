@@ -3,18 +3,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { graphHandler } from "../../src/handlers/graph";
 import { fr } from "../../src/locales/fr";
-import type { DailySpeedPoint } from "../../src/services/db";
+import type { DailySpeedPoint } from "../../src/services/db/types";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
-  return {
-    ...actual,
-    getTimezone: vi.fn(),
-    getDailySpeedData: vi.fn(),
-  };
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn() };
+});
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, getDailySpeedData: vi.fn() };
 });
 
-import { getDailySpeedData, getTimezone } from "../../src/services/db";
+import { getTimezone } from "../../src/services/db/date-helpers";
+import { getDailySpeedData } from "../../src/services/db/speed";
 
 function makeCtx(match = ""): CustomContext {
   return {

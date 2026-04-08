@@ -9,7 +9,8 @@ import {
   LANGUAGES,
 } from "../locales";
 import type { Locale } from "../locales/types";
-import { clearPrayerCache, getConfig, setConfig } from "../services/db";
+import { getConfig, setConfig } from "../services/db/config";
+import { clearPrayerCache } from "../services/db/prayer";
 import { formatError } from "../services/format";
 import { invalidateLocaleCache } from "../services/locale-cache";
 

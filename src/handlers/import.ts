@@ -1,10 +1,7 @@
 // src/handlers/import.ts
 import type { CustomContext } from "../bot";
-import {
-  type InsertSessionData,
-  insertBatch,
-  type SessionType,
-} from "../services/db";
+import { insertBatch } from "../services/db/sessions";
+import type { InsertSessionData, SessionType } from "../services/db/types";
 import { formatError, parseImportLine } from "../services/format";
 import { calculateAyahCount, validateRange } from "../services/quran";
 
@@ -74,7 +71,11 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
   }
 
   if (valid.length > 0) {
-    await insertBatch(ctx.db, valid);
+    const batchResult = await insertBatch(ctx.db, valid);
+    if (!batchResult.ok) {
+      await ctx.reply(formatError(batchResult.error, t));
+      return;
+    }
   }
 
   let message: string;

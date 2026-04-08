@@ -4,14 +4,15 @@ import { buildWelcome, getBotCommands } from "../../src/locales";
 import { en } from "../../src/locales/en";
 import { fr } from "../../src/locales/fr";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
-  return {
-    ...actual,
-    getConfig: vi.fn(),
-    setConfig: vi.fn(),
-    clearPrayerCache: vi.fn(),
-  };
+vi.mock("../../src/services/db/config", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/config")>();
+  return { ...actual, getConfig: vi.fn(), setConfig: vi.fn() };
+});
+vi.mock("../../src/services/db/prayer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/prayer")>();
+  return { ...actual, clearPrayerCache: vi.fn() };
 });
 
 vi.mock("../../src/services/locale-cache", async (importOriginal) => {
@@ -29,7 +30,8 @@ import {
   langSetCallback,
   startHandler,
 } from "../../src/handlers/config";
-import { clearPrayerCache, getConfig, setConfig } from "../../src/services/db";
+import { getConfig, setConfig } from "../../src/services/db/config";
+import { clearPrayerCache } from "../../src/services/db/prayer";
 import { invalidateLocaleCache } from "../../src/services/locale-cache";
 
 function createMockContext(chatId = 12_345): CustomContext {

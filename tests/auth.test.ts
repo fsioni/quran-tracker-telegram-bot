@@ -13,7 +13,7 @@ function makeUpdate(userId: number): Update {
     message: {
       message_id: 1,
       date: Math.floor(Date.now() / 1000),
-      chat: { id: userId, type: "private" },
+      chat: { id: userId, type: "private", first_name: "Test" },
       from: { id: userId, is_bot: false, first_name: "Test" },
       text: "hello",
     },

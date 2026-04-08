@@ -626,7 +626,7 @@ export const KAHF_FIRST_PAGE_WEIGHT = 4 / 15;
 export function effectivePageCount(
   pageStart: number,
   pageEnd: number,
-  type?: "kahf"
+  type?: string
 ): number {
   const raw = pageEnd - pageStart + 1;
   if (type === "kahf" && pageStart === KAHF_PAGE_START) {
@@ -664,7 +664,7 @@ export function getPageBoundary(page: number): PageBoundary | undefined {
 export function getPageRange(
   pageStart: number,
   pageEnd: number,
-  type?: "kahf"
+  type?: string
 ):
   | {
       surahStart: number;

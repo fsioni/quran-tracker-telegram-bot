@@ -1,26 +1,31 @@
 import { Bot, webhookCallback } from "grammy";
 import { createBot } from "./bot";
-import { DEFAULT_CITY, DEFAULT_COUNTRY, DEFAULT_TZ } from "./config";
+import {
+  DEFAULT_CITY,
+  DEFAULT_COUNTRY,
+  DEFAULT_TZ,
+  WEEKLY_RECAP_HOUR,
+} from "./config";
 import { getNextKahfPage, getNextPage } from "./data/pages";
 import { CALLBACK_TIMER_GO } from "./handlers/timer";
 import { getBotCommands, getLocale } from "./locales";
 import type { Locale } from "./locales/types";
-import type { PrayerCacheRow } from "./services/db";
+import { getConfig, setConfig } from "./services/db/config";
+import { getTodayInTimezone } from "./services/db/date-helpers";
 import {
   calculateKahfPagesRead,
-  calculateStreak,
-  cleanOldCache,
-  getConfig,
   getKahfSessionsThisWeek,
   getKahfStats,
-  getLastSession,
-  getPeriodStats,
+} from "./services/db/kahf";
+import {
+  cleanOldCache,
   getPrayerCache,
-  getTodayInTimezone,
   markPrayerSent,
-  setConfig,
   setPrayerCache,
-} from "./services/db";
+} from "./services/db/prayer";
+import { getLastSession } from "./services/db/sessions";
+import { calculateStreak, getPeriodStats } from "./services/db/stats";
+import type { PrayerCacheRow } from "./services/db/types";
 import {
   formatKahfReminder,
   formatReminder,
@@ -44,7 +49,7 @@ async function sendTelegramMessage(
   botToken: string,
   chatId: string,
   text: string,
-  replyMarkup?: unknown
+  replyMarkup?: { inline_keyboard: { text: string; callback_data: string }[][] }
 ): Promise<boolean> {
   try {
     const body: Record<string, unknown> = { chat_id: chatId, text };
@@ -65,7 +70,10 @@ async function sendTelegramMessage(
     }
     return true;
   } catch (e) {
-    console.error("Telegram sendMessage failed:", (e as Error).message);
+    console.error(
+      "Telegram sendMessage failed:",
+      e instanceof Error ? e.message : String(e)
+    );
     return false;
   }
 }
@@ -193,7 +201,7 @@ async function sendKahfReminder(
 
 async function sendWeeklyRecap(sctx: ScheduledContext): Promise<void> {
   const recapLast = await getConfig(sctx.db, "weekly_recap_last");
-  if (recapLast === sctx.today || sctx.nowHHMM < "21:00") {
+  if (recapLast === sctx.today || sctx.nowHHMM < WEEKLY_RECAP_HOUR) {
     return;
   }
 
@@ -213,7 +221,10 @@ async function sendWeeklyRecap(sctx: ScheduledContext): Promise<void> {
       await setConfig(sctx.db, "weekly_recap_last", sctx.today);
     }
   } catch (e) {
-    console.error("Weekly recap failed:", (e as Error).message);
+    console.error(
+      "Weekly recap failed:",
+      e instanceof Error ? e.message : String(e)
+    );
   }
 }
 
@@ -306,7 +317,10 @@ export default {
         await bot.api.setMyCommands(getBotCommands(t));
         return new Response("Commands registered");
       } catch (e) {
-        console.error("setMyCommands failed:", (e as Error).message);
+        console.error(
+          "setMyCommands failed:",
+          e instanceof Error ? e.message : String(e)
+        );
         return new Response("Failed to register commands", { status: 502 });
       }
     }

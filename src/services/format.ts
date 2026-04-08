@@ -2,12 +2,8 @@ import { effectivePageCount, TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
-import {
-  addDays,
-  type Session,
-  type SpeedAverages,
-  type TypeSpeed,
-} from "./db";
+import { addDays } from "./db/date-helpers";
+import type { Session, SpeedAverages, TypeSpeed } from "./db/types";
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weekly-recap";
 
@@ -31,7 +27,7 @@ function formatSpeedOneDecimal(speed: number): string {
 }
 
 function formatOneDecimalTrimmed(n: number): string {
-  return String(parseFloat(n.toFixed(1)));
+  return String(Number.parseFloat(n.toFixed(1)));
 }
 
 export interface ParsedRange {

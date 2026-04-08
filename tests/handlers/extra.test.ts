@@ -3,28 +3,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { extraHandler } from "../../src/handlers/extra";
 import { fr } from "../../src/locales/fr";
-import type { Session } from "../../src/services/db";
+import type { Session } from "../../src/services/db/types";
 
-vi.mock("../../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../src/services/db")>();
-  return {
-    ...actual,
-    insertSession: vi.fn(),
-    getConfig: vi.fn(),
-    getTimezone: vi.fn(),
-    getNowTimestamp: vi.fn(),
-  };
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn(), getNowTimestamp: vi.fn() };
+});
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
+  return { ...actual, insertSession: vi.fn() };
 });
 
 import {
-  getConfig,
   getNowTimestamp,
   getTimezone,
-  insertSession,
-} from "../../src/services/db";
+} from "../../src/services/db/date-helpers";
+import { insertSession } from "../../src/services/db/sessions";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
-const mockGetConfig = getConfig as ReturnType<typeof vi.fn>;
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -57,7 +55,6 @@ function createMockContext(match = ""): CustomContext {
 describe("extraHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetConfig.mockResolvedValue(null);
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
   });

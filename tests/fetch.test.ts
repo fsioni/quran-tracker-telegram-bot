@@ -22,7 +22,7 @@ vi.mock("../src/locales", () => ({
     .mockReturnValue([{ command: "start", description: "test" }]),
 }));
 
-vi.mock("../src/services/db", () => ({
+vi.mock("../src/services/db/config", () => ({
   getConfig: vi.fn().mockResolvedValue(null),
 }));
 

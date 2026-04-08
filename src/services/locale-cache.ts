@@ -1,6 +1,6 @@
 import { getLocale } from "../locales";
 import type { Locale } from "../locales/types";
-import { getConfig } from "./db";
+import { getConfig } from "./db/config";
 
 let cachedLocale: Locale | null = null;
 

@@ -4,7 +4,7 @@ import { fr } from "../src/locales/fr";
 
 // Mock the db module before importing localeCache
 const mockGetConfig = vi.fn();
-vi.mock("../src/services/db", () => ({
+vi.mock("../src/services/db/config", () => ({
   getConfig: (...args: unknown[]) => mockGetConfig(...args),
 }));
 

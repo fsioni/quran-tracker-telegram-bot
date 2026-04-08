@@ -2,37 +2,43 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import type { PrayerTimes, SessionType } from "../src/services/db";
+import { getConfig, setConfig } from "../src/services/db/config";
 import {
   addDays,
-  calculateStreak,
-  cleanOldCache,
-  deleteSessionById,
-  getConfig,
-  getGlobalStats,
-  getHistory,
-  getKahfSessionsThisWeek,
-  getKahfStats,
-  getKhatmaCount,
-  getLastSession,
-  getLastWeekKahfTotal,
   getMonthBounds,
-  getPeriodStats,
-  getPrayerCache,
-  getPreviousWeekStats,
-  getRecentPace,
-  getSessionById,
-  getSessionCount,
-  getStatsByType,
   getTodayInTimezone,
   getWeekBounds,
-  insertBatch,
-  insertKhatma,
-  insertSession,
+} from "../src/services/db/date-helpers";
+import {
+  getKahfSessionsThisWeek,
+  getKahfStats,
+  getLastWeekKahfTotal,
+} from "../src/services/db/kahf";
+import { getKhatmaCount, insertKhatma } from "../src/services/db/khatma";
+import {
+  cleanOldCache,
+  getPrayerCache,
   markPrayerSent,
-  setConfig,
   setPrayerCache,
-} from "../src/services/db";
+} from "../src/services/db/prayer";
+import {
+  deleteSessionById,
+  getHistory,
+  getLastSession,
+  getSessionById,
+  getSessionCount,
+  insertBatch,
+  insertSession,
+} from "../src/services/db/sessions";
+import {
+  calculateStreak,
+  getGlobalStats,
+  getPeriodStats,
+  getPreviousWeekStats,
+  getRecentPace,
+  getStatsByType,
+} from "../src/services/db/stats";
+import type { PrayerTimes, SessionType } from "../src/services/db/types";
 
 const DATE_FORMAT_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -49,8 +55,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const schemaSQL = readFileSync(resolve(__dirname, "../schema.sql"), "utf-8");
 const schemaStatements = schemaSQL
   .split(";")
-  .map((s) => s.trim())
-  .filter((s) => s.length > 0);
+  .map((s: string) => s.trim())
+  .filter((s: string) => s.length > 0);
 
 let mf: Miniflare;
 let db: D1Database;
@@ -63,7 +69,7 @@ beforeEach(async () => {
   });
   db = await mf.getD1Database("DB");
 
-  await db.batch(schemaStatements.map((s) => db.prepare(s)));
+  await db.batch(schemaStatements.map((s: string) => db.prepare(s)));
 });
 
 afterEach(async () => {
@@ -288,16 +294,18 @@ describe("insertBatch", () => {
       makeSession({ startedAt: "2026-03-10 10:00:00" }),
       makeSession({ startedAt: "2026-03-11 12:00:00" }),
     ];
-    const count = await insertBatch(db, sessions);
-    expect(count).toBe(3);
+    const result = await insertBatch(db, sessions);
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.value).toBe(3);
 
     const history = await getHistory(db);
     expect(history).toHaveLength(3);
   });
 
   it("returns 0 for an empty array", async () => {
-    const count = await insertBatch(db, []);
-    expect(count).toBe(0);
+    const result = await insertBatch(db, []);
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.value).toBe(0);
   });
 });
 

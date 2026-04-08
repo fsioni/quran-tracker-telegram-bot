@@ -7,11 +7,11 @@ import {
 } from "../services/chart";
 import {
   addDays,
-  type DailySpeedPoint,
-  getDailySpeedData,
   getTimezone,
   getTodayInTimezone,
-} from "../services/db";
+} from "../services/db/date-helpers";
+import { getDailySpeedData } from "../services/db/speed";
+import type { DailySpeedPoint } from "../services/db/types";
 
 const DEFAULT_DAYS = 30;
 const MIN_DAYS = 7;

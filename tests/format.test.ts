@@ -1,5 +1,5 @@
 import { fr } from "../src/locales/fr";
-import type { Session } from "../src/services/db";
+import type { Session } from "../src/services/db/types";
 
 const MONTHS_REMAINING_RE =
   /^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/;

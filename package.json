@@ -27,7 +27,8 @@
     "deploy": "wrangler deploy",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "grammy": "^1.41.1"
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
     "@cloudflare/workers-types": "^4.20260313.1",
+    "@types/node": "^25.5.2",
     "miniflare": "^4.20260310.0",
     "typescript": "^5.9.3",
     "ultracite": "^7.3.2",

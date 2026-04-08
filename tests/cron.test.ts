@@ -1,23 +1,45 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/services/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/services/db")>();
+vi.mock("../src/services/db/config", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/config")>();
+  return { ...actual, getConfig: vi.fn(), setConfig: vi.fn() };
+});
+vi.mock("../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/date-helpers")>();
+  return { ...actual, getTodayInTimezone: vi.fn() };
+});
+vi.mock("../src/services/db/kahf", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/kahf")>();
   return {
     ...actual,
-    getConfig: vi.fn(),
+    calculateKahfPagesRead: vi.fn(),
+    getKahfSessionsThisWeek: vi.fn(),
+    getKahfStats: vi.fn(),
+  };
+});
+vi.mock("../src/services/db/prayer", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/prayer")>();
+  return {
+    ...actual,
     getPrayerCache: vi.fn(),
     setPrayerCache: vi.fn(),
     markPrayerSent: vi.fn(),
-    getLastSession: vi.fn(),
-    getPeriodStats: vi.fn(),
-    calculateStreak: vi.fn(),
-    calculateKahfPagesRead: vi.fn(),
-    getKahfSessionsThisWeek: vi.fn(),
-    getTodayInTimezone: vi.fn(),
     cleanOldCache: vi.fn(),
-    getKahfStats: vi.fn(),
-    setConfig: vi.fn(),
   };
+});
+vi.mock("../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/sessions")>();
+  return { ...actual, getLastSession: vi.fn() };
+});
+vi.mock("../src/services/db/stats", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/services/db/stats")>();
+  return { ...actual, getPeriodStats: vi.fn(), calculateStreak: vi.fn() };
 });
 
 vi.mock("../src/services/prayer", async (importOriginal) => {
@@ -51,21 +73,21 @@ vi.mock("../src/services/weekly-recap", async (importOriginal) => {
 
 import { handleScheduled } from "../src/index";
 import { fr } from "../src/locales/fr";
+import { getConfig, setConfig } from "../src/services/db/config";
+import { getTodayInTimezone } from "../src/services/db/date-helpers";
 import {
   calculateKahfPagesRead,
-  calculateStreak,
-  cleanOldCache,
-  getConfig,
   getKahfSessionsThisWeek,
   getKahfStats,
-  getLastSession,
-  getPeriodStats,
+} from "../src/services/db/kahf";
+import {
+  cleanOldCache,
   getPrayerCache,
-  getTodayInTimezone,
   markPrayerSent,
-  setConfig,
   setPrayerCache,
-} from "../src/services/db";
+} from "../src/services/db/prayer";
+import { getLastSession } from "../src/services/db/sessions";
+import { calculateStreak, getPeriodStats } from "../src/services/db/stats";
 import {
   formatKahfReminder,
   formatReminder,
@@ -78,6 +100,12 @@ import {
   isReminderDue,
 } from "../src/services/prayer";
 import { buildWeeklyRecap } from "../src/services/weekly-recap";
+
+function mockConfigValues(values: Record<string, string | null>) {
+  vi.mocked(getConfig).mockImplementation((_, key) =>
+    Promise.resolve(values[key] ?? null)
+  );
+}
 
 describe("handleScheduled", () => {
   const db = {} as D1Database;
@@ -98,23 +126,12 @@ describe("handleScheduled", () => {
   });
 
   it("ne fait rien si aucune priere dans la fenetre", async () => {
-    vi.mocked(getConfig).mockImplementation((_, key) => {
-      if (key === "chat_id") {
-        return "123";
-      }
-      if (key === "timezone") {
-        return "America/Cancun";
-      }
-      if (key === "city") {
-        return "Playa del Carmen";
-      }
-      if (key === "country") {
-        return "MX";
-      }
-      if (key === "language") {
-        return "fr";
-      }
-      return null;
+    mockConfigValues({
+      chat_id: "123",
+      timezone: "America/Cancun",
+      city: "Playa del Carmen",
+      country: "MX",
+      language: "fr",
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
     vi.mocked(getPrayerCache).mockResolvedValue({
@@ -139,23 +156,12 @@ describe("handleScheduled", () => {
   });
 
   it("envoie un rappel et marque la priere", async () => {
-    vi.mocked(getConfig).mockImplementation((_, key) => {
-      if (key === "chat_id") {
-        return "123";
-      }
-      if (key === "timezone") {
-        return "America/Cancun";
-      }
-      if (key === "city") {
-        return "PDC";
-      }
-      if (key === "country") {
-        return "MX";
-      }
-      if (key === "language") {
-        return "fr";
-      }
-      return null;
+    mockConfigValues({
+      chat_id: "123",
+      timezone: "America/Cancun",
+      city: "PDC",
+      country: "MX",
+      language: "fr",
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
     vi.mocked(getPrayerCache).mockResolvedValue({
@@ -190,7 +196,13 @@ describe("handleScheduled", () => {
     });
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 3, ayahs: 45, seconds: 2000 },
+      value: {
+        sessions: 3,
+        ayahs: 45,
+        seconds: 2000,
+        pages: 0,
+        pageSeconds: 0,
+      },
     });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 5,
@@ -218,23 +230,12 @@ describe("handleScheduled", () => {
   });
 
   it("fetch Aladhan si cache absent", async () => {
-    vi.mocked(getConfig).mockImplementation((_, key) => {
-      if (key === "chat_id") {
-        return "123";
-      }
-      if (key === "timezone") {
-        return "America/Cancun";
-      }
-      if (key === "city") {
-        return "PDC";
-      }
-      if (key === "country") {
-        return "MX";
-      }
-      if (key === "language") {
-        return "fr";
-      }
-      return null;
+    mockConfigValues({
+      chat_id: "123",
+      timezone: "America/Cancun",
+      city: "PDC",
+      country: "MX",
+      language: "fr",
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
     vi.mocked(getPrayerCache).mockResolvedValueOnce(null);
@@ -266,23 +267,12 @@ describe("handleScheduled", () => {
   });
 
   it("ne marque pas la priere si Telegram echoue", async () => {
-    vi.mocked(getConfig).mockImplementation((_, key) => {
-      if (key === "chat_id") {
-        return "123";
-      }
-      if (key === "timezone") {
-        return "America/Cancun";
-      }
-      if (key === "city") {
-        return "PDC";
-      }
-      if (key === "country") {
-        return "MX";
-      }
-      if (key === "language") {
-        return "fr";
-      }
-      return null;
+    mockConfigValues({
+      chat_id: "123",
+      timezone: "America/Cancun",
+      city: "PDC",
+      country: "MX",
+      language: "fr",
     });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
     vi.mocked(getPrayerCache).mockResolvedValue({
@@ -304,7 +294,7 @@ describe("handleScheduled", () => {
     vi.mocked(getLastSession).mockResolvedValue(null);
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 0, ayahs: 0, seconds: 0 },
+      value: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
     });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 0,
@@ -322,15 +312,7 @@ describe("handleScheduled", () => {
   });
 
   it("envoie rappel avec nextPage=1 si aucune session", async () => {
-    vi.mocked(getConfig).mockImplementation((_, key) => {
-      if (key === "chat_id") {
-        return "123";
-      }
-      if (key === "language") {
-        return "fr";
-      }
-      return null;
-    });
+    mockConfigValues({ chat_id: "123", language: "fr" });
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-14");
     vi.mocked(getPrayerCache).mockResolvedValue({
       date: "2026-03-14",
@@ -351,7 +333,7 @@ describe("handleScheduled", () => {
     vi.mocked(getLastSession).mockResolvedValue(null);
     vi.mocked(getPeriodStats).mockResolvedValue({
       ok: true,
-      value: { sessions: 0, ayahs: 0, seconds: 0 },
+      value: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
     });
     vi.mocked(calculateStreak).mockResolvedValue({
       currentStreak: 0,
@@ -380,26 +362,12 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "America/Cancun";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        if (key === "kahf_reminder_last") {
-          return null;
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
       vi.mocked(getPrayerCache).mockResolvedValue({
@@ -455,23 +423,12 @@ describe("handleScheduled", () => {
       // 2026-03-11 is a Wednesday
       vi.setSystemTime(new Date("2026-03-11T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "America/Cancun";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");
       vi.mocked(getPrayerCache).mockResolvedValue({
@@ -500,26 +457,13 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "America/Cancun";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "kahf_reminder_last") {
-          return "2026-03-13";
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        kahf_reminder_last: "2026-03-13",
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
       vi.mocked(getPrayerCache).mockResolvedValue({
@@ -548,26 +492,12 @@ describe("handleScheduled", () => {
       // 2026-03-13 is a Friday
       vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "America/Cancun";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        if (key === "kahf_reminder_last") {
-          return null;
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
       vi.mocked(getPrayerCache).mockResolvedValue({
@@ -635,26 +565,13 @@ describe("handleScheduled", () => {
         )
       );
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "UTC";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "weekly_recap_last") {
-          return overrides.recapLast ?? null;
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "UTC",
+        city: "PDC",
+        country: "MX",
+        weekly_recap_last: overrides.recapLast ?? null,
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue(date);
       vi.mocked(getPrayerCache).mockResolvedValue({
@@ -680,8 +597,20 @@ describe("handleScheduled", () => {
       vi.mocked(buildWeeklyRecap).mockResolvedValue({
         ok: true,
         value: {
-          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeek: {
+            sessions: 5,
+            ayahs: 100,
+            seconds: 3000,
+            pages: 0,
+            pageSeconds: 0,
+          },
+          lastWeek: {
+            sessions: 4,
+            ayahs: 80,
+            seconds: 2500,
+            pages: 0,
+            pageSeconds: 0,
+          },
           thisWeekPages: 12,
           lastWeekPages: 10,
           streak: { currentStreak: 8, bestStreak: 15 },
@@ -712,23 +641,12 @@ describe("handleScheduled", () => {
       // 2026-03-11 is a Wednesday
       vi.setSystemTime(new Date("2026-03-11T21:05:00Z"));
 
-      vi.mocked(getConfig).mockImplementation((_, key) => {
-        if (key === "chat_id") {
-          return "123";
-        }
-        if (key === "timezone") {
-          return "UTC";
-        }
-        if (key === "city") {
-          return "PDC";
-        }
-        if (key === "country") {
-          return "MX";
-        }
-        if (key === "language") {
-          return "fr";
-        }
-        return null;
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "UTC",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
       });
       vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-11");
       vi.mocked(getPrayerCache).mockResolvedValue({
