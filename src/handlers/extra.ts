@@ -228,7 +228,7 @@ export async function confirmExtraNoDurCallback(
     return;
   }
 
-  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+  await ctx.editMessageReplyMarkup({ reply_markup: new InlineKeyboard() });
   await insertAndReplyExtra(ctx, validation.value, null);
   await ctx.answerCallbackQuery();
 }

@@ -319,15 +319,12 @@ describe("confirmKahfNoDurCallback", () => {
     expect(ctx.reply).not.toHaveBeenCalled();
   });
 
-  it("count=0 dans le callback -> insère quand même (regex matche)", async () => {
+  it("count=0 dans le callback -> retour anticipé sans insert", async () => {
     // The regex /^ndk_c:(\d+)$/ matches "ndk_c:0" -> count=0
-    // getNextKahfPage(0) returns 293, pageEnd = 293 + 0 - 1 = 292
-    // pageEnd (292) < KAHF_PAGE_END so it proceeds but getPageRange may fail
+    // The handler returns early when count < 1, so no session is inserted.
     const ctx = createMockCallbackContext("ndk_c:0");
     await confirmKahfNoDurCallback(ctx);
 
-    // The handler proceeds with count=0, pageEnd = 292 < pageStart = 293
-    // getPageRange(293, 292, "kahf") returns null -> editMessageText with error
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
     expect(mockInsertSession).not.toHaveBeenCalled();
   });

@@ -207,7 +207,7 @@ export async function confirmReadNoDurCallback(
     return;
   }
 
-  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+  await ctx.editMessageReplyMarkup({ reply_markup: new InlineKeyboard() });
   await insertAndReply(ctx, pageStart, pageEnd, null, rangeData);
   await ctx.answerCallbackQuery();
 }

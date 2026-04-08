@@ -248,7 +248,7 @@ export async function confirmKahfNoDurCallback(
     return;
   }
 
-  await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+  await ctx.editMessageReplyMarkup({ reply_markup: new InlineKeyboard() });
   await insertAndReplyKahf(ctx, {
     count,
     durationSeconds: null,
