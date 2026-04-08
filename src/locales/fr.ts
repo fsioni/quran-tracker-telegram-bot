@@ -155,10 +155,10 @@ export const fr: Locale = {
     khatmas: (count) => `Khatmas : ${count}`,
     page: "Page",
     khatmaTime: (duration) => `Temps de lecture (cette khatma) : ${duration}`,
-    remainingTime: (duration) => `Temps restant estime : ~${duration}`,
-    noRecentData: "Pas assez de donnees recentes",
+    remainingTime: (duration) => `Temps restant estimé : ~${duration}`,
+    noRecentData: "Pas assez de données récentes",
     completionDate: (day, month, year) =>
-      `Fin estimee : ${day} ${month} ${year}`,
+      `Fin estimée : ${day} ${month} ${year}`,
   },
 
   reminder: {

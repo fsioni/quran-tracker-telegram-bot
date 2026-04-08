@@ -662,7 +662,7 @@ describe("progressHandler", () => {
     expect(ctx.reply).toHaveBeenCalledWith("Aucune session enregistrée.");
   });
 
-  it("affiche temps khatma et estimation quand donnees recentes disponibles", async () => {
+  it("affiche temps khatma et estimation quand données récentes disponibles", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -692,11 +692,11 @@ describe("progressHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("Temps de lecture (cette khatma)");
-    expect(msg).toContain("Temps restant estime");
-    expect(msg).toContain("Fin estimee");
+    expect(msg).toContain("Temps restant estimé");
+    expect(msg).toContain("Fin estimée");
   });
 
-  it("affiche 'pas assez de donnees' quand pas de donnees recentes", async () => {
+  it("affiche 'pas assez de données' quand pas de données récentes", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -721,7 +721,7 @@ describe("progressHandler", () => {
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).toContain("Pas assez de donnees recentes");
+    expect(msg).toContain("Pas assez de données récentes");
   });
 
   it("n'affiche pas d'estimation quand pageEnd == 604 (termine)", async () => {
@@ -753,10 +753,10 @@ describe("progressHandler", () => {
     expect(msg).toContain("Page : 604 / 604");
     expect(msg).toContain("Temps de lecture (cette khatma)");
     expect(msg).not.toContain("Temps restant");
-    expect(msg).not.toContain("Fin estimee");
+    expect(msg).not.toContain("Fin estimée");
   });
 
-  it("n'affiche pas d'estimation quand pageEnd est null", async () => {
+  it("affiche khatmaTime mais pas d'estimation quand pageEnd est null", async () => {
     vi.mocked(getGlobalStats).mockResolvedValue({
       ok: true,
       value: {
@@ -770,14 +770,16 @@ describe("progressHandler", () => {
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
+    vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(3600);
 
     const ctx = makeCtx();
     await progressHandler(ctx);
 
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
-    expect(msg).not.toContain("Temps de lecture");
-    expect(msg).not.toContain("Fin estimee");
+    expect(msg).toContain("Temps de lecture (cette khatma)");
+    expect(msg).not.toContain("Page :");
+    expect(msg).not.toContain("Fin estimée");
   });
 
   it("affiche le nombre de khatmas quand > 0", async () => {

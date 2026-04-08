@@ -1190,8 +1190,8 @@ describe("getRecentPageStats", () => {
 
     const stats = await getRecentPageStats(db, "America/Cancun");
     expect(stats).not.toBeNull();
-    expect(stats!.pagesPerDay).toBeCloseTo(8 / 7);
-    expect(stats!.secondsPerPage).toBeCloseTo(1600 / 8);
+    expect(stats?.pagesPerDay).toBeCloseTo(8 / 7);
+    expect(stats?.secondsPerPage).toBeCloseTo(1600 / 8);
   });
 
   it("uses full window when history spans all days", async () => {
@@ -1214,8 +1214,8 @@ describe("getRecentPageStats", () => {
 
     const stats = await getRecentPageStats(db, "America/Cancun");
     expect(stats).not.toBeNull();
-    expect(stats!.pagesPerDay).toBeCloseTo(5 / 7);
-    expect(stats!.secondsPerPage).toBeCloseTo(500 / 5);
+    expect(stats?.pagesPerDay).toBeCloseTo(5 / 7);
+    expect(stats?.secondsPerPage).toBeCloseTo(500 / 5);
   });
 
   it("returns null when no recent sessions", async () => {

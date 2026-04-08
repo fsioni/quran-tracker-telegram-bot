@@ -97,12 +97,14 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
-  const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
-    getGlobalStats(ctx.db),
-    getLastSession(ctx.db, "normal"),
-    getTimezone(ctx.db),
-    getKhatmaCount(ctx.db),
-  ]);
+  const [globalResult, lastSession, tz, khatmaCount, elapsedSeconds] =
+    await Promise.all([
+      getGlobalStats(ctx.db),
+      getLastSession(ctx.db, "normal"),
+      getTimezone(ctx.db),
+      getKhatmaCount(ctx.db),
+      getKhatmaElapsedSeconds(ctx.db),
+    ]);
 
   if (!lastSession) {
     await ctx.reply(t.stats.noSession);
@@ -127,20 +129,20 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     t
   );
 
+  const elapsedMinutes = Math.round(elapsedSeconds / 60) * 60;
+  msg += `\n${t.progress.khatmaTime(formatDuration(elapsedMinutes, t))}`;
+
   if (lastSession.pageEnd != null) {
-    const elapsedSeconds = await getKhatmaElapsedSeconds(ctx.db);
     msg += `\n${t.progress.page} : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
-    msg += `\n${t.progress.khatmaTime(formatDuration(elapsedSeconds, t))}`;
 
     if (lastSession.pageEnd < TOTAL_PAGES) {
       const pagesRemaining = TOTAL_PAGES - lastSession.pageEnd;
       const recentStats = await getRecentPageStats(ctx.db, tz, 7);
 
       if (recentStats) {
-        const remainingSeconds = Math.ceil(
-          pagesRemaining * recentStats.secondsPerPage
-        );
-        msg += `\n${t.progress.remainingTime(formatDuration(remainingSeconds, t))}`;
+        const remainingMinutes =
+          Math.round((pagesRemaining * recentStats.secondsPerPage) / 60) * 60;
+        msg += `\n${t.progress.remainingTime(formatDuration(remainingMinutes, t))}`;
 
         const today = getTodayInTimezone(tz);
         const daysRemaining = Math.ceil(
