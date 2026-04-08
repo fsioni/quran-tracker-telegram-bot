@@ -312,6 +312,40 @@ describe("formatSessionConfirmation", () => {
       "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 0m"
     );
   });
+
+  it("formats same-surah without duration", () => {
+    const result = formatSessionConfirmation(
+      {
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+        ayahCount: 7,
+        durationSeconds: null,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets"
+    );
+  });
+
+  it("formats cross-surah without duration", () => {
+    const result = formatSessionConfirmation(
+      {
+        surahStart: 2,
+        ayahStart: 280,
+        surahEnd: 3,
+        ayahEnd: 10,
+        ayahCount: 17,
+        durationSeconds: null,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Session enregistrée : sourate Al-Baqara v.280 à sourate Al-Imran v.10 -- 17 versets"
+    );
+  });
 });
 
 // --- formatHistoryLine ---
@@ -434,6 +468,44 @@ describe("formatHistoryLine", () => {
       fr
     );
     expect(result).toBe("[N] #5 | 10/03 13h30 | 0m | Al-Fatiha 1:1-7 (7v)");
+  });
+
+  it("shows -- for null duration and no speed", () => {
+    const result = formatHistoryLine(
+      {
+        id: 5,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: null,
+        surahStart: 1,
+        ayahStart: 1,
+        surahEnd: 1,
+        ayahEnd: 7,
+        ayahCount: 7,
+      },
+      fr
+    );
+    expect(result).toBe("[N] #5 | 10/03 13h30 | -- | Al-Fatiha 1:1-7 (7v)");
+  });
+
+  it("shows pages but no speed for null duration with pages", () => {
+    const result = formatHistoryLine(
+      {
+        id: 10,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: null,
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+        ayahCount: 7,
+        pageStart: 10,
+        pageEnd: 12,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "[N] #10 | 10/03 13h30 | -- | Al-Baqara 2:77-83 (7v, 3p)"
+    );
   });
 });
 
@@ -918,6 +990,34 @@ describe("formatReadConfirmation", () => {
     );
     expect(result).toBe("Page 42 lue en 0m (42/604)\nProchaine page : 43");
   });
+
+  it("formats single page without duration", () => {
+    const result = formatReadConfirmation(
+      {
+        pageStart: 42,
+        pageEnd: 42,
+        durationSeconds: null,
+        totalPagesRead: 42,
+        totalPages: 604,
+      },
+      fr
+    );
+    expect(result).toBe("Page 42 (42/604)\nProchaine page : 43");
+  });
+
+  it("formats multi-page without duration", () => {
+    const result = formatReadConfirmation(
+      {
+        pageStart: 42,
+        pageEnd: 44,
+        durationSeconds: null,
+        totalPagesRead: 44,
+        totalPages: 604,
+      },
+      fr
+    );
+    expect(result).toBe("Pages 42-44 (44/604)\nProchaine page : 45");
+  });
 });
 
 // --- formatKahfPageConfirmation ---
@@ -1043,6 +1143,38 @@ describe("formatKahfPageConfirmation", () => {
     expect(result).toBe(
       "Al-Kahf terminée ! 12/12 pages en 52m\nSemaine dernière : 52m"
     );
+  });
+
+  it("formats in progress without duration", () => {
+    const result = formatKahfPageConfirmation(
+      {
+        kahfPage: 3,
+        kahfTotal: 12,
+        durationSeconds: null,
+        weekPagesRead: 3,
+        weekTotalSeconds: 840,
+        isComplete: false,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Al-Kahf page 3/12\nCette semaine : 3/12 pages, 14m au total"
+    );
+  });
+
+  it("formats completion without duration", () => {
+    const result = formatKahfPageConfirmation(
+      {
+        kahfPage: 12,
+        kahfTotal: 12,
+        durationSeconds: null,
+        weekPagesRead: 12,
+        weekTotalSeconds: 3120,
+        isComplete: true,
+      },
+      fr
+    );
+    expect(result).toBe("Al-Kahf terminée ! 12/12 pages en 52m");
   });
 });
 

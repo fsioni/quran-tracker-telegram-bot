@@ -70,6 +70,7 @@ export interface Locale {
       oldDuration: string,
       newDuration: string
     ) => string;
+    durationAdded: (id: number, range: string, newDuration: string) => string;
   };
 
   // Error/example prefixes
@@ -133,6 +134,7 @@ export interface Locale {
   // Kahf
   kahf: {
     pageRead: (page: number, total: number, duration: string) => string;
+    pageReadNoDuration: (page: number, total: number) => string;
     thisWeek: (pages: number, total: number, duration: string) => string;
     complete: (page: number, total: number, duration: string) => string;
     lastWeek: (duration: string) => string;
@@ -242,6 +244,8 @@ export interface Locale {
   read: {
     pageSingularRead: (page: number, duration: string) => string;
     pagePluralRead: (start: number, end: number, duration: string) => string;
+    pageSingularRecorded: (page: number) => string;
+    pagePluralRecorded: (start: number, end: number) => string;
     quranComplete: string;
     nextPage: (page: number) => string;
     remainingPages: (count: number, start: number, end: number) => string;
@@ -283,6 +287,8 @@ export interface Locale {
     pagesPerHour: (n: string) => string;
     from: string;
     to: string;
+    noDurationPrompt: string;
+    cancelled: string;
     confirmationSameSurah: (
       surahName: string,
       ayahStart: number,
@@ -299,6 +305,19 @@ export interface Locale {
       ayahCount: number,
       duration: string,
       speed: string
+    ) => string;
+    confirmationSameSurahNoDuration: (
+      surahName: string,
+      ayahStart: number,
+      ayahEnd: number,
+      ayahCount: number
+    ) => string;
+    confirmationCrossSurahNoDuration: (
+      startName: string,
+      ayahStart: number,
+      endName: string,
+      ayahEnd: number,
+      ayahCount: number
     ) => string;
     speedComparison: (pct: string) => string;
   };

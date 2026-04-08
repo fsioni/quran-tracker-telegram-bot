@@ -613,7 +613,8 @@ async function handleKahfResponse(
 
   const weekPagesRead = pagesAlreadyRead + count;
   const weekTotalSeconds =
-    weekSessions.reduce((sum, s) => sum + s.durationSeconds, 0) + durationSec;
+    weekSessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0) +
+    durationSec;
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 

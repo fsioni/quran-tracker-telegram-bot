@@ -7,10 +7,18 @@ import {
 } from "./handlers/config";
 import { debugHandler } from "./handlers/debug";
 import { editHandler } from "./handlers/edit";
-import { extraHandler } from "./handlers/extra";
+import {
+  CALLBACK_EXTRA_NODUR_CONFIRM_RE,
+  confirmExtraNoDurCallback,
+  extraHandler,
+} from "./handlers/extra";
 import { graphHandler } from "./handlers/graph";
 import { importHandler } from "./handlers/import";
-import { kahfHandler } from "./handlers/kahf";
+import {
+  CALLBACK_KAHF_NODUR_CONFIRM_RE,
+  confirmKahfNoDurCallback,
+  kahfHandler,
+} from "./handlers/kahf";
 import {
   CALLBACK_CANCEL_RE,
   CALLBACK_CONFIRM_RE,
@@ -20,7 +28,11 @@ import {
   undoHandler,
 } from "./handlers/manage";
 import { prayerHandler } from "./handlers/prayer";
-import { readHandler } from "./handlers/read";
+import {
+  CALLBACK_READ_NODUR_CONFIRM_RE,
+  confirmReadNoDurCallback,
+  readHandler,
+} from "./handlers/read";
 import { sessionHandler } from "./handlers/session";
 import {
   CALLBACK_HISTORY_RE,
@@ -50,6 +62,8 @@ import {
 import { CALLBACK_LANG_SET_RE } from "./locales";
 import type { Locale } from "./locales/types";
 import { resolveLocale } from "./services/locale-cache";
+
+const CALLBACK_NODUR_CANCEL_RE = /^nd[rek]_x$/;
 
 export interface CustomContext extends Context {
   db: D1Database;
@@ -123,6 +137,13 @@ export function createBot(
   bot.callbackQuery(CALLBACK_CANCEL_RE, cancelDeleteCallback);
   bot.callbackQuery(CALLBACK_LANG_SET_RE, langSetCallback);
   bot.callbackQuery(CALLBACK_HISTORY_RE, historyPageCallback);
+  bot.callbackQuery(CALLBACK_READ_NODUR_CONFIRM_RE, confirmReadNoDurCallback);
+  bot.callbackQuery(CALLBACK_EXTRA_NODUR_CONFIRM_RE, confirmExtraNoDurCallback);
+  bot.callbackQuery(CALLBACK_KAHF_NODUR_CONFIRM_RE, confirmKahfNoDurCallback);
+  bot.callbackQuery(CALLBACK_NODUR_CANCEL_RE, async (ctx) => {
+    await ctx.editMessageText(ctx.locale.session.cancelled);
+    await ctx.answerCallbackQuery();
+  });
 
   // Error handler global
   bot.catch((err) => {

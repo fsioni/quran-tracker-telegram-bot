@@ -89,9 +89,9 @@ export const fr: Locale = {
 
   examples: {
     session: "/session 2:77-83 8m53",
-    read: "/read 5m ou /read 3 15m",
-    extra: "/extra 300 5m ou /extra 2:77-83 8m",
-    kahf: "/kahf 5m ou /kahf 3 15m",
+    read: "/read 5m ou /read 3 15m ou /read 3",
+    extra: "/extra 300 5m ou /extra 2:77-83 8m ou /extra 300",
+    kahf: "/kahf 5m ou /kahf 3 15m ou /kahf 3",
     import: "/import\n10/03, 13h30 - 8m53 - 2:77-83",
     edit: "/edit 42 15m",
   },
@@ -107,6 +107,8 @@ export const fr: Locale = {
     pagesPerHour: (n) => `${n} pages/h`,
     from: "v.",
     to: "à",
+    noDurationPrompt: "Enregistrer sans timer ?",
+    cancelled: "Annulé.",
     confirmationSameSurah: (
       surahName,
       ayahStart,
@@ -126,6 +128,21 @@ export const fr: Locale = {
       speed
     ) =>
       `sourate ${startName} v.${ayahStart} à sourate ${endName} v.${ayahEnd} -- ${ayahCount} versets en ${duration}${speed}`,
+    confirmationSameSurahNoDuration: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `sourate ${surahName} v.${ayahStart} à v.${ayahEnd} -- ${ayahCount} versets`,
+    confirmationCrossSurahNoDuration: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `sourate ${startName} v.${ayahStart} à sourate ${endName} v.${ayahEnd} -- ${ayahCount} versets`,
     speedComparison: (pct) => `${pct} vs votre moy. 7j`,
   },
 
@@ -181,6 +198,8 @@ export const fr: Locale = {
     pageSingularRead: (page, duration) => `Page ${page} lue en ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `Pages ${start}-${end} lues en ${duration}`,
+    pageSingularRecorded: (page) => `Page ${page}`,
+    pagePluralRecorded: (start, end) => `Pages ${start}-${end}`,
     quranComplete: "Coran terminé ! Alhamdulillah !",
     nextPage: (page) => `Prochaine page : ${page}`,
     remainingPages: (count, start, end) =>
@@ -192,6 +211,7 @@ export const fr: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `Al-Kahf page ${page}/${total} lue en ${duration}`,
+    pageReadNoDuration: (page, total) => `Al-Kahf page ${page}/${total}`,
     thisWeek: (pages, total, duration) =>
       `Cette semaine : ${pages}/${total} pages, ${duration} au total`,
     complete: (page, total, duration) =>
@@ -324,6 +344,8 @@ export const fr: Locale = {
     sessionNotFound: (id) => `la session #${id} n'existe pas`,
     sessionEdited: (id, range, oldDuration, newDuration) =>
       `Session #${id} modifiée.\n${range}\n${oldDuration} -> ${newDuration}`,
+    durationAdded: (id, range, newDuration) =>
+      `Durée ajoutée à la session #${id}.\n${range}\n-- -> ${newDuration}`,
   },
 
   manage: {

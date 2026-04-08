@@ -5,7 +5,7 @@ export interface SessionRow {
   ayah_end: number;
   ayah_start: number;
   created_at: string;
-  duration_seconds: number;
+  duration_seconds: number | null;
   id: number;
   page_end: number | null;
   page_start: number | null;
@@ -20,7 +20,7 @@ export interface Session {
   ayahEnd: number;
   ayahStart: number;
   createdAt: string;
-  durationSeconds: number;
+  durationSeconds: number | null;
   id: number;
   pageEnd: number | null;
   pageStart: number | null;
@@ -96,7 +96,7 @@ export interface InsertSessionData {
   ayahCount: number;
   ayahEnd: number;
   ayahStart: number;
-  durationSeconds: number;
+  durationSeconds: number | null;
   pageEnd?: number;
   pageStart?: number;
   startedAt: string;
