@@ -273,8 +273,20 @@ describe("locale completeness", () => {
     expect(
       formatWeeklyRecap(
         {
-          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeek: {
+            sessions: 5,
+            ayahs: 100,
+            seconds: 3000,
+            pages: 0,
+            pageSeconds: 0,
+          },
+          lastWeek: {
+            sessions: 4,
+            ayahs: 80,
+            seconds: 2500,
+            pages: 0,
+            pageSeconds: 0,
+          },
           thisWeekPages: 12,
           lastWeekPages: 10,
           streak: { currentStreak: 8, bestStreak: 15 },
@@ -409,8 +421,20 @@ describe("format functions match snapshots", () => {
     expect(
       formatWeeklyRecap(
         {
-          thisWeek: { sessions: 5, ayahs: 100, seconds: 3000 },
-          lastWeek: { sessions: 4, ayahs: 80, seconds: 2500 },
+          thisWeek: {
+            sessions: 5,
+            ayahs: 100,
+            seconds: 3000,
+            pages: 0,
+            pageSeconds: 0,
+          },
+          lastWeek: {
+            sessions: 4,
+            ayahs: 80,
+            seconds: 2500,
+            pages: 0,
+            pageSeconds: 0,
+          },
           thisWeekPages: 12,
           lastWeekPages: 10,
           streak: { currentStreak: 8, bestStreak: 15 },

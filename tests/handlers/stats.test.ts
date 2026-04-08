@@ -532,6 +532,8 @@ describe("progressHandler", () => {
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({
@@ -567,6 +569,8 @@ describe("progressHandler", () => {
         totalSeconds: 533,
         avgAyahsPerSession: 7,
         avgSecondsPerSession: 533,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
@@ -586,6 +590,8 @@ describe("progressHandler", () => {
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({
@@ -612,6 +618,8 @@ describe("progressHandler", () => {
         totalSeconds: 533,
         avgAyahsPerSession: 7,
         avgSecondsPerSession: 533,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
@@ -634,6 +642,8 @@ describe("progressHandler", () => {
         totalSeconds: 0,
         avgAyahsPerSession: 0,
         avgSecondsPerSession: 0,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue(null);
@@ -653,6 +663,8 @@ describe("progressHandler", () => {
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({
@@ -680,6 +692,8 @@ describe("progressHandler", () => {
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({
@@ -706,6 +720,8 @@ describe("progressHandler", () => {
         totalSeconds: 50_000,
         avgAyahsPerSession: 62,
         avgSecondsPerSession: 500,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({
@@ -735,6 +751,8 @@ describe("progressHandler", () => {
         totalSeconds: 533,
         avgAyahsPerSession: 7,
         avgSecondsPerSession: 533,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
@@ -757,6 +775,8 @@ describe("progressHandler", () => {
         totalSeconds: 15_780,
         avgAyahsPerSession: 34,
         avgSecondsPerSession: 1578,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });
@@ -779,6 +799,8 @@ describe("progressHandler", () => {
         totalSeconds: 533,
         avgAyahsPerSession: 7,
         avgSecondsPerSession: 533,
+        totalPages: 0,
+        totalPageSeconds: 0,
       },
     });
     vi.mocked(getLastSession).mockResolvedValue({ ...MOCK_SESSION });

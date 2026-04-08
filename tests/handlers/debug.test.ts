@@ -66,7 +66,7 @@ function setupMocks(
       chat_id: "123456",
       kahf_reminder_last: "2026-03-14",
     };
-    return values[key] ?? null;
+    return Promise.resolve(values[key] ?? null);
   });
 
   if (overrides.prayerCache === null) {
@@ -115,6 +115,8 @@ function setupMocks(
       totalSeconds: 36_000,
       avgAyahsPerSession: 12,
       avgSecondsPerSession: 857,
+      totalPages: 0,
+      totalPageSeconds: 0,
     },
   });
 }

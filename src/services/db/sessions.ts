@@ -23,33 +23,41 @@ export function mapRow(row: SessionRow): Session {
   };
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export async function insertSession(
   db: D1Database,
   data: InsertSessionData
 ): Promise<Result<Session>> {
-  const result = await db
-    .prepare(
-      `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       RETURNING *`
-    )
-    .bind(
-      data.startedAt,
-      data.durationSeconds,
-      data.surahStart,
-      data.ayahStart,
-      data.surahEnd,
-      data.ayahEnd,
-      data.ayahCount,
-      data.type ?? "normal",
-      data.pageStart ?? null,
-      data.pageEnd ?? null
-    )
-    .first<SessionRow>();
-  if (!result) {
-    return err("insertSession: D1 returned no row after INSERT");
+  try {
+    const result = await db
+      .prepare(
+        `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING *`
+      )
+      .bind(
+        data.startedAt,
+        data.durationSeconds,
+        data.surahStart,
+        data.ayahStart,
+        data.surahEnd,
+        data.ayahEnd,
+        data.ayahCount,
+        data.type ?? "normal",
+        data.pageStart ?? null,
+        data.pageEnd ?? null
+      )
+      .first<SessionRow>();
+    if (!result) {
+      return err("insertSession: D1 returned no row after INSERT");
+    }
+    return ok(mapRow(result));
+  } catch (error) {
+    return err(`insertSession: ${getErrorMessage(error)}`);
   }
-  return ok(mapRow(result));
 }
 
 export async function getSessionById(
@@ -103,33 +111,37 @@ export async function updateSessionDuration(
 export async function insertBatch(
   db: D1Database,
   sessions: InsertSessionData[]
-): Promise<number> {
+): Promise<Result<number>> {
   if (sessions.length === 0) {
-    return 0;
+    return ok(0);
   }
 
-  const statements = sessions.map((s) =>
-    db
-      .prepare(
-        `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .bind(
-        s.startedAt,
-        s.durationSeconds,
-        s.surahStart,
-        s.ayahStart,
-        s.surahEnd,
-        s.ayahEnd,
-        s.ayahCount,
-        s.type ?? "normal",
-        s.pageStart ?? null,
-        s.pageEnd ?? null
-      )
-  );
+  try {
+    const statements = sessions.map((s) =>
+      db
+        .prepare(
+          `INSERT INTO sessions (started_at, duration_seconds, surah_start, ayah_start, surah_end, ayah_end, ayah_count, type, page_start, page_end)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          s.startedAt,
+          s.durationSeconds,
+          s.surahStart,
+          s.ayahStart,
+          s.surahEnd,
+          s.ayahEnd,
+          s.ayahCount,
+          s.type ?? "normal",
+          s.pageStart ?? null,
+          s.pageEnd ?? null
+        )
+    );
 
-  await db.batch(statements);
-  return sessions.length;
+    await db.batch(statements);
+    return ok(sessions.length);
+  } catch (error) {
+    return err(`insertBatch: ${getErrorMessage(error)}`);
+  }
 }
 
 export async function getHistory(

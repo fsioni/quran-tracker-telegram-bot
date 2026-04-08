@@ -71,7 +71,11 @@ export async function importHandler(ctx: CustomContext): Promise<void> {
   }
 
   if (valid.length > 0) {
-    await insertBatch(ctx.db, valid);
+    const batchResult = await insertBatch(ctx.db, valid);
+    if (!batchResult.ok) {
+      await ctx.reply(formatError(batchResult.error, t));
+      return;
+    }
   }
 
   let message: string;
