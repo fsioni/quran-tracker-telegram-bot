@@ -4,6 +4,7 @@ import {
   DEFAULT_CITY,
   DEFAULT_COUNTRY,
   DEFAULT_TZ,
+  STREAK_FOLLOWUP_DELAY_MINUTES,
   WEEKLY_RECAP_HOUR,
 } from "./config";
 import { getNextKahfPage, getNextPage } from "./data/pages";
@@ -104,6 +105,12 @@ interface ScheduledContext {
   tz: string;
 }
 
+function buildGoKeyboard(t: Locale) {
+  return {
+    inline_keyboard: [[{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }]],
+  };
+}
+
 async function computeNextKahfPage(
   db: D1Database,
   tz: string
@@ -158,16 +165,11 @@ async function sendPrayerReminders(
     sctx.t
   );
 
-  const goKeyboard = {
-    inline_keyboard: [
-      [{ text: sctx.t.timer.go, callback_data: CALLBACK_TIMER_GO }],
-    ],
-  };
   const sent = await sendTelegramMessage(
     sctx.botToken,
     sctx.chatId,
     message,
-    goKeyboard
+    buildGoKeyboard(sctx.t)
   );
   if (sent) {
     for (const prayer of duePrayers) {
@@ -220,7 +222,12 @@ async function sendStreakFollowup(
   if (cache.isha_sent === 0) {
     return;
   }
-  if (!isReminderDue(sctx.nowHHMM, addMinutesToHHMM(cache.isha, 90))) {
+  if (
+    !isReminderDue(
+      sctx.nowHHMM,
+      addMinutesToHHMM(cache.isha, STREAK_FOLLOWUP_DELAY_MINUTES)
+    )
+  ) {
     return;
   }
   const readToday = await hasSessionToday(sctx.db, sctx.tz);
@@ -236,16 +243,11 @@ async function sendStreakFollowup(
     { streak: streak.currentStreak },
     sctx.t
   );
-  const goKeyboard = {
-    inline_keyboard: [
-      [{ text: sctx.t.timer.go, callback_data: CALLBACK_TIMER_GO }],
-    ],
-  };
   const sent = await sendTelegramMessage(
     sctx.botToken,
     sctx.chatId,
     message,
-    goKeyboard
+    buildGoKeyboard(sctx.t)
   );
   if (sent) {
     await markStreakFollowupSent(sctx.db, sctx.today);
