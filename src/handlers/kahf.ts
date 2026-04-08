@@ -15,9 +15,12 @@ import {
   getLastWeekKahfTotal,
 } from "../services/db/kahf";
 import { insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   formatError,
   formatKahfPageConfirmation,
+  formatSpeedComparison,
+  insertAfterFirstLine,
   parsePageCountAndDuration,
 } from "../services/format";
 
@@ -147,6 +150,13 @@ async function insertAndReplyKahf(
   const isComplete = weekPagesRead >= KAHF_TOTAL_PAGES;
   const sessionPages = effectivePageCount(pageStart, pageEnd, "kahf");
 
+  let comparison = "";
+  if (durationSeconds != null && durationSeconds > 0) {
+    const avg = await get7DayTypeAvgSpeed(ctx.db, "kahf", tz, result.value.id);
+    const currentSpeed = sessionPages / (durationSeconds / 3600);
+    comparison = formatSpeedComparison(currentSpeed, avg.pagesPerHour, t);
+  }
+
   if (isComplete) {
     const lastWeekResult = await getLastWeekKahfTotal(ctx.db, tz);
     if (!lastWeekResult.ok) {
@@ -155,34 +165,40 @@ async function insertAndReplyKahf(
     const lastWeekTotalSeconds = lastWeekResult.ok ? lastWeekResult.value : 0;
 
     await ctx.reply(
-      formatKahfPageConfirmation(
-        {
-          kahfPage: weekPagesRead,
-          kahfTotal: KAHF_TOTAL_PAGES,
-          durationSeconds,
-          weekPagesRead,
-          weekTotalSeconds,
-          isComplete: true,
-          lastWeekTotalSeconds:
-            lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
-          sessionPages,
-        },
-        t
+      insertAfterFirstLine(
+        formatKahfPageConfirmation(
+          {
+            kahfPage: weekPagesRead,
+            kahfTotal: KAHF_TOTAL_PAGES,
+            durationSeconds,
+            weekPagesRead,
+            weekTotalSeconds,
+            isComplete: true,
+            lastWeekTotalSeconds:
+              lastWeekTotalSeconds > 0 ? lastWeekTotalSeconds : undefined,
+            sessionPages,
+          },
+          t
+        ),
+        comparison
       )
     );
   } else {
     await ctx.reply(
-      formatKahfPageConfirmation(
-        {
-          kahfPage: weekPagesRead,
-          kahfTotal: KAHF_TOTAL_PAGES,
-          durationSeconds,
-          weekPagesRead,
-          weekTotalSeconds,
-          isComplete: false,
-          sessionPages,
-        },
-        t
+      insertAfterFirstLine(
+        formatKahfPageConfirmation(
+          {
+            kahfPage: weekPagesRead,
+            kahfTotal: KAHF_TOTAL_PAGES,
+            durationSeconds,
+            weekPagesRead,
+            weekTotalSeconds,
+            isComplete: false,
+            sessionPages,
+          },
+          t
+        ),
+        comparison
       )
     );
   }

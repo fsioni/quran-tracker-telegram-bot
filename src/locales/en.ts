@@ -140,6 +140,7 @@ export const en: Locale = {
       ayahCount
     ) =>
       `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses`,
+    speedComparison: (pct) => `${pct} vs. your 7-day avg`,
   },
 
   stats: {
@@ -167,6 +168,11 @@ export const en: Locale = {
       `Progress: ${read} / ${total} verses (${pct}%)`,
     khatmas: (count) => `Khatmas: ${count}`,
     page: "Page",
+    khatmaTime: (duration) => `Reading time (this khatma): ${duration}`,
+    remainingTime: (duration) => `Estimated remaining: ~${duration}`,
+    noRecentData: "No recent data",
+    completionDate: (day, month, year) =>
+      `Estimated completion: ${month} ${day}, ${year}`,
   },
 
   reminder: {
@@ -244,15 +250,6 @@ export const en: Locale = {
     next: "Next >>",
     prev: "<< Previous",
     pageIndicator: (current, total) => `Page ${current}/${total}`,
-  },
-
-  estimation: {
-    notEnoughData:
-      "Not enough recent data to estimate (read regularly to see a projection)",
-    monthsRemaining: (pace, months) =>
-      `At your current pace (~${pace} pages/day), about ${months} months remaining`,
-    dateEstimate: (pace, day, month, year) =>
-      `At this pace (~${pace} pages/day), you'll finish around ${month} ${day}, ${year}`,
   },
 
   khatma: {

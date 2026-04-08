@@ -76,17 +76,6 @@ export interface Locale {
   // Error/example prefixes
   error: string;
 
-  // Estimation
-  estimation: {
-    notEnoughData: string;
-    monthsRemaining: (pace: string, months: number) => string;
-    dateEstimate: (
-      pace: string,
-      day: number,
-      month: string,
-      year: number
-    ) => string;
-  };
   example: string;
 
   // Command usage examples (shown in error messages)
@@ -245,6 +234,10 @@ export interface Locale {
     label: (read: number, total: number, pct: string) => string;
     khatmas: (count: number) => string;
     page: string;
+    khatmaTime: (duration: string) => string;
+    remainingTime: (duration: string) => string;
+    noRecentData: string;
+    completionDate: (day: number, month: string, year: number) => string;
   };
 
   // Read confirmation
@@ -324,6 +317,7 @@ export interface Locale {
       ayahEnd: number,
       ayahCount: number
     ) => string;
+    speedComparison: (pct: string) => string;
   };
 
   // Speed report

@@ -1,13 +1,9 @@
 import { fr } from "../src/locales/fr";
 import type { Session } from "../src/services/db/types";
 
-const MONTHS_REMAINING_RE =
-  /^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/;
-
 import {
   formatDuration,
   formatError,
-  formatEstimation,
   formatHistoryLine,
   formatKahfPageConfirmation,
   formatKahfReminder,
@@ -16,6 +12,7 @@ import {
   formatReadConfirmation,
   formatReminder,
   formatSessionConfirmation,
+  formatSpeedComparison,
   formatSpeedReport,
   formatStats,
   formatSurahsComplete,
@@ -1155,40 +1152,6 @@ describe("formatSessionConfirmation with type", () => {
   });
 });
 
-// --- formatEstimation ---
-
-describe("formatEstimation", () => {
-  const today = "2026-03-15";
-
-  it("formate une date de fin avec un rythme normal", () => {
-    // 1.2 pages/jour, 400 pages restantes -> ceil(333.3) = 334 jours -> 2027-02-12
-    const result = formatEstimation(1.2, 400, today, fr);
-    expect(result).toBe(
-      "À ce rythme (~1.2 pages/jour), tu finiras vers le 12 février 2027"
-    );
-  });
-
-  it("retourne message 'pas assez de donnees' quand pace est 0", () => {
-    const result = formatEstimation(0, 400, today, fr);
-    expect(result).toBe(
-      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)"
-    );
-  });
-
-  it("retourne format en mois quand estimation > 5 ans", () => {
-    // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
-    const result = formatEstimation(0.1, 500, today, fr);
-    expect(result).toMatch(MONTHS_REMAINING_RE);
-  });
-
-  it("retourne message pour pace negatif", () => {
-    const result = formatEstimation(-1, 400, today, fr);
-    expect(result).toBe(
-      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)"
-    );
-  });
-});
-
 // --- formatError ---
 
 describe("formatError", () => {
@@ -1428,5 +1391,29 @@ describe("formatSpeedReport", () => {
     expect(result).toContain("  Normal : 10.0 pages/h (10 sessions)");
     expect(result).toContain("  Extra  : 12.0 pages/h (5 sessions)");
     expect(result).toContain("  Kahf   : 8.0 pages/h (3 sessions)");
+  });
+});
+
+// --- formatSpeedComparison ---
+
+describe("formatSpeedComparison", () => {
+  it("returns positive percentage with + prefix", () => {
+    expect(formatSpeedComparison(12.5, 10, fr)).toBe("+25% vs votre moy. 7j");
+  });
+
+  it("returns negative percentage", () => {
+    expect(formatSpeedComparison(9.2, 10, fr)).toBe("-8% vs votre moy. 7j");
+  });
+
+  it("returns +0% when speeds are equal", () => {
+    expect(formatSpeedComparison(10, 10, fr)).toBe("+0% vs votre moy. 7j");
+  });
+
+  it("returns empty string when avgSpeed is null", () => {
+    expect(formatSpeedComparison(10, null, fr)).toBe("");
+  });
+
+  it("returns empty string when avgSpeed is 0", () => {
+    expect(formatSpeedComparison(10, 0, fr)).toBe("");
   });
 });

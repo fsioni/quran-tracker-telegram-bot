@@ -2,7 +2,6 @@ import { effectivePageCount, TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
-import { addDays } from "./db/date-helpers";
 import type { Session, SpeedAverages, TypeSpeed } from "./db/types";
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weekly-recap";
@@ -273,6 +272,28 @@ export function formatDuration(seconds: number | null, t?: Locale): string {
     return s > 0 ? `${h}${hSuf}${m}${mSuf}${s}` : `${h}${hSuf}${m}${mSuf}`;
   }
   return s > 0 ? `${m}${mSuf}${s}` : `${m}${mSuf}`;
+}
+
+export function insertAfterFirstLine(text: string, insertion: string): string {
+  if (!insertion) {
+    return text;
+  }
+  const lines = text.split("\n");
+  lines.splice(1, 0, insertion);
+  return lines.join("\n");
+}
+
+export function formatSpeedComparison(
+  currentSpeed: number,
+  avgSpeed: number | null,
+  t: Locale
+): string {
+  if (avgSpeed === null || avgSpeed === 0) {
+    return "";
+  }
+  const pctDiff = Math.round(((currentSpeed - avgSpeed) / avgSpeed) * 100);
+  const sign = pctDiff >= 0 ? "+" : "";
+  return t.session.speedComparison(`${sign}${pctDiff}%`);
 }
 
 export function formatSessionConfirmation(
@@ -634,28 +655,6 @@ export function formatKahfReminder(
     lines.push(t.kahf.reminderNextPage(data.nextKahfPage));
   }
   return lines.join("\n");
-}
-
-export function formatEstimation(
-  pagesPerDay: number,
-  pagesRemaining: number,
-  today: string,
-  t: Locale
-): string {
-  if (pagesPerDay <= 0) {
-    return t.estimation.notEnoughData;
-  }
-  const daysRemaining = Math.ceil(pagesRemaining / pagesPerDay);
-  if (daysRemaining > 5 * 365) {
-    const months = Math.round(daysRemaining / 30);
-    return t.estimation.monthsRemaining(pagesPerDay.toFixed(1), months);
-  }
-  const target = addDays(today, daysRemaining);
-  const d = new Date(`${target}T00:00:00Z`);
-  const day = d.getUTCDate();
-  const month = t.months[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-  return t.estimation.dateEstimate(pagesPerDay.toFixed(1), day, month, year);
 }
 
 export function formatKhatmaMessage(khatmaNumber: number, t: Locale): string {

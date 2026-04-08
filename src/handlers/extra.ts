@@ -1,14 +1,16 @@
 // src/handlers/extra.ts
 import { InlineKeyboard } from "grammy";
 import type { CustomContext } from "../bot";
-import { getPageRange } from "../data/pages";
+import { effectivePageCount, getPageRange } from "../data/pages";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import { insertSession } from "../services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../services/db/speed";
 import {
   appendCompletedSurahs,
   formatError,
   formatRange,
   formatSessionConfirmation,
+  formatSpeedComparison,
   parseDuration,
   parsePage,
   parseRange,
@@ -21,6 +23,31 @@ const PAGE_OR_RANGE_RE = /^\d+(-\d+)?$/;
 
 // Callback data for no-duration extra confirmation
 export const CALLBACK_EXTRA_NODUR_CONFIRM_RE = /^nde_c:(.+)$/;
+
+async function appendSpeedComparison(
+  msgParts: string[],
+  ctx: CustomContext,
+  tz: string,
+  sessionId: number,
+  durationSeconds: number | null,
+  pageStart: number | undefined,
+  pageEnd: number | undefined,
+  ayahCount: number
+): Promise<void> {
+  if (durationSeconds === null || durationSeconds <= 0) {
+    return;
+  }
+  const avg = await get7DayTypeAvgSpeed(ctx.db, "extra", tz, sessionId);
+  const isPageBased = pageStart != null && pageEnd != null;
+  const currentSpeed = isPageBased
+    ? effectivePageCount(pageStart, pageEnd, "extra") / (durationSeconds / 3600)
+    : ayahCount / (durationSeconds / 3600);
+  const avgSpeed = isPageBased ? avg.pagesPerHour : avg.versesPerHour;
+  const comparison = formatSpeedComparison(currentSpeed, avgSpeed, ctx.locale);
+  if (comparison) {
+    msgParts.push(comparison);
+  }
+}
 
 export async function extraHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
@@ -161,6 +188,18 @@ async function insertAndReplyExtra(
   }
 
   const msgParts: string[] = [formatSessionConfirmation(result.value, t)];
+
+  await appendSpeedComparison(
+    msgParts,
+    ctx,
+    tz,
+    result.value.id,
+    durationSeconds,
+    target.pageStart,
+    target.pageEnd,
+    target.ayahCount
+  );
+
   appendCompletedSurahs(
     msgParts,
     target.surahStart,

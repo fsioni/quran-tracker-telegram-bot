@@ -257,16 +257,18 @@ export async function calculateStreak(
   return { currentStreak, bestStreak };
 }
 
-export async function getRecentPace(
+export async function getRecentPageStats(
   db: D1Database,
   tz: string,
-  days = 14
-): Promise<number> {
+  days = 7
+): Promise<{ secondsPerPage: number; pagesPerDay: number } | null> {
   const today = getTodayInTimezone(tz);
   const startDate = addDays(today, -(days - 1));
   const row = await db
     .prepare(
-      `SELECT COALESCE(SUM(${ADJ_PAGE_COUNT_SQL}), 0) AS total_pages
+      `SELECT
+        COALESCE(SUM(duration_seconds), 0) AS total_seconds,
+        COALESCE(SUM(${ADJ_PAGE_COUNT_SQL}), 0) AS total_pages
        FROM sessions
        WHERE type = 'normal'
          AND page_start IS NOT NULL
@@ -274,10 +276,12 @@ export async function getRecentPace(
          AND started_at >= ?`
     )
     .bind(`${startDate} 00:00:00`)
-    .first<{ total_pages: number }>();
+    .first<{ total_seconds: number; total_pages: number }>();
   if (!row || row.total_pages === 0) {
-    return 0;
+    return null;
   }
-
-  return row.total_pages / days;
+  return {
+    secondsPerPage: row.total_seconds / row.total_pages,
+    pagesPerDay: row.total_pages / days,
+  };
 }
