@@ -412,5 +412,14 @@ export const en: Locale = {
     apiError: (message) => `Aladhan API error: ${message}`,
   },
 
+  milestone: {
+    surahRemaining: (count, name) =>
+      `${count} ${count === 1 ? "ayah" : "ayahs"} left to finish ${name}`,
+    juzRemaining: (count, juz) =>
+      `${count} ${count === 1 ? "page" : "pages"} left to finish Juz ${juz}`,
+    khatmaRemaining: (count) =>
+      `${count} ${count === 1 ? "page" : "pages"} left to complete the Quran`,
+  },
+
   nativeName: "English",
 };

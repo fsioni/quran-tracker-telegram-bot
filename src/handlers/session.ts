@@ -11,6 +11,7 @@ import {
   parseDuration,
   parseRange,
 } from "../services/format";
+import { getMilestoneText } from "../services/milestone";
 import { calculateAyahCount, validateRange } from "../services/quran";
 
 const WHITESPACE_RE = /\s+/;
@@ -99,6 +100,11 @@ export async function sessionHandler(ctx: CustomContext): Promise<void> {
 
   // Check for completed surahs
   appendCompletedSurahs(msgParts, surahStart, ayahStart, surahEnd, ayahEnd, t);
+
+  const milestone = getMilestoneText({ surahEnd, ayahEnd }, t);
+  if (milestone) {
+    msgParts.push(milestone);
+  }
 
   await ctx.reply(msgParts.join("\n"));
 }

@@ -42,6 +42,7 @@ import {
   parsePage,
   parseVerseStart,
 } from "../services/format";
+import { getMilestoneText } from "../services/milestone";
 import {
   calculateAyahCount,
   validateAyah,
@@ -536,11 +537,17 @@ async function handleVerseResponse(
     await ctx.reply(formatError(result.error, t));
     return;
   }
-
-  const replyBase = formatSessionConfirmation(
+  let replyBase = formatSessionConfirmation(
     { ...result.value, type: sessionType },
     t
   );
+
+  if (sessionType === "normal") {
+    const milestone = getMilestoneText({ surahEnd, ayahEnd }, t);
+    if (milestone) {
+      replyBase += `\n${milestone}`;
+    }
+  }
 
   if (durationSeconds > 0) {
     const [avg] = await Promise.all([
@@ -553,7 +560,7 @@ async function handleVerseResponse(
       avg.versesPerHour,
       t
     );
-    await ctx.reply(comparison ? `${replyBase}\n${comparison}` : replyBase);
+    await ctx.reply(insertAfterFirstLine(replyBase, comparison));
   } else {
     await Promise.all([clearTimerState(ctx.db), ctx.reply(replyBase)]);
   }
@@ -700,8 +707,8 @@ async function dispatchPageResponse(
             pageStart,
             TOTAL_PAGES
           ),
-        (_r, ps, pe, dur) =>
-          formatReadConfirmation(
+        (session, ps, pe, dur) => {
+          const confirmation = formatReadConfirmation(
             {
               pageStart: ps,
               pageEnd: pe,
@@ -710,7 +717,17 @@ async function dispatchPageResponse(
               totalPages: TOTAL_PAGES,
             },
             t
-          ),
+          );
+          const milestone = getMilestoneText(
+            {
+              surahEnd: session.surahEnd,
+              ayahEnd: session.ayahEnd,
+              pageEnd: pe,
+            },
+            t
+          );
+          return milestone ? `${confirmation}\n${milestone}` : confirmation;
+        },
         tz
       );
     }

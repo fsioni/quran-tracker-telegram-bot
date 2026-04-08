@@ -20,6 +20,7 @@ import {
   insertAfterFirstLine,
   parsePageCountAndDuration,
 } from "../services/format";
+import { getMilestoneText } from "../services/milestone";
 
 // Callback data for no-duration read confirmation
 export const CALLBACK_READ_NODUR_CONFIRM_RE = /^ndr_c:(\d+)$/;
@@ -158,6 +159,14 @@ async function insertAndReply(
     rangeData.ayahEnd,
     t
   );
+
+  const milestone = getMilestoneText(
+    { surahEnd: rangeData.surahEnd, ayahEnd: rangeData.ayahEnd, pageEnd },
+    t
+  );
+  if (milestone) {
+    parts.push(milestone);
+  }
 
   await ctx.reply(parts.join("\n"));
 }

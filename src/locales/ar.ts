@@ -410,5 +410,32 @@ export const ar: Locale = {
     apiError: (message) => `خطأ Aladhan API: ${message}`,
   },
 
+  milestone: {
+    surahRemaining: (count, name) =>
+      `${arPlural(count, {
+        one: "آية واحدة متبقية",
+        two: "آيتان متبقيتان",
+        few: `${count} آيات متبقية`,
+        many: `${count} آية متبقية`,
+        other: `${count} آية متبقية`,
+      })} لإتمام ${name}`,
+    juzRemaining: (count, juz) =>
+      `${arPlural(count, {
+        one: "صفحة واحدة متبقية",
+        two: "صفحتان متبقيتان",
+        few: `${count} صفحات متبقية`,
+        many: `${count} صفحة متبقية`,
+        other: `${count} صفحة متبقية`,
+      })} لإتمام الجزء ${juz}`,
+    khatmaRemaining: (count) =>
+      `${arPlural(count, {
+        one: "صفحة واحدة متبقية",
+        two: "صفحتان متبقيتان",
+        few: `${count} صفحات متبقية`,
+        many: `${count} صفحة متبقية`,
+        other: `${count} صفحة متبقية`,
+      })} لختم القرآن`,
+  },
+
   nativeName: "العربية",
 };

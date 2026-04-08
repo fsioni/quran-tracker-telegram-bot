@@ -174,6 +174,13 @@ export interface Locale {
     deletionCancelled: string;
   };
 
+  // Milestone proximity
+  milestone: {
+    surahRemaining: (count: number, name: string) => string;
+    juzRemaining: (count: number, juz: number) => string;
+    khatmaRemaining: (count: number) => string;
+  };
+
   // Months
   months: [
     string,
