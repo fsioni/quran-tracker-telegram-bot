@@ -44,8 +44,7 @@ vi.mock("../../src/services/db/stats", async (importOriginal) => {
     getGlobalStats: vi.fn(),
     getPeriodStats: vi.fn(),
     calculateStreak: vi.fn(),
-    getRecentPace: vi.fn(),
-    getRecentSecondsPerPage: vi.fn(),
+    getRecentPageStats: vi.fn(),
     getPreviousWeekStats: vi.fn(),
   };
 });
@@ -68,8 +67,7 @@ import {
   getGlobalStats,
   getPeriodStats,
   getPreviousWeekStats,
-  getRecentPace,
-  getRecentSecondsPerPage,
+  getRecentPageStats,
 } from "../../src/services/db/stats";
 
 function makeCtx(match = ""): CustomContext {
@@ -528,8 +526,7 @@ describe("progressHandler", () => {
     vi.clearAllMocks();
     vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
     vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-15");
-    vi.mocked(getRecentPace).mockResolvedValue(0);
-    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(null);
+    vi.mocked(getRecentPageStats).mockResolvedValue(null);
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
     vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(0);
   });
@@ -684,8 +681,10 @@ describe("progressHandler", () => {
       pageEnd: 200,
     });
     vi.mocked(getKhatmaElapsedSeconds).mockResolvedValue(45_300);
-    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(180);
-    vi.mocked(getRecentPace).mockResolvedValue(2.5);
+    vi.mocked(getRecentPageStats).mockResolvedValue({
+      secondsPerPage: 180,
+      pagesPerDay: 2.5,
+    });
 
     const ctx = makeCtx();
     await progressHandler(ctx);
@@ -715,8 +714,7 @@ describe("progressHandler", () => {
       pageStart: 41,
       pageEnd: 200,
     });
-    vi.mocked(getRecentSecondsPerPage).mockResolvedValue(null);
-    vi.mocked(getRecentPace).mockResolvedValue(0);
+    vi.mocked(getRecentPageStats).mockResolvedValue(null);
 
     const ctx = makeCtx();
     await progressHandler(ctx);

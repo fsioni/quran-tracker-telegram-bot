@@ -26,8 +26,7 @@ import {
   getGlobalStats,
   getPeriodStats,
   getPreviousWeekStats,
-  getRecentPace,
-  getRecentSecondsPerPage,
+  getRecentPageStats,
 } from "../services/db/stats";
 import type { SessionType } from "../services/db/types";
 import {
@@ -98,14 +97,12 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
-  const [globalResult, lastSession, tz, khatmaCount, elapsedSeconds] =
-    await Promise.all([
-      getGlobalStats(ctx.db),
-      getLastSession(ctx.db, "normal"),
-      getTimezone(ctx.db),
-      getKhatmaCount(ctx.db),
-      getKhatmaElapsedSeconds(ctx.db),
-    ]);
+  const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
+    getGlobalStats(ctx.db),
+    getLastSession(ctx.db, "normal"),
+    getTimezone(ctx.db),
+    getKhatmaCount(ctx.db),
+  ]);
 
   if (!lastSession) {
     await ctx.reply(t.stats.noSession);
@@ -131,22 +128,24 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
   );
 
   if (lastSession.pageEnd != null) {
+    const elapsedSeconds = await getKhatmaElapsedSeconds(ctx.db);
     msg += `\n${t.progress.page} : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
     msg += `\n${t.progress.khatmaTime(formatDuration(elapsedSeconds, t))}`;
 
     if (lastSession.pageEnd < TOTAL_PAGES) {
       const pagesRemaining = TOTAL_PAGES - lastSession.pageEnd;
-      const [secondsPerPage, pagesPerDay] = await Promise.all([
-        getRecentSecondsPerPage(ctx.db, tz, 7),
-        getRecentPace(ctx.db, tz, 7),
-      ]);
+      const recentStats = await getRecentPageStats(ctx.db, tz, 7);
 
-      if (secondsPerPage !== null && pagesPerDay > 0) {
-        const remainingSeconds = Math.ceil(pagesRemaining * secondsPerPage);
+      if (recentStats) {
+        const remainingSeconds = Math.ceil(
+          pagesRemaining * recentStats.secondsPerPage
+        );
         msg += `\n${t.progress.remainingTime(formatDuration(remainingSeconds, t))}`;
 
         const today = getTodayInTimezone(tz);
-        const daysRemaining = Math.ceil(pagesRemaining / pagesPerDay);
+        const daysRemaining = Math.ceil(
+          pagesRemaining / recentStats.pagesPerDay
+        );
         const target = addDays(today, daysRemaining);
         const d = new Date(`${target}T00:00:00Z`);
         msg += `\n${t.progress.completionDate(d.getUTCDate(), t.months[d.getUTCMonth()], d.getUTCFullYear())}`;
