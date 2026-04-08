@@ -720,7 +720,12 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
     lines.push("");
     if (data.bestSession) {
       const { pageStart, pageEnd, durationSeconds, type } = data.bestSession;
-      if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
+      if (
+        pageStart !== null &&
+        pageEnd !== null &&
+        durationSeconds != null &&
+        durationSeconds > 0
+      ) {
         const pages = effectivePageCount(pageStart, pageEnd, type);
         const speedStr = formatSpeedOneDecimal(
           pages / (durationSeconds / 3600)
