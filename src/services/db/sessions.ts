@@ -166,11 +166,14 @@ export async function hasSessionToday(
   tz: string
 ): Promise<boolean> {
   const today = getTodayInTimezone(tz);
+  const tomorrow = new Date(`${today}T00:00:00Z`);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
   const row = await db
     .prepare(
-      "SELECT COUNT(*) AS count FROM sessions WHERE substr(started_at, 1, 10) = ?"
+      "SELECT COUNT(*) AS count FROM sessions WHERE started_at >= ? AND started_at < ?"
     )
-    .bind(today)
+    .bind(`${today} 00:00:00`, `${tomorrowStr} 00:00:00`)
     .first<{ count: number }>();
   return (row?.count ?? 0) > 0;
 }

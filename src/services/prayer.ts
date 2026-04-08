@@ -84,7 +84,10 @@ function timeToMinutes(hhmm: string): number {
 }
 
 export function addMinutesToHHMM(hhmm: string, minutes: number): string {
-  const total = (timeToMinutes(hhmm) + minutes) % (24 * 60);
+  const minutesPerDay = 24 * 60;
+  const total =
+    (((timeToMinutes(hhmm) + minutes) % minutesPerDay) + minutesPerDay) %
+    minutesPerDay;
   const h = Math.floor(total / 60);
   const m = total % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
