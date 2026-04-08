@@ -1,46 +1,80 @@
 // tests/handlers/session.test.ts
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
 import { sessionHandler } from "../../src/handlers/session";
 import { fr } from "../../src/locales/fr";
+import type { Session } from "../../src/services/db/types";
+
+const PCT_RE = /[+-]\d+%/;
+
+vi.mock("../../src/services/db/date-helpers", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/date-helpers")>();
+  return { ...actual, getTimezone: vi.fn(), getNowTimestamp: vi.fn() };
+});
+vi.mock("../../src/services/db/sessions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/sessions")>();
+  return { ...actual, insertSession: vi.fn() };
+});
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
+
+import {
+  getNowTimestamp,
+  getTimezone,
+} from "../../src/services/db/date-helpers";
+import { insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
+
+const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: 1,
+    startedAt: "2026-03-13 14:00:00",
+    durationSeconds: 533,
+    pageStart: null,
+    pageEnd: null,
+    surahStart: 2,
+    ayahStart: 77,
+    surahEnd: 2,
+    ayahEnd: 83,
+    ayahCount: 7,
+    type: "normal",
+    createdAt: "2026-03-13 14:00:00",
+    ...overrides,
+  };
+}
 
 function createMockContext(match = ""): CustomContext {
-  const firstFn = vi.fn().mockResolvedValue({
-    id: 1,
-    started_at: "2026-03-13 14:00:00",
-    duration_seconds: 533,
-    surah_start: 2,
-    ayah_start: 77,
-    surah_end: 2,
-    ayah_end: 83,
-    ayah_count: 7,
-    created_at: "2026-03-13 14:00:00",
-  });
-  const bindFn = vi
-    .fn()
-    .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-  const prepareFn = vi.fn().mockReturnValue({
-    bind: bindFn,
-    run: vi.fn(),
-    first: firstFn,
-    all: vi.fn(),
-  });
-
   return {
     match,
     reply: vi.fn().mockResolvedValue(undefined),
     chat: { id: 12_345 },
-    db: {
-      prepare: prepareFn,
-      batch: vi.fn(),
-      exec: vi.fn(),
-      dump: vi.fn(),
-    } as unknown as D1Database,
+    db: {} as D1Database,
     locale: fr,
   } as unknown as CustomContext;
 }
 
 describe("sessionHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-13 14:00:00");
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession(),
+    });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
+  });
+
   it("enregistre une session same-surah et repond avec confirmation", async () => {
     const ctx = createMockContext("2:77-83 8m53");
     await sessionHandler(ctx);
@@ -116,29 +150,19 @@ describe("sessionHandler", () => {
   });
 
   it("enregistre une session cross-surah", async () => {
-    const ctx = createMockContext("2:280-3:10 8m53");
-    // Override mock pour cross-surah
-    const firstFn = vi.fn().mockResolvedValue({
-      id: 2,
-      started_at: "2026-03-13 14:00:00",
-      duration_seconds: 533,
-      surah_start: 2,
-      ayah_start: 280,
-      surah_end: 3,
-      ayah_end: 10,
-      ayah_count: 17,
-      created_at: "2026-03-13 14:00:00",
-    });
-    const bindFn = vi
-      .fn()
-      .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({
-      bind: bindFn,
-      run: vi.fn(),
-      first: firstFn,
-      all: vi.fn(),
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({
+        id: 2,
+        surahStart: 2,
+        ayahStart: 280,
+        surahEnd: 3,
+        ayahEnd: 10,
+        ayahCount: 17,
+      }),
     });
 
+    const ctx = createMockContext("2:280-3:10 8m53");
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
@@ -148,41 +172,33 @@ describe("sessionHandler", () => {
     expect(msg).toContain("17 versets");
   });
 
-  it("n'appelle pas db.prepare pour les erreurs de format", async () => {
+  it("n'appelle pas insertSession pour les erreurs de format", async () => {
     const ctx = createMockContext("");
     await sessionHandler(ctx);
-    expect(ctx.db.prepare).not.toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
-  it("appelle db.prepare pour une session valide", async () => {
+  it("appelle insertSession pour une session valide", async () => {
     const ctx = createMockContext("2:77-83 8m53");
     await sessionHandler(ctx);
-    expect(ctx.db.prepare).toHaveBeenCalled();
+    expect(mockInsertSession).toHaveBeenCalled();
   });
 
   it("session completant une sourate -> message de fin", async () => {
-    const ctx = createMockContext("1:1-7 5m");
-    const firstFn = vi.fn().mockResolvedValue({
-      id: 10,
-      started_at: "2026-03-15 14:00:00",
-      duration_seconds: 300,
-      surah_start: 1,
-      ayah_start: 1,
-      surah_end: 1,
-      ayah_end: 7,
-      ayah_count: 7,
-      created_at: "2026-03-15 14:00:00",
-    });
-    const bindFn = vi
-      .fn()
-      .mockReturnValue({ run: vi.fn(), first: firstFn, all: vi.fn() });
-    (ctx.db.prepare as ReturnType<typeof vi.fn>).mockReturnValue({
-      bind: bindFn,
-      run: vi.fn(),
-      first: firstFn,
-      all: vi.fn(),
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({
+        id: 10,
+        durationSeconds: 300,
+        surahStart: 1,
+        ayahStart: 1,
+        surahEnd: 1,
+        ayahEnd: 7,
+        ayahCount: 7,
+      }),
     });
 
+    const ctx = createMockContext("1:1-7 5m");
     await sessionHandler(ctx);
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
@@ -197,5 +213,40 @@ describe("sessionHandler", () => {
       .calls[0][0] as string;
     expect(msg).toContain("Session enregistrée");
     expect(msg).not.toContain("terminée");
+  });
+
+  it("affiche la comparaison de vitesse quand une moyenne 7j existe", async () => {
+    // 7 ayahs in 533s = ~47.3 v/h; avg = 40 v/h -> +18%
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: 40,
+    });
+
+    const ctx = createMockContext("2:77-83 8m53");
+    await sessionHandler(ctx);
+
+    expect(get7DayTypeAvgSpeed).toHaveBeenCalledWith(
+      expect.anything(),
+      "normal",
+      "America/Cancun",
+      1
+    );
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("vs votre moy. 7j");
+    expect(msg).toMatch(PCT_RE);
+  });
+
+  it("pas de comparaison quand aucune moyenne 7j", async () => {
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
+
+    const ctx = createMockContext("2:77-83 8m53");
+    await sessionHandler(ctx);
+    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).not.toContain("vs votre moy. 7j");
   });
 });
