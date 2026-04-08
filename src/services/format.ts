@@ -2,7 +2,6 @@ import { effectivePageCount, TOTAL_PAGES } from "../data/pages";
 import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { err, ok, type Result } from "../types";
-import { addDays } from "./db/date-helpers";
 import type { Session, SpeedAverages, TypeSpeed } from "./db/types";
 import { getCompletedSurahs } from "./quran";
 import type { WeeklyRecapData } from "./weekly-recap";
@@ -206,32 +205,40 @@ export function parsePageCountAndDuration(
   input: string,
   cmdExample: string,
   t: Locale
-): Result<{ count: number; durationSeconds: number }> {
+): Result<{ count: number; durationSeconds: number | null }> {
   if (!input) {
-    return err(t.parse.invalidFormat(cmdExample));
+    return ok({ count: 1, durationSeconds: null });
   }
   const parts = input.split(WHITESPACE_RE);
-  let count: number;
-  let durationStr: string;
 
   if (parts.length === 1) {
-    count = 1;
-    durationStr = parts[0];
-  } else {
-    const parsed = Number.parseInt(parts[0], 10);
-    if (Number.isNaN(parsed) || parsed < 1) {
-      return err(t.parse.invalidPageCount(cmdExample));
+    // Single part: try as duration first, then as page count (no duration)
+    const durationResult = parseDuration(parts[0], t);
+    if (durationResult.ok) {
+      return ok({ count: 1, durationSeconds: durationResult.value });
     }
-    count = parsed;
-    durationStr = parts[1];
+    const parsed = Number.parseInt(parts[0], 10);
+    if (!Number.isNaN(parsed) && parsed >= 1) {
+      return ok({ count: parsed, durationSeconds: null });
+    }
+    return err(t.parse.invalidFormat(cmdExample));
   }
 
-  const durationResult = parseDuration(durationStr, t);
+  // Two parts: count + duration
+  const parsed = Number.parseInt(parts[0], 10);
+  if (Number.isNaN(parsed) || parsed < 1) {
+    return err(t.parse.invalidPageCount(cmdExample));
+  }
+
+  const durationResult = parseDuration(parts[1], t);
   if (!durationResult.ok) {
-    return durationResult as Result<{ count: number; durationSeconds: number }>;
+    return durationResult as Result<{
+      count: number;
+      durationSeconds: number | null;
+    }>;
   }
 
-  return ok({ count, durationSeconds: durationResult.value });
+  return ok({ count: parsed, durationSeconds: durationResult.value });
 }
 
 // --- Formatting functions ---
@@ -251,7 +258,10 @@ export function formatRange(
   return `${startName} ${surahStart}:${ayahStart} - ${endName} ${surahEnd}:${ayahEnd}`;
 }
 
-export function formatDuration(seconds: number, t?: Locale): string {
+export function formatDuration(seconds: number | null, t?: Locale): string {
+  if (seconds == null) {
+    return "--";
+  }
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
@@ -264,6 +274,28 @@ export function formatDuration(seconds: number, t?: Locale): string {
   return s > 0 ? `${m}${mSuf}${s}` : `${m}${mSuf}`;
 }
 
+export function insertAfterFirstLine(text: string, insertion: string): string {
+  if (!insertion) {
+    return text;
+  }
+  const lines = text.split("\n");
+  lines.splice(1, 0, insertion);
+  return lines.join("\n");
+}
+
+export function formatSpeedComparison(
+  currentSpeed: number,
+  avgSpeed: number | null,
+  t: Locale
+): string {
+  if (avgSpeed === null || avgSpeed === 0) {
+    return "";
+  }
+  const pctDiff = Math.round(((currentSpeed - avgSpeed) / avgSpeed) * 100);
+  const sign = pctDiff >= 0 ? "+" : "";
+  return t.session.speedComparison(`${sign}${pctDiff}%`);
+}
+
 export function formatSessionConfirmation(
   session: {
     surahStart: number;
@@ -271,7 +303,7 @@ export function formatSessionConfirmation(
     surahEnd: number;
     ayahEnd: number;
     ayahCount: number;
-    durationSeconds: number;
+    durationSeconds: number | null;
     type?: string;
     pageStart?: number | null;
     pageEnd?: number | null;
@@ -280,9 +312,17 @@ export function formatSessionConfirmation(
 ): string {
   const startName = getSurahName(session.surahStart, t);
   const endName = getSurahName(session.surahEnd, t);
-  const duration = formatDuration(session.durationSeconds, t);
   const prefix =
     session.type === "extra" ? t.session.extraRecorded : t.session.recorded;
+
+  if (session.durationSeconds == null) {
+    if (session.surahStart === session.surahEnd) {
+      return `${prefix} ${t.session.confirmationSameSurahNoDuration(startName, session.ayahStart, session.ayahEnd, session.ayahCount)}`;
+    }
+    return `${prefix} ${t.session.confirmationCrossSurahNoDuration(startName, session.ayahStart, endName, session.ayahEnd, session.ayahCount)}`;
+  }
+
+  const duration = formatDuration(session.durationSeconds, t);
 
   let speedSuffix = "";
   if (session.durationSeconds > 0) {
@@ -313,7 +353,7 @@ export function formatHistoryLine(
   session: {
     id: number;
     startedAt: string;
-    durationSeconds: number;
+    durationSeconds: number | null;
     surahStart: number;
     ayahStart: number;
     surahEnd: number;
@@ -359,11 +399,11 @@ export function formatHistoryLine(
     );
     const displayCount = Math.round(pageCount * 10) / 10;
     pagesSuffix = `, ${t.fmt.pagesCompact(displayCount)}`;
-    if (session.durationSeconds > 0) {
+    if (session.durationSeconds != null && session.durationSeconds > 0) {
       const pagesPerHour = pageCount / (session.durationSeconds / 3600);
       speedSuffix = `, ${t.fmt.pagesPerHourCompact(pagesPerHour.toFixed(1))}`;
     }
-  } else if (session.durationSeconds > 0) {
+  } else if (session.durationSeconds != null && session.durationSeconds > 0) {
     const versetsPerHour = Math.round(
       session.ayahCount / (session.durationSeconds / 3600)
     );
@@ -484,63 +524,81 @@ export function formatReminder(
     weekSessions: number;
     weekAyahs: number;
     streak: number;
+    streakAtRisk?: boolean;
   },
   t: Locale
 ): string {
   const closing =
     data.streak > 0 ? t.reminder.keepItUp : t.reminder.timeToResume;
 
-  return [
+  const lines = [
     t.reminder.title,
     "",
     t.reminder.nextPage(data.nextPage),
     t.reminder.thisWeek(data.weekSessions, data.weekAyahs),
     t.reminder.streak(data.streak),
-    "",
-    closing,
-  ].join("\n");
+  ];
+
+  if (data.streakAtRisk && data.streak >= 2) {
+    lines.push(t.reminder.streakAtRisk(data.streak));
+  }
+
+  lines.push("", closing);
+
+  return lines.join("\n");
+}
+
+export function formatStreakFollowup(
+  data: { streak: number },
+  t: Locale
+): string {
+  return t.reminder.streakLastChance(data.streak);
 }
 
 export function formatReadConfirmation(
   data: {
     pageStart: number;
     pageEnd: number;
-    durationSeconds: number;
+    durationSeconds: number | null;
     totalPagesRead: number;
     totalPages: number;
   },
   t: Locale
 ): string {
-  const duration = formatDuration(data.durationSeconds, t);
-  const isLastPage = data.pageEnd === data.totalPages;
+  const tail =
+    data.pageEnd === data.totalPages
+      ? t.read.quranComplete
+      : t.read.nextPage(data.pageEnd + 1);
+  const progress = `(${data.totalPagesRead}/${data.totalPages})`;
 
-  let speedPart = "";
-  if (data.durationSeconds > 0) {
-    const pagesPerHour =
-      (data.pageEnd - data.pageStart + 1) / (data.durationSeconds / 3600);
-    speedPart = ` -- ${t.session.pagesPerHour(pagesPerHour.toFixed(1))}`;
-  }
-
-  if (data.pageStart === data.pageEnd) {
-    const line1 = `${t.read.pageSingularRead(data.pageStart, duration)}${speedPart} (${data.totalPagesRead}/${data.totalPages})`;
-    if (isLastPage) {
-      return `${line1}\n${t.read.quranComplete}`;
+  let line1: string;
+  if (data.durationSeconds == null) {
+    line1 =
+      data.pageStart === data.pageEnd
+        ? `${t.read.pageSingularRecorded(data.pageStart)} ${progress}`
+        : `${t.read.pagePluralRecorded(data.pageStart, data.pageEnd)} ${progress}`;
+  } else {
+    const duration = formatDuration(data.durationSeconds, t);
+    let speedPart = "";
+    if (data.durationSeconds > 0) {
+      const pagesPerHour =
+        (data.pageEnd - data.pageStart + 1) / (data.durationSeconds / 3600);
+      speedPart = ` -- ${t.session.pagesPerHour(pagesPerHour.toFixed(1))}`;
     }
-    return `${line1}\n${t.read.nextPage(data.pageEnd + 1)}`;
+    line1 =
+      data.pageStart === data.pageEnd
+        ? `${t.read.pageSingularRead(data.pageStart, duration)}${speedPart} ${progress}`
+        : `${t.read.pagePluralRead(data.pageStart, data.pageEnd, duration)}${speedPart} ${progress}`;
   }
 
-  const line1 = `${t.read.pagePluralRead(data.pageStart, data.pageEnd, duration)}${speedPart} (${data.totalPagesRead}/${data.totalPages})`;
-  if (isLastPage) {
-    return `${line1}\n${t.read.quranComplete}`;
-  }
-  return `${line1}\n${t.read.nextPage(data.pageEnd + 1)}`;
+  return `${line1}\n${tail}`;
 }
 
 export function formatKahfPageConfirmation(
   data: {
     kahfPage: number;
     kahfTotal: number;
-    durationSeconds: number;
+    durationSeconds: number | null;
     weekPagesRead: number;
     weekTotalSeconds: number;
     isComplete: boolean;
@@ -549,8 +607,17 @@ export function formatKahfPageConfirmation(
   },
   t: Locale
 ): string {
-  const duration = formatDuration(data.durationSeconds, t);
   const pages = data.sessionPages ?? 1;
+  const weekDuration = formatDuration(data.weekTotalSeconds, t);
+
+  if (data.durationSeconds == null) {
+    if (!data.isComplete) {
+      return `${t.kahf.pageReadNoDuration(data.kahfPage, data.kahfTotal)}\n${t.kahf.thisWeek(data.weekPagesRead, data.kahfTotal, weekDuration)}`;
+    }
+    return t.kahf.complete(data.kahfPage, data.kahfTotal, weekDuration);
+  }
+
+  const duration = formatDuration(data.durationSeconds, t);
 
   let speedPart = "";
   if (data.durationSeconds > 0) {
@@ -559,11 +626,8 @@ export function formatKahfPageConfirmation(
   }
 
   if (!data.isComplete) {
-    const weekDuration = formatDuration(data.weekTotalSeconds, t);
     return `${t.kahf.pageRead(data.kahfPage, data.kahfTotal, duration)}${speedPart}\n${t.kahf.thisWeek(data.weekPagesRead, data.kahfTotal, weekDuration)}`;
   }
-
-  const weekDuration = formatDuration(data.weekTotalSeconds, t);
   const lines: string[] = [
     t.kahf.complete(data.kahfPage, data.kahfTotal, weekDuration),
   ];
@@ -605,28 +669,6 @@ export function formatKahfReminder(
     lines.push(t.kahf.reminderNextPage(data.nextKahfPage));
   }
   return lines.join("\n");
-}
-
-export function formatEstimation(
-  pagesPerDay: number,
-  pagesRemaining: number,
-  today: string,
-  t: Locale
-): string {
-  if (pagesPerDay <= 0) {
-    return t.estimation.notEnoughData;
-  }
-  const daysRemaining = Math.ceil(pagesRemaining / pagesPerDay);
-  if (daysRemaining > 5 * 365) {
-    const months = Math.round(daysRemaining / 30);
-    return t.estimation.monthsRemaining(pagesPerDay.toFixed(1), months);
-  }
-  const target = addDays(today, daysRemaining);
-  const d = new Date(`${target}T00:00:00Z`);
-  const day = d.getUTCDate();
-  const month = t.months[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-  return t.estimation.dateEstimate(pagesPerDay.toFixed(1), day, month, year);
 }
 
 export function formatKhatmaMessage(khatmaNumber: number, t: Locale): string {
@@ -691,7 +733,12 @@ export function formatSpeedReport(data: SpeedReportData, t: Locale): string {
     lines.push("");
     if (data.bestSession) {
       const { pageStart, pageEnd, durationSeconds, type } = data.bestSession;
-      if (pageStart !== null && pageEnd !== null && durationSeconds > 0) {
+      if (
+        pageStart !== null &&
+        pageEnd !== null &&
+        durationSeconds != null &&
+        durationSeconds > 0
+      ) {
         const pages = effectivePageCount(pageStart, pageEnd, type);
         const speedStr = formatSpeedOneDecimal(
           pages / (durationSeconds / 3600)

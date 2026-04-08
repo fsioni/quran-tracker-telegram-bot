@@ -1,13 +1,9 @@
 import { fr } from "../src/locales/fr";
 import type { Session } from "../src/services/db/types";
 
-const MONTHS_REMAINING_RE =
-  /^À ton rythme actuel \(~0\.1 pages\/jour\), il te reste environ \d+ mois$/;
-
 import {
   formatDuration,
   formatError,
-  formatEstimation,
   formatHistoryLine,
   formatKahfPageConfirmation,
   formatKahfReminder,
@@ -16,8 +12,10 @@ import {
   formatReadConfirmation,
   formatReminder,
   formatSessionConfirmation,
+  formatSpeedComparison,
   formatSpeedReport,
   formatStats,
+  formatStreakFollowup,
   formatSurahsComplete,
   parseDuration,
   parseImportLine,
@@ -314,6 +312,40 @@ describe("formatSessionConfirmation", () => {
       "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 0m"
     );
   });
+
+  it("formats same-surah without duration", () => {
+    const result = formatSessionConfirmation(
+      {
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+        ayahCount: 7,
+        durationSeconds: null,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Session enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets"
+    );
+  });
+
+  it("formats cross-surah without duration", () => {
+    const result = formatSessionConfirmation(
+      {
+        surahStart: 2,
+        ayahStart: 280,
+        surahEnd: 3,
+        ayahEnd: 10,
+        ayahCount: 17,
+        durationSeconds: null,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Session enregistrée : sourate Al-Baqara v.280 à sourate Al-Imran v.10 -- 17 versets"
+    );
+  });
 });
 
 // --- formatHistoryLine ---
@@ -436,6 +468,44 @@ describe("formatHistoryLine", () => {
       fr
     );
     expect(result).toBe("[N] #5 | 10/03 13h30 | 0m | Al-Fatiha 1:1-7 (7v)");
+  });
+
+  it("shows -- for null duration and no speed", () => {
+    const result = formatHistoryLine(
+      {
+        id: 5,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: null,
+        surahStart: 1,
+        ayahStart: 1,
+        surahEnd: 1,
+        ayahEnd: 7,
+        ayahCount: 7,
+      },
+      fr
+    );
+    expect(result).toBe("[N] #5 | 10/03 13h30 | -- | Al-Fatiha 1:1-7 (7v)");
+  });
+
+  it("shows pages but no speed for null duration with pages", () => {
+    const result = formatHistoryLine(
+      {
+        id: 10,
+        startedAt: "2026-03-10 13:30:00",
+        durationSeconds: null,
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+        ayahCount: 7,
+        pageStart: 10,
+        pageEnd: 12,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "[N] #10 | 10/03 13h30 | -- | Al-Baqara 2:77-83 (7v, 3p)"
+    );
   });
 });
 
@@ -749,6 +819,59 @@ describe("formatReminder", () => {
     expect(result).toContain("Prochaine page : 1");
     expect(result).toContain("C'est le moment de reprendre !");
   });
+
+  it("includes streak-at-risk warning when streakAtRisk=true and streak>=2", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 5,
+        weekAyahs: 120,
+        streak: 5,
+        streakAtRisk: true,
+      },
+      fr
+    );
+    expect(result).toContain(
+      "Ta série de 5 jours se termine ce soir si tu ne lis pas."
+    );
+  });
+
+  it("no streak-at-risk warning when streakAtRisk=false", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 5,
+        weekAyahs: 120,
+        streak: 5,
+        streakAtRisk: false,
+      },
+      fr
+    );
+    expect(result).not.toContain("se termine ce soir");
+  });
+
+  it("no streak-at-risk warning when streak < 2", () => {
+    const result = formatReminder(
+      {
+        nextPage: 42,
+        weekSessions: 1,
+        weekAyahs: 10,
+        streak: 1,
+        streakAtRisk: true,
+      },
+      fr
+    );
+    expect(result).not.toContain("se termine ce soir");
+  });
+});
+
+// --- formatStreakFollowup ---
+
+describe("formatStreakFollowup", () => {
+  it("formats last chance message", () => {
+    const result = formatStreakFollowup({ streak: 7 }, fr);
+    expect(result).toBe("Dernière chance de garder ta série de 7 jours.");
+  });
 });
 
 // --- parsePage ---
@@ -866,6 +989,34 @@ describe("formatReadConfirmation", () => {
       fr
     );
     expect(result).toBe("Page 42 lue en 0m (42/604)\nProchaine page : 43");
+  });
+
+  it("formats single page without duration", () => {
+    const result = formatReadConfirmation(
+      {
+        pageStart: 42,
+        pageEnd: 42,
+        durationSeconds: null,
+        totalPagesRead: 42,
+        totalPages: 604,
+      },
+      fr
+    );
+    expect(result).toBe("Page 42 (42/604)\nProchaine page : 43");
+  });
+
+  it("formats multi-page without duration", () => {
+    const result = formatReadConfirmation(
+      {
+        pageStart: 42,
+        pageEnd: 44,
+        durationSeconds: null,
+        totalPagesRead: 44,
+        totalPages: 604,
+      },
+      fr
+    );
+    expect(result).toBe("Pages 42-44 (44/604)\nProchaine page : 45");
   });
 });
 
@@ -992,6 +1143,38 @@ describe("formatKahfPageConfirmation", () => {
     expect(result).toBe(
       "Al-Kahf terminée ! 12/12 pages en 52m\nSemaine dernière : 52m"
     );
+  });
+
+  it("formats in progress without duration", () => {
+    const result = formatKahfPageConfirmation(
+      {
+        kahfPage: 3,
+        kahfTotal: 12,
+        durationSeconds: null,
+        weekPagesRead: 3,
+        weekTotalSeconds: 840,
+        isComplete: false,
+      },
+      fr
+    );
+    expect(result).toBe(
+      "Al-Kahf page 3/12\nCette semaine : 3/12 pages, 14m au total"
+    );
+  });
+
+  it("formats completion without duration", () => {
+    const result = formatKahfPageConfirmation(
+      {
+        kahfPage: 12,
+        kahfTotal: 12,
+        durationSeconds: null,
+        weekPagesRead: 12,
+        weekTotalSeconds: 3120,
+        isComplete: true,
+      },
+      fr
+    );
+    expect(result).toBe("Al-Kahf terminée ! 12/12 pages en 52m");
   });
 });
 
@@ -1151,40 +1334,6 @@ describe("formatSessionConfirmation with type", () => {
     );
     expect(result).toBe(
       "Session extra enregistrée : sourate Al-Baqara v.77 à v.83 -- 7 versets en 8m53 (47 versets/h)"
-    );
-  });
-});
-
-// --- formatEstimation ---
-
-describe("formatEstimation", () => {
-  const today = "2026-03-15";
-
-  it("formate une date de fin avec un rythme normal", () => {
-    // 1.2 pages/jour, 400 pages restantes -> ceil(333.3) = 334 jours -> 2027-02-12
-    const result = formatEstimation(1.2, 400, today, fr);
-    expect(result).toBe(
-      "À ce rythme (~1.2 pages/jour), tu finiras vers le 12 février 2027"
-    );
-  });
-
-  it("retourne message 'pas assez de donnees' quand pace est 0", () => {
-    const result = formatEstimation(0, 400, today, fr);
-    expect(result).toBe(
-      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)"
-    );
-  });
-
-  it("retourne format en mois quand estimation > 5 ans", () => {
-    // 0.1 pages/jour, 500 pages = 5000 jours > 5*365
-    const result = formatEstimation(0.1, 500, today, fr);
-    expect(result).toMatch(MONTHS_REMAINING_RE);
-  });
-
-  it("retourne message pour pace negatif", () => {
-    const result = formatEstimation(-1, 400, today, fr);
-    expect(result).toBe(
-      "Pas assez de données récentes pour estimer (lis régulièrement pour voir une projection)"
     );
   });
 });
@@ -1428,5 +1577,29 @@ describe("formatSpeedReport", () => {
     expect(result).toContain("  Normal : 10.0 pages/h (10 sessions)");
     expect(result).toContain("  Extra  : 12.0 pages/h (5 sessions)");
     expect(result).toContain("  Kahf   : 8.0 pages/h (3 sessions)");
+  });
+});
+
+// --- formatSpeedComparison ---
+
+describe("formatSpeedComparison", () => {
+  it("returns positive percentage with + prefix", () => {
+    expect(formatSpeedComparison(12.5, 10, fr)).toBe("+25% vs votre moy. 7j");
+  });
+
+  it("returns negative percentage", () => {
+    expect(formatSpeedComparison(9.2, 10, fr)).toBe("-8% vs votre moy. 7j");
+  });
+
+  it("returns +0% when speeds are equal", () => {
+    expect(formatSpeedComparison(10, 10, fr)).toBe("+0% vs votre moy. 7j");
+  });
+
+  it("returns empty string when avgSpeed is null", () => {
+    expect(formatSpeedComparison(10, null, fr)).toBe("");
+  });
+
+  it("returns empty string when avgSpeed is 0", () => {
+    expect(formatSpeedComparison(10, 0, fr)).toBe("");
   });
 });

@@ -70,22 +70,12 @@ export interface Locale {
       oldDuration: string,
       newDuration: string
     ) => string;
+    durationAdded: (id: number, range: string, newDuration: string) => string;
   };
 
   // Error/example prefixes
   error: string;
 
-  // Estimation
-  estimation: {
-    notEnoughData: string;
-    monthsRemaining: (pace: string, months: number) => string;
-    dateEstimate: (
-      pace: string,
-      day: number,
-      month: string,
-      year: number
-    ) => string;
-  };
   example: string;
 
   // Command usage examples (shown in error messages)
@@ -144,6 +134,7 @@ export interface Locale {
   // Kahf
   kahf: {
     pageRead: (page: number, total: number, duration: string) => string;
+    pageReadNoDuration: (page: number, total: number) => string;
     thisWeek: (pages: number, total: number, duration: string) => string;
     complete: (page: number, total: number, duration: string) => string;
     lastWeek: (duration: string) => string;
@@ -250,12 +241,18 @@ export interface Locale {
     label: (read: number, total: number, pct: string) => string;
     khatmas: (count: number) => string;
     page: string;
+    khatmaTime: (duration: string) => string;
+    remainingTime: (duration: string) => string;
+    noRecentData: string;
+    completionDate: (day: number, month: string, year: number) => string;
   };
 
   // Read confirmation
   read: {
     pageSingularRead: (page: number, duration: string) => string;
     pagePluralRead: (start: number, end: number, duration: string) => string;
+    pageSingularRecorded: (page: number) => string;
+    pagePluralRecorded: (start: number, end: number) => string;
     quranComplete: string;
     nextPage: (page: number) => string;
     remainingPages: (count: number, start: number, end: number) => string;
@@ -279,6 +276,8 @@ export interface Locale {
     nextPage: (page: number) => string;
     thisWeek: (sessions: number, ayahs: number) => string;
     streak: (days: number) => string;
+    streakAtRisk: (days: number) => string;
+    streakLastChance: (days: number) => string;
     keepItUp: string;
     timeToResume: string;
   };
@@ -295,6 +294,8 @@ export interface Locale {
     pagesPerHour: (n: string) => string;
     from: string;
     to: string;
+    noDurationPrompt: string;
+    cancelled: string;
     confirmationSameSurah: (
       surahName: string,
       ayahStart: number,
@@ -312,6 +313,20 @@ export interface Locale {
       duration: string,
       speed: string
     ) => string;
+    confirmationSameSurahNoDuration: (
+      surahName: string,
+      ayahStart: number,
+      ayahEnd: number,
+      ayahCount: number
+    ) => string;
+    confirmationCrossSurahNoDuration: (
+      startName: string,
+      ayahStart: number,
+      endName: string,
+      ayahEnd: number,
+      ayahCount: number
+    ) => string;
+    speedComparison: (pct: string) => string;
   };
 
   // Speed report

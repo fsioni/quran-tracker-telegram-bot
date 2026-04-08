@@ -1,7 +1,7 @@
 // tests/handlers/read.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import { readHandler } from "../../src/handlers/read";
+import { confirmReadNoDurCallback, readHandler } from "../../src/handlers/read";
 import { fr } from "../../src/locales/fr";
 import type { Session } from "../../src/services/db/types";
 
@@ -20,6 +20,11 @@ vi.mock("../../src/services/db/sessions", async (importOriginal) => {
     await importOriginal<typeof import("../../src/services/db/sessions")>();
   return { ...actual, getLastSession: vi.fn(), insertSession: vi.fn() };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
@@ -27,6 +32,7 @@ import {
 } from "../../src/services/db/date-helpers";
 import { getKhatmaCount, insertKhatma } from "../../src/services/db/khatma";
 import { getLastSession, insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 
 const mockGetLastSession = getLastSession as ReturnType<typeof vi.fn>;
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
@@ -70,6 +76,10 @@ describe("readHandler", () => {
       completedAt: "2026-03-15 14:00:00",
     });
     vi.mocked(getKhatmaCount).mockResolvedValue(0);
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("/read 5m sans session précédente -> enregistre page 1", async () => {
@@ -245,15 +255,17 @@ describe("readHandler", () => {
     expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
-  it("erreur si durée manquante", async () => {
+  it("prompt de confirmation sans durée (input vide)", async () => {
     const ctx = createMockContext("");
     await readHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as string;
-    expect(msg).toContain("Erreur");
-    expect(msg).toContain("format invalide");
+    const call = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0];
+    const msg = call[0] as string;
+    expect(msg).toContain("Page 1");
+    expect(msg).toContain("sans timer");
+    expect(call[1]).toHaveProperty("reply_markup");
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
   it("erreur si format de durée invalide", async () => {
@@ -264,7 +276,7 @@ describe("readHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("Erreur");
-    expect(msg).toContain("format de durée invalide");
+    expect(msg).toContain("format invalide");
   });
 
   it("passe type='normal' à insertSession", async () => {
@@ -298,6 +310,16 @@ describe("readHandler", () => {
         pageEnd: 1,
       })
     );
+  });
+
+  it("prompt de confirmation sans durée avec nombre de pages", async () => {
+    const ctx = createMockContext("3");
+    await readHandler(ctx);
+
+    expect(ctx.reply).toHaveBeenCalledTimes(1);
+    const call = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[1]).toHaveProperty("reply_markup");
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
   it("/read terminant une sourate -> message de fin de sourate", async () => {
@@ -340,5 +362,110 @@ describe("readHandler", () => {
     const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).not.toContain("terminée");
+  });
+});
+
+function createMockCallbackContext(callbackData: string) {
+  const ctx = createMockContext("");
+  (ctx as any).callbackQuery = { data: callbackData };
+  ctx.editMessageReplyMarkup = vi.fn().mockResolvedValue(undefined);
+  ctx.editMessageText = vi.fn().mockResolvedValue(undefined);
+  ctx.answerCallbackQuery = vi.fn().mockResolvedValue(undefined);
+  return ctx;
+}
+
+describe("confirmReadNoDurCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
+    mockGetLastSession.mockResolvedValue(null);
+    vi.mocked(insertKhatma).mockResolvedValue({
+      id: 1,
+      completedAt: "2026-03-15 14:00:00",
+    });
+    vi.mocked(getKhatmaCount).mockResolvedValue(0);
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
+  });
+
+  it("confirme et insère une session avec durationSeconds null", async () => {
+    const session = makeSession({
+      id: 1,
+      durationSeconds: null,
+      pageStart: 1,
+      pageEnd: 1,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 1,
+      ayahEnd: 7,
+      ayahCount: 7,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockCallbackContext("ndr_c:1");
+    await confirmReadNoDurCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledTimes(1);
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "normal",
+        durationSeconds: null,
+        pageStart: 1,
+        pageEnd: 1,
+      })
+    );
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledTimes(1);
+  });
+
+  it("callback data invalide -> answerCallbackQuery sans insert", async () => {
+    const ctx = createMockCallbackContext("invalid_data");
+    await confirmReadNoDurCallback(ctx);
+
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+    expect(ctx.reply).not.toHaveBeenCalled();
+  });
+
+  it("count=0 -> answerCallbackQuery sans insert", async () => {
+    const ctx = createMockCallbackContext("ndr_c:0");
+    await confirmReadNoDurCallback(ctx);
+
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+  });
+
+  it("confirme plusieurs pages avec durationSeconds null", async () => {
+    const session = makeSession({
+      id: 2,
+      durationSeconds: null,
+      pageStart: 1,
+      pageEnd: 3,
+      surahStart: 1,
+      ayahStart: 1,
+      surahEnd: 2,
+      ayahEnd: 5,
+      ayahCount: 12,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockCallbackContext("ndr_c:3");
+    await confirmReadNoDurCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledTimes(1);
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "normal",
+        durationSeconds: null,
+        pageStart: 1,
+        pageEnd: 3,
+      })
+    );
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

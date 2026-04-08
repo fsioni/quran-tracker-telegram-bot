@@ -2,6 +2,7 @@ import { addDays, getTodayInTimezone } from "./date-helpers";
 import { mapRow } from "./sessions";
 import {
   ADJ_PAGE_COUNT_SQL,
+  HAS_SPEED_DATA_SQL,
   PAGE_SECONDS_SQL,
   PAGE_STATS_SQL,
 } from "./sql-fragments";
@@ -14,6 +15,46 @@ import type {
   TypeSpeed,
 } from "./types";
 
+export async function get7DayTypeAvgSpeed(
+  db: D1Database,
+  type: SessionType,
+  tz: string,
+  excludeSessionId: number
+): Promise<{ pagesPerHour: number | null; versesPerHour: number | null }> {
+  const today = getTodayInTimezone(tz);
+  const date7d = addDays(today, -(7 - 1));
+
+  const row = await db
+    .prepare(
+      `SELECT
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL}
+            THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) AS total_pages,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL}
+            THEN duration_seconds ELSE 0 END) AS page_seconds,
+        SUM(CASE WHEN duration_seconds IS NOT NULL THEN ayah_count ELSE 0 END) AS total_ayahs,
+        SUM(duration_seconds) AS total_seconds
+      FROM sessions
+      WHERE type = ? AND started_at >= ? AND id != ?`
+    )
+    .bind(type, `${date7d} 00:00:00`, excludeSessionId)
+    .first<{
+      total_pages: number | null;
+      page_seconds: number | null;
+      total_ayahs: number | null;
+      total_seconds: number | null;
+    }>();
+
+  const pageSeconds = row?.page_seconds ?? 0;
+  const totalSeconds = row?.total_seconds ?? 0;
+
+  return {
+    pagesPerHour:
+      pageSeconds > 0 ? (row?.total_pages ?? 0) / (pageSeconds / 3600) : null,
+    versesPerHour:
+      totalSeconds > 0 ? (row?.total_ayahs ?? 0) / (totalSeconds / 3600) : null,
+  };
+}
+
 export async function getSpeedAverages(
   db: D1Database,
   tz: string
@@ -25,12 +66,12 @@ export async function getSpeedAverages(
   const row = await db
     .prepare(
       `SELECT
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_7d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_7d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_30d,
-        SUM(CASE WHEN started_at >= ? AND page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as seconds_30d
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_7d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as seconds_7d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as pages_30d,
+        SUM(CASE WHEN started_at >= ? AND ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as seconds_30d
       FROM sessions`
     )
     .bind(
@@ -86,6 +127,7 @@ export async function getLongestSession(
   const row = await db
     .prepare(
       `SELECT * FROM sessions
+       WHERE duration_seconds IS NOT NULL
        ORDER BY duration_seconds DESC
        LIMIT 1`
     )
@@ -97,9 +139,9 @@ export async function getSpeedByType(db: D1Database): Promise<TypeSpeed[]> {
   const { results } = await db
     .prepare(
       `SELECT type,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN duration_seconds ELSE 0 END) as total_seconds,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
-        SUM(CASE WHEN page_start IS NOT NULL AND page_end IS NOT NULL THEN 1 ELSE 0 END) as session_count
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN duration_seconds ELSE 0 END) as total_seconds,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN ${ADJ_PAGE_COUNT_SQL} ELSE 0 END) as total_pages,
+        SUM(CASE WHEN ${HAS_SPEED_DATA_SQL} THEN 1 ELSE 0 END) as session_count
       FROM sessions
       GROUP BY type`
     )

@@ -44,7 +44,7 @@ export async function editHandler(ctx: CustomContext): Promise<void> {
     return;
   }
 
-  const oldDuration = formatDuration(session.durationSeconds, t);
+  const hadNoDuration = session.durationSeconds == null;
   const updated = await updateSessionDuration(ctx.db, id, durationResult.value);
   if (!updated) {
     await ctx.reply(formatError(t.edit.sessionNotFound(id), t));
@@ -60,5 +60,10 @@ export async function editHandler(ctx: CustomContext): Promise<void> {
     t
   );
 
-  await ctx.reply(t.edit.sessionEdited(id, range, oldDuration, newDuration));
+  if (hadNoDuration) {
+    await ctx.reply(t.edit.durationAdded(id, range, newDuration));
+  } else {
+    const oldDuration = formatDuration(session.durationSeconds, t);
+    await ctx.reply(t.edit.sessionEdited(id, range, oldDuration, newDuration));
+  }
 }

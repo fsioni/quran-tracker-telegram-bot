@@ -88,9 +88,9 @@ export const ar: Locale = {
 
   examples: {
     session: "/session 2:77-83 8m53",
-    read: "/read 5m أو /read 3 15m",
-    extra: "/extra 300 5m أو /extra 2:77-83 8m",
-    kahf: "/kahf 5m أو /kahf 3 15m",
+    read: "/read 5m أو /read 3 15m أو /read 3",
+    extra: "/extra 300 5m أو /extra 2:77-83 8m أو /extra 300",
+    kahf: "/kahf 5m أو /kahf 3 15m أو /kahf 3",
     import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
     edit: "/edit 42 15m",
   },
@@ -106,6 +106,8 @@ export const ar: Locale = {
     pagesPerHour: (n) => `${n} صفحة/س`,
     from: "آ.",
     to: "إلى",
+    noDurationPrompt: "تسجيل بدون مؤقت؟",
+    cancelled: "تم الإلغاء.",
     confirmationSameSurah: (
       surahName,
       ayahStart,
@@ -125,6 +127,22 @@ export const ar: Locale = {
       speed
     ) =>
       `سورة ${startName} آ.${ayahStart} إلى سورة ${endName} آ.${ayahEnd} -- ${ayahCount} آية في ${duration}${speed}`,
+    confirmationSameSurahNoDuration: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `سورة ${surahName} آ.${ayahStart} إلى آ.${ayahEnd} -- ${ayahCount} آية`,
+    confirmationCrossSurahNoDuration: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `سورة ${startName} آ.${ayahStart} إلى سورة ${endName} آ.${ayahEnd} -- ${ayahCount} آية`,
+    speedComparison: (pct) => `${pct} مقارنة بمتوسط 7 أيام`,
   },
 
   stats: {
@@ -152,6 +170,11 @@ export const ar: Locale = {
     label: (read, total, pct) => `التقدم: ${read} / ${total} آية (${pct}%)`,
     khatmas: (count) => `الختمات: ${count}`,
     page: "صفحة",
+    khatmaTime: (duration) => `وقت القراءة (هذه الختمة): ${duration}`,
+    remainingTime: (duration) => `الوقت المتبقي المقدر: ~${duration}`,
+    noRecentData: "لا توجد بيانات حديثة",
+    completionDate: (day, month, year) =>
+      `تاريخ الانتهاء المتوقع: ${day} ${month} ${year}`,
   },
 
   reminder: {
@@ -161,6 +184,10 @@ export const ar: Locale = {
       `هذا الأسبوع: ${sessions} ${arPlural(sessions, { one: "جلسة", two: "جلستان", few: "جلسات", many: "جلسة", other: "جلسات" })}، ${ayahs} آية`,
     streak: (days) =>
       `السلسلة: ${days} ${arPlural(days, { one: "يوم متتالي", two: "يومان متتاليان", few: "أيام متتالية", many: "يومًا متتاليًا", other: "أيام متتالية" })}`,
+    streakAtRisk: (days) =>
+      `سلسلتك من ${days} ${arPlural(days, { one: "يوم", two: "يومين", few: "أيام", many: "يومًا", other: "أيام" })} تنتهي الليلة إن لم تقرأ.`,
+    streakLastChance: (days) =>
+      `فرصة أخيرة للحفاظ على سلسلتك من ${days} ${arPlural(days, { one: "يوم", two: "يومين", few: "أيام", many: "يومًا", other: "أيام" })}.`,
     keepItUp: "استمر على هذا!",
     timeToResume: "حان وقت العودة للقراءة!",
   },
@@ -170,6 +197,8 @@ export const ar: Locale = {
       `تمت قراءة الصفحة ${page} في ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `تمت قراءة الصفحات ${start}-${end} في ${duration}`,
+    pageSingularRecorded: (page) => `الصفحة ${page}`,
+    pagePluralRecorded: (start, end) => `الصفحات ${start}-${end}`,
     quranComplete: "اكتمل القرآن! الحمد لله!",
     nextPage: (page) => `الصفحة التالية: ${page}`,
     remainingPages: (count, start, end) =>
@@ -181,6 +210,7 @@ export const ar: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `تمت قراءة صفحة الكهف ${page}/${total} في ${duration}`,
+    pageReadNoDuration: (page, total) => `صفحة الكهف ${page}/${total}`,
     thisWeek: (pages, total, duration) =>
       `هذا الأسبوع: ${pages}/${total} صفحة، ${duration} إجمالي`,
     complete: (page, total, duration) =>
@@ -227,14 +257,6 @@ export const ar: Locale = {
     next: "التالي >>",
     prev: "<< السابق",
     pageIndicator: (current, total) => `صفحة ${current}/${total}`,
-  },
-
-  estimation: {
-    notEnoughData: "لا توجد بيانات كافية للتقدير (اقرأ بانتظام لرؤية التوقعات)",
-    monthsRemaining: (pace, months) =>
-      `بوتيرتك الحالية (~${pace} صفحة/يوم)، يتبقى حوالي ${months} شهر`,
-    dateEstimate: (pace, day, month, year) =>
-      `بهذه الوتيرة (~${pace} صفحة/يوم)، ستنتهي حوالي ${day} ${month} ${year}`,
   },
 
   khatma: {
@@ -317,6 +339,8 @@ export const ar: Locale = {
     sessionNotFound: (id) => `الجلسة #${id} غير موجودة`,
     sessionEdited: (id, range, oldDuration, newDuration) =>
       `تم تعديل الجلسة #${id}.\n${range}\n${oldDuration} -> ${newDuration}`,
+    durationAdded: (id, range, newDuration) =>
+      `تمت إضافة المدة للجلسة #${id}.\n${range}\n-- -> ${newDuration}`,
   },
 
   manage: {

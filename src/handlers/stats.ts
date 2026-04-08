@@ -4,8 +4,12 @@ import type { CustomContext } from "../bot";
 import { getNextPage, TOTAL_PAGES } from "../data/pages";
 import { TOTAL_AYAH_COUNT } from "../data/surahs";
 import type { Locale } from "../locales/types";
-import { getTimezone, getTodayInTimezone } from "../services/db/date-helpers";
-import { getKhatmaCount } from "../services/db/khatma";
+import {
+  addDays,
+  getTimezone,
+  getTodayInTimezone,
+} from "../services/db/date-helpers";
+import { getKhatmaCount, getKhatmaElapsedSeconds } from "../services/db/khatma";
 import {
   getHistory,
   getLastSession,
@@ -22,12 +26,12 @@ import {
   getGlobalStats,
   getPeriodStats,
   getPreviousWeekStats,
-  getRecentPace,
+  getRecentPageStats,
 } from "../services/db/stats";
 import type { SessionType } from "../services/db/types";
 import {
+  formatDuration,
   formatError,
-  formatEstimation,
   formatHistoryLine,
   formatProgress,
   formatSpeedReport,
@@ -93,12 +97,14 @@ export async function statsHandler(ctx: CustomContext): Promise<void> {
 
 export async function progressHandler(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
-  const [globalResult, lastSession, tz, khatmaCount] = await Promise.all([
-    getGlobalStats(ctx.db),
-    getLastSession(ctx.db, "normal"),
-    getTimezone(ctx.db),
-    getKhatmaCount(ctx.db),
-  ]);
+  const [globalResult, lastSession, tz, khatmaCount, elapsedSeconds] =
+    await Promise.all([
+      getGlobalStats(ctx.db),
+      getLastSession(ctx.db, "normal"),
+      getTimezone(ctx.db),
+      getKhatmaCount(ctx.db),
+      getKhatmaElapsedSeconds(ctx.db),
+    ]);
 
   if (!lastSession) {
     await ctx.reply(t.stats.noSession);
@@ -123,14 +129,31 @@ export async function progressHandler(ctx: CustomContext): Promise<void> {
     t
   );
 
+  const elapsedMinutes = Math.round(elapsedSeconds / 60) * 60;
+  msg += `\n${t.progress.khatmaTime(formatDuration(elapsedMinutes, t))}`;
+
   if (lastSession.pageEnd != null) {
     msg += `\n${t.progress.page} : ${lastSession.pageEnd} / ${TOTAL_PAGES}`;
 
     if (lastSession.pageEnd < TOTAL_PAGES) {
-      const today = getTodayInTimezone(tz);
-      const pace = await getRecentPace(ctx.db, tz);
       const pagesRemaining = TOTAL_PAGES - lastSession.pageEnd;
-      msg += `\n${formatEstimation(pace, pagesRemaining, today, t)}`;
+      const recentStats = await getRecentPageStats(ctx.db, tz, 7);
+
+      if (recentStats) {
+        const remainingMinutes =
+          Math.round((pagesRemaining * recentStats.secondsPerPage) / 60) * 60;
+        msg += `\n${t.progress.remainingTime(formatDuration(remainingMinutes, t))}`;
+
+        const today = getTodayInTimezone(tz);
+        const daysRemaining = Math.ceil(
+          pagesRemaining / recentStats.pagesPerDay
+        );
+        const target = addDays(today, daysRemaining);
+        const d = new Date(`${target}T00:00:00Z`);
+        msg += `\n${t.progress.completionDate(d.getUTCDate(), t.months[d.getUTCMonth()], d.getUTCFullYear())}`;
+      } else {
+        msg += `\n${t.progress.noRecentData}`;
+      }
     }
   }
 

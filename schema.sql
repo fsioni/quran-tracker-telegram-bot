@@ -1,7 +1,7 @@
 CREATE TABLE sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   started_at TEXT NOT NULL,
-  duration_seconds INTEGER NOT NULL,
+  duration_seconds INTEGER,
   page_start INTEGER,
   page_end INTEGER,
   surah_start INTEGER NOT NULL,
@@ -42,5 +42,6 @@ CREATE TABLE prayer_cache (
   asr_sent INTEGER DEFAULT 0,
   maghrib_sent INTEGER DEFAULT 0,
   isha_sent INTEGER DEFAULT 0,
+  streak_followup_sent INTEGER DEFAULT 0,
   fetched_at TEXT DEFAULT (datetime('now'))
 );

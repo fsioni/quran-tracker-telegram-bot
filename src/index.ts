@@ -4,6 +4,7 @@ import {
   DEFAULT_CITY,
   DEFAULT_COUNTRY,
   DEFAULT_TZ,
+  STREAK_FOLLOWUP_DELAY_MINUTES,
   WEEKLY_RECAP_HOUR,
 } from "./config";
 import { getNextKahfPage, getNextPage } from "./data/pages";
@@ -21,17 +22,20 @@ import {
   cleanOldCache,
   getPrayerCache,
   markPrayerSent,
+  markStreakFollowupSent,
   setPrayerCache,
 } from "./services/db/prayer";
-import { getLastSession } from "./services/db/sessions";
+import { getLastSession, hasSessionToday } from "./services/db/sessions";
 import { calculateStreak, getPeriodStats } from "./services/db/stats";
 import type { PrayerCacheRow } from "./services/db/types";
 import {
   formatKahfReminder,
   formatReminder,
+  formatStreakFollowup,
   formatWeeklyRecap,
 } from "./services/format";
 import {
+  addMinutesToHHMM,
   fetchPrayerTimes,
   getDueReminders,
   getNowInTimezone,
@@ -101,6 +105,12 @@ interface ScheduledContext {
   tz: string;
 }
 
+function buildGoKeyboard(t: Locale) {
+  return {
+    inline_keyboard: [[{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }]],
+  };
+}
+
 async function computeNextKahfPage(
   db: D1Database,
   tz: string
@@ -132,6 +142,13 @@ async function sendPrayerReminders(
         return { sessions: 0, ayahs: 0, seconds: 0 };
       })();
 
+  const isIshaIncluded = duePrayers.includes("isha");
+  let streakAtRisk = false;
+  if (isIshaIncluded && streak.currentStreak >= 2) {
+    const readToday = await hasSessionToday(sctx.db, sctx.tz);
+    streakAtRisk = !readToday;
+  }
+
   const nextKahfPage = isFriday
     ? await computeNextKahfPage(sctx.db, sctx.tz)
     : undefined;
@@ -143,20 +160,16 @@ async function sendPrayerReminders(
       weekSessions: weekStats.sessions,
       weekAyahs: weekStats.ayahs,
       streak: streak.currentStreak,
+      streakAtRisk,
     },
     sctx.t
   );
 
-  const goKeyboard = {
-    inline_keyboard: [
-      [{ text: sctx.t.timer.go, callback_data: CALLBACK_TIMER_GO }],
-    ],
-  };
   const sent = await sendTelegramMessage(
     sctx.botToken,
     sctx.chatId,
     message,
-    goKeyboard
+    buildGoKeyboard(sctx.t)
   );
   if (sent) {
     for (const prayer of duePrayers) {
@@ -196,6 +209,48 @@ async function sendKahfReminder(
   );
   if (kahfSent) {
     await setConfig(sctx.db, "kahf_reminder_last", sctx.today);
+  }
+}
+
+async function sendStreakFollowup(
+  sctx: ScheduledContext,
+  cache: PrayerCacheRow
+): Promise<void> {
+  if (cache.streak_followup_sent === 1) {
+    return;
+  }
+  if (cache.isha_sent === 0) {
+    return;
+  }
+  if (
+    !isReminderDue(
+      sctx.nowHHMM,
+      addMinutesToHHMM(cache.isha, STREAK_FOLLOWUP_DELAY_MINUTES)
+    )
+  ) {
+    return;
+  }
+  const readToday = await hasSessionToday(sctx.db, sctx.tz);
+  if (readToday) {
+    return;
+  }
+  const streak = await calculateStreak(sctx.db, sctx.tz);
+  if (streak.currentStreak < 2) {
+    return;
+  }
+
+  const message = formatStreakFollowup(
+    { streak: streak.currentStreak },
+    sctx.t
+  );
+  const sent = await sendTelegramMessage(
+    sctx.botToken,
+    sctx.chatId,
+    message,
+    buildGoKeyboard(sctx.t)
+  );
+  if (sent) {
+    await markStreakFollowupSent(sctx.db, sctx.today);
   }
 }
 
@@ -272,6 +327,7 @@ export async function handleScheduled(
       asr_sent: 0,
       maghrib_sent: 0,
       isha_sent: 0,
+      streak_followup_sent: 0,
       fetched_at: new Date().toISOString(),
     } as PrayerCacheRow;
   }
@@ -292,6 +348,7 @@ export async function handleScheduled(
   const dayOfWeek = getDayOfWeek(tz);
   const isFriday = dayOfWeek === 5;
   await sendPrayerReminders(sctx, cache, isFriday);
+  await sendStreakFollowup(sctx, cache);
   if (isFriday) {
     await sendKahfReminder(sctx, cache);
   }

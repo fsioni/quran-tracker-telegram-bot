@@ -1,7 +1,7 @@
 // tests/handlers/kahf.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
-import { kahfHandler } from "../../src/handlers/kahf";
+import { confirmKahfNoDurCallback, kahfHandler } from "../../src/handlers/kahf";
 import { fr } from "../../src/locales/fr";
 import type { Session } from "../../src/services/db/types";
 
@@ -24,6 +24,11 @@ vi.mock("../../src/services/db/sessions", async (importOriginal) => {
     await importOriginal<typeof import("../../src/services/db/sessions")>();
   return { ...actual, insertSession: vi.fn() };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
@@ -34,6 +39,7 @@ import {
   getLastWeekKahfTotal,
 } from "../../src/services/db/kahf";
 import { insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 
 const mockInsertSession = insertSession as ReturnType<typeof vi.fn>;
 const mockGetKahfSessionsThisWeek = getKahfSessionsThisWeek as ReturnType<
@@ -78,6 +84,10 @@ describe("kahfHandler", () => {
     vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
     mockGetKahfSessionsThisWeek.mockResolvedValue([]); // no sessions this week
     mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("/kahf 5m -> première page de la semaine (page 293), kahf page 1/12", async () => {
@@ -225,15 +235,17 @@ describe("kahfHandler", () => {
     expect(msg).toContain("Semaine dernière");
   });
 
-  it("erreur: durée manquante", async () => {
+  it("prompt de confirmation sans durée (input vide)", async () => {
     const ctx = createMockContext("");
     await kahfHandler(ctx);
 
     expect(ctx.reply).toHaveBeenCalledTimes(1);
-    const msg = (ctx.reply as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as string;
-    expect(msg).toContain("Erreur");
-    expect(msg).toContain("format invalide");
+    const call = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0];
+    const msg = call[0] as string;
+    expect(msg).toContain("Al-Kahf");
+    expect(msg).toContain("sans timer");
+    expect(call[1]).toHaveProperty("reply_markup");
+    expect(mockInsertSession).not.toHaveBeenCalled();
   });
 
   it("passe type='kahf' à insertSession", async () => {
@@ -247,5 +259,112 @@ describe("kahfHandler", () => {
       expect.anything(),
       expect.objectContaining({ type: "kahf" })
     );
+  });
+});
+
+function createMockCallbackContext(callbackData: string) {
+  const ctx = createMockContext("");
+  (ctx as any).callbackQuery = { data: callbackData };
+  ctx.editMessageReplyMarkup = vi.fn().mockResolvedValue(undefined);
+  ctx.editMessageText = vi.fn().mockResolvedValue(undefined);
+  ctx.answerCallbackQuery = vi.fn().mockResolvedValue(undefined);
+  return ctx;
+}
+
+describe("confirmKahfNoDurCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+    mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
+  });
+
+  it("confirme et insère une session kahf avec durationSeconds null", async () => {
+    const session = makeSession({
+      id: 1,
+      durationSeconds: null,
+      pageStart: 293,
+      pageEnd: 293,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockCallbackContext("ndk_c:1");
+    await confirmKahfNoDurCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledTimes(1);
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "kahf",
+        durationSeconds: null,
+        pageStart: 293,
+        pageEnd: 293,
+      })
+    );
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledTimes(1);
+  });
+
+  it("callback data invalide -> answerCallbackQuery sans insert", async () => {
+    const ctx = createMockCallbackContext("invalid_data");
+    await confirmKahfNoDurCallback(ctx);
+
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+    expect(ctx.reply).not.toHaveBeenCalled();
+  });
+
+  it("count=0 dans le callback -> retour anticipé sans insert", async () => {
+    // The regex /^ndk_c:(\d+)$/ matches "ndk_c:0" -> count=0
+    // The handler returns early when count < 1, so no session is inserted.
+    const ctx = createMockCallbackContext("ndk_c:0");
+    await confirmKahfNoDurCallback(ctx);
+
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+  });
+
+  it("Al-Kahf deja terminee -> editMessageText sans insert", async () => {
+    // 12 pages already read this week
+    mockGetKahfSessionsThisWeek.mockResolvedValue([
+      makeSession({ pageStart: 293, pageEnd: 304, durationSeconds: 3600 }),
+    ]);
+
+    const ctx = createMockCallbackContext("ndk_c:1");
+    await confirmKahfNoDurCallback(ctx);
+
+    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+    expect(mockInsertSession).not.toHaveBeenCalled();
+  });
+
+  it("confirme plusieurs pages kahf avec durationSeconds null", async () => {
+    const session = makeSession({
+      id: 2,
+      durationSeconds: null,
+      pageStart: 293,
+      pageEnd: 295,
+    });
+    mockInsertSession.mockResolvedValue({ ok: true, value: session });
+
+    const ctx = createMockCallbackContext("ndk_c:3");
+    await confirmKahfNoDurCallback(ctx);
+
+    expect(mockInsertSession).toHaveBeenCalledTimes(1);
+    expect(mockInsertSession).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "kahf",
+        durationSeconds: null,
+        pageStart: 293,
+        pageEnd: 295,
+      })
+    );
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

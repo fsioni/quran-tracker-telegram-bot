@@ -86,9 +86,9 @@ export const en: Locale = {
 
   examples: {
     session: "/session 2:77-83 8m53",
-    read: "/read 5m or /read 3 15m",
-    extra: "/extra 300 5m or /extra 2:77-83 8m",
-    kahf: "/kahf 5m or /kahf 3 15m",
+    read: "/read 5m or /read 3 15m or /read 3",
+    extra: "/extra 300 5m or /extra 2:77-83 8m or /extra 300",
+    kahf: "/kahf 5m or /kahf 3 15m or /kahf 3",
     import: "/import\n10/03, 13:30 - 8m53 - 2:77-83",
     edit: "/edit 42 15m",
   },
@@ -104,6 +104,8 @@ export const en: Locale = {
     pagesPerHour: (n) => `${n} pages/h`,
     from: "v.",
     to: "to",
+    noDurationPrompt: "Record without timer?",
+    cancelled: "Cancelled.",
     confirmationSameSurah: (
       surahName,
       ayahStart,
@@ -123,6 +125,22 @@ export const en: Locale = {
       speed
     ) =>
       `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses in ${duration}${speed}`,
+    confirmationSameSurahNoDuration: (
+      surahName,
+      ayahStart,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `surah ${surahName} v.${ayahStart} to v.${ayahEnd} -- ${ayahCount} verses`,
+    confirmationCrossSurahNoDuration: (
+      startName,
+      ayahStart,
+      endName,
+      ayahEnd,
+      ayahCount
+    ) =>
+      `surah ${startName} v.${ayahStart} to surah ${endName} v.${ayahEnd} -- ${ayahCount} verses`,
+    speedComparison: (pct) => `${pct} vs. your 7-day avg`,
   },
 
   stats: {
@@ -150,6 +168,11 @@ export const en: Locale = {
       `Progress: ${read} / ${total} verses (${pct}%)`,
     khatmas: (count) => `Khatmas: ${count}`,
     page: "Page",
+    khatmaTime: (duration) => `Reading time (this khatma): ${duration}`,
+    remainingTime: (duration) => `Estimated remaining: ~${duration}`,
+    noRecentData: "No recent data",
+    completionDate: (day, month, year) =>
+      `Estimated completion: ${month} ${day}, ${year}`,
   },
 
   reminder: {
@@ -159,6 +182,10 @@ export const en: Locale = {
       `This week: ${sessions} ${sessions === 1 ? "session" : "sessions"}, ${ayahs} verses`,
     streak: (days) =>
       `Streak: ${days} consecutive ${days === 1 ? "day" : "days"}`,
+    streakAtRisk: (days) =>
+      `Your ${days}-day streak ends tonight if you don't read.`,
+    streakLastChance: (days) =>
+      `Last chance to keep your ${days}-day streak alive.`,
     keepItUp: "Keep it up!",
     timeToResume: "Time to get back to it!",
   },
@@ -167,6 +194,8 @@ export const en: Locale = {
     pageSingularRead: (page, duration) => `Page ${page} read in ${duration}`,
     pagePluralRead: (start, end, duration) =>
       `Pages ${start}-${end} read in ${duration}`,
+    pageSingularRecorded: (page) => `Page ${page}`,
+    pagePluralRecorded: (start, end) => `Pages ${start}-${end}`,
     quranComplete: "Quran complete! Alhamdulillah!",
     nextPage: (page) => `Next page: ${page}`,
     remainingPages: (count, start, end) =>
@@ -178,6 +207,7 @@ export const en: Locale = {
   kahf: {
     pageRead: (page, total, duration) =>
       `Al-Kahf page ${page}/${total} read in ${duration}`,
+    pageReadNoDuration: (page, total) => `Al-Kahf page ${page}/${total}`,
     thisWeek: (pages, total, duration) =>
       `This week: ${pages}/${total} pages, ${duration} total`,
     complete: (page, total, duration) =>
@@ -223,15 +253,6 @@ export const en: Locale = {
     next: "Next >>",
     prev: "<< Previous",
     pageIndicator: (current, total) => `Page ${current}/${total}`,
-  },
-
-  estimation: {
-    notEnoughData:
-      "Not enough recent data to estimate (read regularly to see a projection)",
-    monthsRemaining: (pace, months) =>
-      `At your current pace (~${pace} pages/day), about ${months} months remaining`,
-    dateEstimate: (pace, day, month, year) =>
-      `At this pace (~${pace} pages/day), you'll finish around ${month} ${day}, ${year}`,
   },
 
   khatma: {
@@ -321,6 +342,8 @@ export const en: Locale = {
     sessionNotFound: (id) => `session #${id} does not exist`,
     sessionEdited: (id, range, oldDuration, newDuration) =>
       `Session #${id} edited.\n${range}\n${oldDuration} -> ${newDuration}`,
+    durationAdded: (id, range, newDuration) =>
+      `Duration added to session #${id}.\n${range}\n-- -> ${newDuration}`,
   },
 
   manage: {

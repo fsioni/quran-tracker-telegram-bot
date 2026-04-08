@@ -44,6 +44,11 @@ vi.mock("../../src/services/db/timer", async (importOriginal) => {
     clearTimerState: vi.fn(),
   };
 });
+vi.mock("../../src/services/db/speed", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../src/services/db/speed")>();
+  return { ...actual, get7DayTypeAvgSpeed: vi.fn() };
+});
 
 import {
   getNowTimestamp,
@@ -54,6 +59,7 @@ import {
   getLastWeekKahfTotal,
 } from "../../src/services/db/kahf";
 import { getLastSession, insertSession } from "../../src/services/db/sessions";
+import { get7DayTypeAvgSpeed } from "../../src/services/db/speed";
 import {
   clearTimerState,
   getTimerState,
@@ -585,6 +591,10 @@ describe("timerResponseHandler", () => {
     mockGetLastSession.mockResolvedValue(null);
     mockGetKahfSessionsThisWeek.mockResolvedValue([]);
     mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("commande pendant attente -> next()", async () => {
@@ -1008,6 +1018,10 @@ describe("pagesCountCallback", () => {
     mockGetLastSession.mockResolvedValue(null);
     mockGetKahfSessionsThisWeek.mockResolvedValue([]);
     mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: null,
+      versesPerHour: null,
+    });
   });
 
   it("normal_page: bouton 3 -> insere session avec 3 pages", async () => {
