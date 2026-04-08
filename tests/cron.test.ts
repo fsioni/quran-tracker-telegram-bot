@@ -396,6 +396,7 @@ describe("handleScheduled", () => {
         asr_sent: 0,
         maghrib_sent: 0,
         isha_sent: 0,
+        streak_followup_sent: 0,
         fetched_at: "2026-03-13",
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
@@ -457,6 +458,7 @@ describe("handleScheduled", () => {
         asr_sent: 0,
         maghrib_sent: 0,
         isha_sent: 0,
+        streak_followup_sent: 0,
         fetched_at: "2026-03-11",
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
@@ -492,6 +494,7 @@ describe("handleScheduled", () => {
         asr_sent: 0,
         maghrib_sent: 0,
         isha_sent: 0,
+        streak_followup_sent: 0,
         fetched_at: "2026-03-13",
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
@@ -526,6 +529,7 @@ describe("handleScheduled", () => {
         asr_sent: 0,
         maghrib_sent: 0,
         isha_sent: 0,
+        streak_followup_sent: 0,
         fetched_at: "2026-03-13",
       });
       vi.mocked(getNowInTimezone).mockReturnValue("05:42");
