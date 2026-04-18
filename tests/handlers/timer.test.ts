@@ -4,6 +4,7 @@ import type { CustomContext } from "../../src/bot";
 import {
   cancelTimerStopCallback,
   confirmTimerStopCallback,
+  continueReadingCallback,
   goHandler,
   goTimerCallback,
   pagesCountCallback,
@@ -1180,6 +1181,332 @@ describe("pagesOtherCallback", () => {
     await pagesOtherCallback(ctx);
 
     expect(ctx.editMessageText).toHaveBeenCalledWith("Timer introuvable.");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+});
+
+describe("sendContinuePrompt (via timerResponseHandler)", () => {
+  const next = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
+    vi.mocked(get7DayTypeAvgSpeed).mockResolvedValue({
+      pagesPerHour: 10,
+      versesPerHour: 100,
+    });
+    mockGetLastSession.mockResolvedValue(null);
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+    mockGetLastWeekKahfTotal.mockResolvedValue({ ok: true, value: 0 });
+  });
+
+  it("normal_page -> envoie un second reply 'Continuer la lecture ?' avec cnt:np", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "normal_page",
+        args: "{}",
+      })
+    );
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({ pageStart: 1, pageEnd: 3 }),
+    });
+
+    const ctx = createMessageContext("3");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2);
+    expect(calls[1][0]).toBe("Continuer la lecture ?");
+    const markup = calls[1][1]?.reply_markup;
+    expect(JSON.stringify(markup)).toContain("cnt:np");
+    expect(JSON.stringify(markup)).toContain("Go");
+  });
+
+  it("normal_page pageEnd === TOTAL_PAGES -> pas de prompt", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "normal_page",
+        args: "{}",
+      })
+    );
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 603 }));
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({ pageStart: 604, pageEnd: 604 }),
+    });
+
+    const ctx = createMessageContext("1");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(1);
+  });
+
+  it("extra_page -> envoie prompt avec cnt:ep:<pageEnd+1>", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 300,
+        type: "extra_page",
+        args: JSON.stringify({ page: 300 }),
+      })
+    );
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({ pageStart: 300, pageEnd: 301, type: "extra" }),
+    });
+
+    const ctx = createMessageContext("2");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2);
+    expect(JSON.stringify(calls[1][1]?.reply_markup)).toContain("cnt:ep:302");
+  });
+
+  it("normal_verse -> envoie prompt avec cnt:nv:<surah>:<ayah+1>", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 600,
+        type: "normal_verse",
+        args: JSON.stringify({ surah: 2, ayah: 77 }),
+      })
+    );
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({
+        surahStart: 2,
+        ayahStart: 77,
+        surahEnd: 2,
+        ayahEnd: 83,
+      }),
+    });
+
+    const ctx = createMessageContext("2:83");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2);
+    expect(JSON.stringify(calls[1][1]?.reply_markup)).toContain("cnt:nv:2:84");
+  });
+
+  it("verse a la fin d'une sourate -> prompt pointe vers la sourate suivante", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 600,
+        type: "normal_verse",
+        args: JSON.stringify({ surah: 1, ayah: 1 }),
+      })
+    );
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({
+        surahStart: 1,
+        ayahStart: 1,
+        surahEnd: 1,
+        ayahEnd: 7,
+      }),
+    });
+
+    const ctx = createMessageContext("1:7");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(JSON.stringify(calls[1][1]?.reply_markup)).toContain("cnt:nv:2:1");
+  });
+
+  it("kahf complete -> pas de prompt", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 600,
+        type: "kahf",
+        args: "{}",
+      })
+    );
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({ pageStart: 293, pageEnd: 304, type: "kahf" }),
+    });
+
+    const ctx = createMessageContext("12");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(1);
+  });
+
+  it("kahf non complete -> envoie prompt avec cnt:k", async () => {
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({
+        awaitingResponse: true,
+        durationSeconds: 600,
+        type: "kahf",
+        args: "{}",
+      })
+    );
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+    mockInsertSession.mockResolvedValue({
+      ok: true,
+      value: makeSession({ pageStart: 293, pageEnd: 295, type: "kahf" }),
+    });
+
+    const ctx = createMessageContext("3");
+    await timerResponseHandler(ctx, next);
+
+    const calls = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2);
+    expect(JSON.stringify(calls[1][1]?.reply_markup)).toContain("cnt:k");
+  });
+});
+
+describe("continueReadingCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetTimerState.mockResolvedValue(null);
+    mockSetTimerState.mockResolvedValue(undefined);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-15 14:00:00");
+    mockGetLastSession.mockResolvedValue(null);
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+  });
+
+  it("cnt:np -> cree un timer normal_page et affiche bouton Stop", async () => {
+    const ctx = createCallbackContext("cnt:np");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: "normal_page", args: "{}" })
+    );
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Timer démarré");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("cnt:k -> cree un timer kahf", async () => {
+    const ctx = createCallbackContext("cnt:k");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: "kahf", args: "{}" })
+    );
+  });
+
+  it("cnt:ep:302 -> cree un timer extra_page a la page 302", async () => {
+    const ctx = createCallbackContext("cnt:ep:302");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "extra_page",
+        args: JSON.stringify({ page: 302 }),
+      })
+    );
+  });
+
+  it("cnt:nv:2:84 -> cree un timer normal_verse", async () => {
+    const ctx = createCallbackContext("cnt:nv:2:84");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "normal_verse",
+        args: JSON.stringify({ surah: 2, ayah: 84 }),
+      })
+    );
+  });
+
+  it("cnt:ev:2:84 -> cree un timer extra_verse", async () => {
+    const ctx = createCallbackContext("cnt:ev:2:84");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        type: "extra_verse",
+        args: JSON.stringify({ surah: 2, ayah: 84 }),
+      })
+    );
+  });
+
+  it("avec timer deja actif -> erreur, ne cree pas de timer", async () => {
+    mockGetTimerState.mockResolvedValue(makeTimerState());
+
+    const ctx = createCallbackContext("cnt:np");
+    await continueReadingCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("timer est déjà actif");
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+  });
+
+  it("cnt:np quand Coran termine -> erreur", async () => {
+    mockGetLastSession.mockResolvedValue(makeSession({ pageEnd: 604 }));
+
+    const ctx = createCallbackContext("cnt:np");
+    await continueReadingCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("terminé le Coran");
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+  });
+
+  it("cnt:k quand kahf complet -> erreur", async () => {
+    mockGetKahfSessionsThisWeek.mockResolvedValue([
+      makeSession({ pageStart: 293, pageEnd: 304, type: "kahf" }),
+    ]);
+
+    const ctx = createCallbackContext("cnt:k");
+    await continueReadingCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Al-Kahf déjà terminée");
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+  });
+
+  it("cnt:nv avec verset invalide -> erreur", async () => {
+    const ctx = createCallbackContext("cnt:nv:1:999");
+    await continueReadingCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+  });
+
+  it("cnt:ep:9999 -> erreur page invalide, pas de timer", async () => {
+    const ctx = createCallbackContext("cnt:ep:9999");
+    await continueReadingCallback(ctx);
+
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Erreur");
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+  });
+
+  it("callback data invalide -> ne fait que answerCallbackQuery", async () => {
+    const ctx = createCallbackContext("cnt:zz");
+    await continueReadingCallback(ctx);
+
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });

@@ -551,6 +551,13 @@ export async function continueReadingCallback(
       await ctx.answerCallbackQuery();
       return;
     }
+  } else if (parsed.type === "extra_page") {
+    const pageResult = parsePage(String(parsed.page), t);
+    if (!pageResult.ok) {
+      await ctx.editMessageText(formatError(pageResult.error, t));
+      await ctx.answerCallbackQuery();
+      return;
+    }
   } else if (parsed.type === "normal_verse" || parsed.type === "extra_verse") {
     const valid = validateAyah(parsed.surah, parsed.ayah, t);
     if (!valid.ok) {
