@@ -74,6 +74,7 @@ vi.mock("../src/services/weekly-recap", async (importOriginal) => {
   return { ...actual, buildWeeklyRecap: vi.fn() };
 });
 
+import { KAHF_TOTAL_PAGES } from "../src/data/pages";
 import { handleScheduled } from "../src/index";
 import { fr } from "../src/locales/fr";
 import { getConfig, setConfig } from "../src/services/db/config";
@@ -554,6 +555,126 @@ describe("handleScheduled", () => {
           nextKahfPage: 296,
         },
         fr
+      );
+    });
+
+    it("rappel de priere le vendredi utilise le bouton Go Kahf si Al-Kahf incomplet", async () => {
+      // 2026-03-13 is a Friday
+      vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
+
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-13",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        streak_followup_sent: 0,
+        fetched_at: "2026-03-13",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("12:12");
+      vi.mocked(getDueReminders).mockReturnValue(["dhuhr"]);
+      vi.mocked(getLastSession).mockResolvedValue(null);
+      vi.mocked(getKahfSessionsThisWeek).mockResolvedValue([]);
+      vi.mocked(calculateKahfPagesRead).mockReturnValue(0);
+      vi.mocked(getPeriodStats).mockResolvedValue({
+        ok: true,
+        value: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
+      });
+      vi.mocked(calculateStreak).mockResolvedValue({
+        currentStreak: 0,
+        bestStreak: 0,
+      });
+      vi.mocked(formatReminder).mockReturnValue("Rappel vendredi");
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.telegram.org/botTOKEN/sendMessage",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            chat_id: "123",
+            text: "Rappel vendredi",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "Go", callback_data: "timer_go_kahf" }],
+              ],
+            },
+          }),
+        })
+      );
+    });
+
+    it("rappel de priere le vendredi utilise le bouton Go normal si Al-Kahf termine", async () => {
+      // 2026-03-13 is a Friday
+      vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
+
+      mockConfigValues({
+        chat_id: "123",
+        timezone: "America/Cancun",
+        city: "PDC",
+        country: "MX",
+        language: "fr",
+      });
+      vi.mocked(getTodayInTimezone).mockReturnValue("2026-03-13");
+      vi.mocked(getPrayerCache).mockResolvedValue({
+        date: "2026-03-13",
+        fajr: "05:30",
+        dhuhr: "12:00",
+        asr: "15:45",
+        maghrib: "18:30",
+        isha: "20:00",
+        fajr_sent: 0,
+        dhuhr_sent: 0,
+        asr_sent: 0,
+        maghrib_sent: 0,
+        isha_sent: 0,
+        streak_followup_sent: 0,
+        fetched_at: "2026-03-13",
+      });
+      vi.mocked(getNowInTimezone).mockReturnValue("12:12");
+      vi.mocked(getDueReminders).mockReturnValue(["dhuhr"]);
+      vi.mocked(getLastSession).mockResolvedValue(null);
+      vi.mocked(getKahfSessionsThisWeek).mockResolvedValue([]);
+      vi.mocked(calculateKahfPagesRead).mockReturnValue(KAHF_TOTAL_PAGES);
+      vi.mocked(getPeriodStats).mockResolvedValue({
+        ok: true,
+        value: { sessions: 0, ayahs: 0, seconds: 0, pages: 0, pageSeconds: 0 },
+      });
+      vi.mocked(calculateStreak).mockResolvedValue({
+        currentStreak: 0,
+        bestStreak: 0,
+      });
+      vi.mocked(formatReminder).mockReturnValue("Rappel vendredi");
+
+      await handleScheduled(db, "TOKEN");
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.telegram.org/botTOKEN/sendMessage",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            chat_id: "123",
+            text: "Rappel vendredi",
+            reply_markup: {
+              inline_keyboard: [[{ text: "Go", callback_data: "timer_go" }]],
+            },
+          }),
+        })
       );
     });
   });

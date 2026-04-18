@@ -47,12 +47,14 @@ import {
   CALLBACK_PAGES_RE,
   CALLBACK_TIMER_CANCEL_RE,
   CALLBACK_TIMER_CONFIRM_RE,
+  CALLBACK_TIMER_GO_KAHF_RE,
   CALLBACK_TIMER_GO_RE,
   CALLBACK_TIMER_STOP_RE,
   cancelTimerStopCallback,
   confirmTimerStopCallback,
   goHandler,
   goTimerCallback,
+  goTimerKahfCallback,
   pagesCountCallback,
   pagesOtherCallback,
   stopHandler,
@@ -128,6 +130,7 @@ export function createBot(
 
   // Callbacks inline keyboard
   bot.callbackQuery(CALLBACK_TIMER_STOP_RE, stopTimerCallback);
+  bot.callbackQuery(CALLBACK_TIMER_GO_KAHF_RE, goTimerKahfCallback);
   bot.callbackQuery(CALLBACK_TIMER_GO_RE, goTimerCallback);
   bot.callbackQuery(CALLBACK_TIMER_CONFIRM_RE, confirmTimerStopCallback);
   bot.callbackQuery(CALLBACK_TIMER_CANCEL_RE, cancelTimerStopCallback);
