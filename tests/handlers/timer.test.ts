@@ -1,12 +1,14 @@
 // tests/handlers/timer.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomContext } from "../../src/bot";
+import { KAHF_PAGE_END, KAHF_PAGE_START } from "../../src/data/pages";
 import {
   cancelTimerStopCallback,
   confirmTimerStopCallback,
   continueReadingCallback,
   goHandler,
   goTimerCallback,
+  goTimerKahfCallback,
   pagesCountCallback,
   pagesOtherCallback,
   stopHandler,
@@ -922,6 +924,69 @@ describe("goTimerCallback", () => {
     const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as string;
     expect(msg).toContain("timer est déjà actif");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+});
+
+describe("goTimerKahfCallback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSetTimerState.mockResolvedValue(undefined);
+    vi.mocked(getTimezone).mockResolvedValue("America/Cancun");
+    vi.mocked(getNowTimestamp).mockReturnValue("2026-03-13 10:00:00");
+  });
+
+  it("demarre un timer kahf et affiche le clavier Stop", async () => {
+    mockGetTimerState.mockResolvedValue(null);
+    mockGetKahfSessionsThisWeek.mockResolvedValue([]);
+
+    const ctx = createCallbackContext("timer_go_kahf");
+    await goTimerKahfCallback(ctx);
+
+    expect(mockSetTimerState).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: "kahf", args: "{}" })
+    );
+    const opts = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][1];
+    expect(opts).toHaveProperty("reply_markup");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("timer deja actif -> erreur, pas de nouveau timer", async () => {
+    const epoch = Date.now() - 300_000;
+    mockGetTimerState.mockResolvedValue(
+      makeTimerState({ startedEpoch: epoch })
+    );
+
+    const ctx = createCallbackContext("timer_go_kahf");
+    await goTimerKahfCallback(ctx);
+
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("timer est déjà actif");
+    expect(ctx.answerCallbackQuery).toHaveBeenCalled();
+  });
+
+  it("Al-Kahf deja terminee cette semaine -> pas de timer", async () => {
+    mockGetTimerState.mockResolvedValue(null);
+    mockGetKahfSessionsThisWeek.mockResolvedValue([
+      {
+        id: 1,
+        type: "kahf",
+        pageStart: KAHF_PAGE_START,
+        pageEnd: KAHF_PAGE_END,
+      } as Session,
+    ]);
+
+    const ctx = createCallbackContext("timer_go_kahf");
+    await goTimerKahfCallback(ctx);
+
+    expect(mockSetTimerState).not.toHaveBeenCalled();
+    const msg = (ctx.editMessageText as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as string;
+    expect(msg).toContain("Al-Kahf");
     expect(ctx.answerCallbackQuery).toHaveBeenCalled();
   });
 });
