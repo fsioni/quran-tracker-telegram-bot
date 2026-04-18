@@ -55,11 +55,13 @@ const CALLBACK_TIMER_CONFIRM = "timer_confirm_stop";
 const CALLBACK_TIMER_CANCEL = "timer_cancel_stop";
 const CALLBACK_TIMER_STOP = "timer_stop";
 export const CALLBACK_TIMER_GO = "timer_go";
+export const CALLBACK_TIMER_GO_KAHF = "timer_go_kahf";
 
 export const CALLBACK_TIMER_CONFIRM_RE = /^timer_confirm_stop$/;
 export const CALLBACK_TIMER_CANCEL_RE = /^timer_cancel_stop$/;
 export const CALLBACK_TIMER_STOP_RE = /^timer_stop$/;
 export const CALLBACK_TIMER_GO_RE = /^timer_go$/;
+export const CALLBACK_TIMER_GO_KAHF_RE = /^timer_go_kahf$/;
 export const CALLBACK_PAGES_RE = /^pages:(\d+)$/;
 const CALLBACK_PAGES_OTHER = "pages:other";
 export const CALLBACK_PAGES_OTHER_RE = /^pages:other$/;
@@ -403,6 +405,58 @@ async function executeTimerGoNormalPage(
 export async function goTimerCallback(ctx: CustomContext): Promise<void> {
   const t = ctx.locale;
   await executeTimerGoNormalPage(
+    ctx.db,
+    (...args) => ctx.editMessageText(...args),
+    t
+  );
+  await ctx.answerCallbackQuery();
+}
+
+// --- Shared go logic (kahf, no args) ---
+
+async function executeTimerGoKahf(
+  db: D1Database,
+  send: SendFn,
+  t: Locale
+): Promise<void> {
+  const [existing, tz] = await Promise.all([
+    getTimerState(db),
+    getTimezone(db),
+  ]);
+  if (existing) {
+    const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
+    await send(
+      formatError(t.timer.alreadyActive(formatDuration(elapsed, t)), t)
+    );
+    return;
+  }
+
+  const weekSessions = await getKahfSessionsThisWeek(db, tz);
+  const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
+  if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {
+    await send(t.kahf.alreadyComplete);
+    return;
+  }
+
+  const now = getNowTimestamp(tz);
+  await setTimerState(db, {
+    startedAt: now,
+    startedEpoch: Date.now(),
+    type: "kahf",
+    args: "{}",
+    awaitingResponse: false,
+  });
+
+  await send(t.timer.startedKahf, {
+    reply_markup: new InlineKeyboard().text(t.timer.stop, CALLBACK_TIMER_STOP),
+  });
+}
+
+// --- Callback for inline Go button (Friday Kahf reminder) ---
+
+export async function goTimerKahfCallback(ctx: CustomContext): Promise<void> {
+  const t = ctx.locale;
+  await executeTimerGoKahf(
     ctx.db,
     (...args) => ctx.editMessageText(...args),
     t

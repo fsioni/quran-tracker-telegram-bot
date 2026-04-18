@@ -8,7 +8,7 @@ import {
   WEEKLY_RECAP_HOUR,
 } from "./config";
 import { getNextKahfPage, getNextPage } from "./data/pages";
-import { CALLBACK_TIMER_GO } from "./handlers/timer";
+import { CALLBACK_TIMER_GO, CALLBACK_TIMER_GO_KAHF } from "./handlers/timer";
 import { getBotCommands, getLocale } from "./locales";
 import type { Locale } from "./locales/types";
 import { getConfig, setConfig } from "./services/db/config";
@@ -105,9 +105,10 @@ interface ScheduledContext {
   tz: string;
 }
 
-function buildGoKeyboard(t: Locale) {
+function buildGoKeyboard(t: Locale, kahf = false) {
+  const callbackData = kahf ? CALLBACK_TIMER_GO_KAHF : CALLBACK_TIMER_GO;
   return {
-    inline_keyboard: [[{ text: t.timer.go, callback_data: CALLBACK_TIMER_GO }]],
+    inline_keyboard: [[{ text: t.timer.go, callback_data: callbackData }]],
   };
 }
 
@@ -169,7 +170,7 @@ async function sendPrayerReminders(
     sctx.botToken,
     sctx.chatId,
     message,
-    buildGoKeyboard(sctx.t)
+    buildGoKeyboard(sctx.t, nextKahfPage !== undefined)
   );
   if (sent) {
     for (const prayer of duePrayers) {
