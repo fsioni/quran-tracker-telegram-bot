@@ -43,6 +43,7 @@ import {
   statsHandler,
 } from "./handlers/stats";
 import {
+  CALLBACK_CONTINUE_RE,
   CALLBACK_PAGES_OTHER_RE,
   CALLBACK_PAGES_RE,
   CALLBACK_TIMER_CANCEL_RE,
@@ -51,6 +52,7 @@ import {
   CALLBACK_TIMER_STOP_RE,
   cancelTimerStopCallback,
   confirmTimerStopCallback,
+  continueReadingCallback,
   goHandler,
   goTimerCallback,
   pagesCountCallback,
@@ -140,6 +142,7 @@ export function createBot(
   bot.callbackQuery(CALLBACK_READ_NODUR_CONFIRM_RE, confirmReadNoDurCallback);
   bot.callbackQuery(CALLBACK_EXTRA_NODUR_CONFIRM_RE, confirmExtraNoDurCallback);
   bot.callbackQuery(CALLBACK_KAHF_NODUR_CONFIRM_RE, confirmKahfNoDurCallback);
+  bot.callbackQuery(CALLBACK_CONTINUE_RE, continueReadingCallback);
   bot.callbackQuery(CALLBACK_NODUR_CANCEL_RE, async (ctx) => {
     await ctx.editMessageText(ctx.locale.session.cancelled);
     await ctx.answerCallbackQuery();

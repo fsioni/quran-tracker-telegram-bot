@@ -336,6 +336,7 @@ export const fr: Locale = {
     overflowPages: (start, end, max) =>
       `dépassement: pages ${start}-${end} (max ${max})`,
     internalError: "erreur interne lors du traitement de la réponse",
+    continuePrompt: "Continuer la lecture ?",
   },
 
   edit: {

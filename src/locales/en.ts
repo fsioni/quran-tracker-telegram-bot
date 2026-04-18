@@ -334,6 +334,7 @@ export const en: Locale = {
     overflowPages: (start, end, max) =>
       `overflow: pages ${start}-${end} (max ${max})`,
     internalError: "internal error while processing response",
+    continuePrompt: "Continue reading?",
   },
 
   edit: {
