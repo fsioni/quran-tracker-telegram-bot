@@ -331,6 +331,7 @@ export const ar: Locale = {
     overflowPages: (start, end, max) =>
       `تجاوز: الصفحات ${start}-${end} (الحد الأقصى ${max})`,
     internalError: "خطأ داخلي أثناء معالجة الاستجابة",
+    continuePrompt: "هل تريد المتابعة؟",
   },
 
   edit: {

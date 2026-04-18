@@ -397,6 +397,7 @@ export interface Locale {
     invalidGoExtraFormat: string;
     overflowPages: (start: number, end: number, max: number) => string;
     internalError: string;
+    continuePrompt: string;
   };
 
   // Validation (quran.ts)

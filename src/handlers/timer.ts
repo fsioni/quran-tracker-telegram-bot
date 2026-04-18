@@ -11,6 +11,7 @@ import {
   KAHF_TOTAL_PAGES,
   TOTAL_PAGES,
 } from "../data/pages";
+import { getSurah } from "../data/surahs";
 import type { Locale } from "../locales/types";
 import { getNowTimestamp, getTimezone } from "../services/db/date-helpers";
 import {
@@ -65,6 +66,10 @@ export const CALLBACK_TIMER_GO_KAHF_RE = /^timer_go_kahf$/;
 export const CALLBACK_PAGES_RE = /^pages:(\d+)$/;
 const CALLBACK_PAGES_OTHER = "pages:other";
 export const CALLBACK_PAGES_OTHER_RE = /^pages:other$/;
+export const CALLBACK_CONTINUE_RE =
+  /^cnt:(?:np|k|ep:\d+|nv:\d+:\d+|ev:\d+:\d+)$/;
+const CONTINUE_EXTRA_PAGE_RE = /^cnt:ep:(\d+)$/;
+const CONTINUE_VERSE_RE = /^cnt:(nv|ev):(\d+):(\d+)$/;
 
 // --- Parsed argument types ---
 
@@ -412,6 +417,181 @@ export async function goTimerCallback(ctx: CustomContext): Promise<void> {
   await ctx.answerCallbackQuery();
 }
 
+// --- Continue-reading prompt after timer sessions ---
+
+type ContinueOpts =
+  | { type: "normal_page"; pageEnd: number }
+  | { type: "extra_page"; pageEnd: number }
+  | { type: "normal_verse"; surahEnd: number; ayahEnd: number }
+  | { type: "extra_verse"; surahEnd: number; ayahEnd: number }
+  | { type: "kahf"; isComplete: boolean };
+
+function getNextVerse(
+  surahEnd: number,
+  ayahEnd: number
+): { surah: number; ayah: number } | null {
+  const surah = getSurah(surahEnd);
+  if (!surah) {
+    return null;
+  }
+  if (ayahEnd < surah.ayahCount) {
+    return { surah: surahEnd, ayah: ayahEnd + 1 };
+  }
+  if (surahEnd >= 114) {
+    return null;
+  }
+  return { surah: surahEnd + 1, ayah: 1 };
+}
+
+function buildContinueCallbackData(opts: ContinueOpts): string | null {
+  switch (opts.type) {
+    case "normal_page":
+      return opts.pageEnd >= TOTAL_PAGES ? null : "cnt:np";
+    case "extra_page":
+      return opts.pageEnd >= TOTAL_PAGES ? null : `cnt:ep:${opts.pageEnd + 1}`;
+    case "normal_verse": {
+      const next = getNextVerse(opts.surahEnd, opts.ayahEnd);
+      return next ? `cnt:nv:${next.surah}:${next.ayah}` : null;
+    }
+    case "extra_verse": {
+      const next = getNextVerse(opts.surahEnd, opts.ayahEnd);
+      return next ? `cnt:ev:${next.surah}:${next.ayah}` : null;
+    }
+    case "kahf":
+      return opts.isComplete ? null : "cnt:k";
+    default: {
+      const _exhaustive: never = opts;
+      return _exhaustive;
+    }
+  }
+}
+
+async function sendContinuePrompt(
+  ctx: CustomContext,
+  opts: ContinueOpts
+): Promise<void> {
+  const data = buildContinueCallbackData(opts);
+  if (!data) {
+    return;
+  }
+  const t = ctx.locale;
+  await ctx.reply(t.timer.continuePrompt, {
+    reply_markup: new InlineKeyboard().text(t.timer.go, data),
+  });
+}
+
+function parseContinueData(data: string): ParsedGoArgs | null {
+  if (data === "cnt:np") {
+    return { type: "normal_page" };
+  }
+  if (data === "cnt:k") {
+    return { type: "kahf" };
+  }
+  const extraPage = data.match(CONTINUE_EXTRA_PAGE_RE);
+  if (extraPage) {
+    return { type: "extra_page", page: Number(extraPage[1]) };
+  }
+  const verseMatch = data.match(CONTINUE_VERSE_RE);
+  if (verseMatch) {
+    const type = verseMatch[1] === "nv" ? "normal_verse" : "extra_verse";
+    return {
+      type,
+      surah: Number(verseMatch[2]),
+      ayah: Number(verseMatch[3]),
+    };
+  }
+  return null;
+}
+
+function continueStartedMessage(parsed: ParsedGoArgs, t: Locale): string {
+  switch (parsed.type) {
+    case "normal_page":
+      return t.timer.startedNormalPage;
+    case "extra_page":
+      return t.timer.startedExtraPage(String(parsed.page));
+    case "normal_verse":
+      return t.timer.startedNormalVerse(`${parsed.surah}:${parsed.ayah}`);
+    case "extra_verse":
+      return t.timer.startedExtraVerse(`${parsed.surah}:${parsed.ayah}`);
+    case "kahf":
+      return t.timer.startedKahf;
+    default: {
+      const _exhaustive: never = parsed;
+      return _exhaustive;
+    }
+  }
+}
+
+export async function continueReadingCallback(
+  ctx: CustomContext
+): Promise<void> {
+  const t = ctx.locale;
+  const data = ctx.callbackQuery?.data ?? "";
+
+  const parsed = parseContinueData(data);
+  if (!parsed) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const existing = await getTimerState(ctx.db);
+  if (existing) {
+    const elapsed = Math.floor((Date.now() - existing.startedEpoch) / 1000);
+    await ctx.editMessageText(
+      formatError(t.timer.alreadyActive(formatDuration(elapsed, t)), t)
+    );
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const tz = await getTimezone(ctx.db);
+
+  if (parsed.type === "normal_page") {
+    const lastSession = await getLastSession(ctx.db, "normal");
+    if (lastSession?.pageEnd === TOTAL_PAGES) {
+      await ctx.editMessageText(t.timer.quranFinished);
+      await ctx.answerCallbackQuery();
+      return;
+    }
+  } else if (parsed.type === "extra_page") {
+    const pageResult = parsePage(String(parsed.page), t);
+    if (!pageResult.ok) {
+      await ctx.editMessageText(formatError(pageResult.error, t));
+      await ctx.answerCallbackQuery();
+      return;
+    }
+  } else if (parsed.type === "normal_verse" || parsed.type === "extra_verse") {
+    const valid = validateAyah(parsed.surah, parsed.ayah, t);
+    if (!valid.ok) {
+      await ctx.editMessageText(formatError(valid.error, t));
+      await ctx.answerCallbackQuery();
+      return;
+    }
+  } else if (parsed.type === "kahf") {
+    const weekSessions = await getKahfSessionsThisWeek(ctx.db, tz);
+    const pagesAlreadyRead = calculateKahfPagesRead(weekSessions);
+    if (pagesAlreadyRead >= KAHF_TOTAL_PAGES) {
+      await ctx.editMessageText(t.kahf.alreadyComplete);
+      await ctx.answerCallbackQuery();
+      return;
+    }
+  }
+
+  const now = getNowTimestamp(tz);
+  await setTimerState(ctx.db, {
+    startedAt: now,
+    startedEpoch: Date.now(),
+    type: parsed.type,
+    args: argsToJson(parsed),
+    awaitingResponse: false,
+  });
+
+  await ctx.editMessageText(continueStartedMessage(parsed, t), {
+    reply_markup: new InlineKeyboard().text(t.timer.stop, CALLBACK_TIMER_STOP),
+  });
+  await ctx.answerCallbackQuery();
+}
+
 // --- Shared go logic (kahf, no args) ---
 
 async function executeTimerGoKahf(
@@ -541,6 +721,13 @@ async function handlePageResponse(
   } else {
     await Promise.all([clearTimerState(ctx.db), ctx.reply(replyBase)]);
   }
+
+  if (sessionType === "normal" || sessionType === "extra") {
+    await sendContinuePrompt(ctx, {
+      type: sessionType === "normal" ? "normal_page" : "extra_page",
+      pageEnd,
+    });
+  }
 }
 
 async function handleVerseResponse(
@@ -617,6 +804,14 @@ async function handleVerseResponse(
     await ctx.reply(insertAfterFirstLine(replyBase, comparison));
   } else {
     await Promise.all([clearTimerState(ctx.db), ctx.reply(replyBase)]);
+  }
+
+  if (sessionType === "normal" || sessionType === "extra") {
+    await sendContinuePrompt(ctx, {
+      type: sessionType === "normal" ? "normal_verse" : "extra_verse",
+      surahEnd,
+      ayahEnd,
+    });
   }
 }
 
@@ -732,6 +927,8 @@ async function handleKahfResponse(
       )
     );
   }
+
+  await sendContinuePrompt(ctx, { type: "kahf", isComplete });
 }
 
 // --- Shared page dispatch ---
