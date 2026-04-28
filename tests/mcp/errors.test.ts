@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { McpError, MCP_ERROR_CODES } from "../../src/mcp/errors";
+import { MCP_ERROR_CODES, McpError } from "../../src/mcp/errors";
 
 describe("McpError", () => {
   it("carries code and message", () => {

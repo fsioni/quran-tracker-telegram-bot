@@ -59,6 +59,9 @@ export interface Locale {
     statsError: string;
   };
 
+  // Text direction for rendering HTML
+  dir: "ltr" | "rtl";
+
   // Edit session duration
   edit: {
     missingArgs: string;
@@ -154,9 +157,6 @@ export interface Locale {
   };
   // Language identifier
   lang: "en" | "fr" | "ar";
-
-  // Text direction for rendering HTML
-  dir: "ltr" | "rtl";
 
   // Manage (delete/undo)
   manage: {

@@ -57,8 +57,8 @@ const MAX_LIMIT = 1000;
 const DEFAULT_LIMIT = 500;
 
 export interface ValidatedSql {
-  normalizedSql: string;
   injectedLimit: boolean;
+  normalizedSql: string;
 }
 
 export type ValidateResult =
@@ -114,11 +114,13 @@ export function validateSql(sql: string): ValidateResult {
 
   // Walk AST for forbidden tables and functions
   const forbidden = walkAst(stmt);
-  if (forbidden) return { ok: false, error: forbidden };
+  if (forbidden) {
+    return { ok: false, error: forbidden };
+  }
 
   // Build normalized SQL with LIMIT injection/clamping
   let injectedLimit = false;
-  if (!stmt.limit || !stmt.limit.value || stmt.limit.value.length === 0) {
+  if (!(stmt.limit && stmt.limit.value) || stmt.limit.value.length === 0) {
     stmt.limit = {
       seperator: "",
       value: [{ type: "number", value: DEFAULT_LIMIT }],
@@ -138,7 +140,9 @@ export function validateSql(sql: string): ValidateResult {
 
 function getFunctionName(nameField: unknown): string | null {
   // aggr_func (e.g. COUNT): name is a plain string
-  if (typeof nameField === "string") return nameField.toLowerCase();
+  if (typeof nameField === "string") {
+    return nameField.toLowerCase();
+  }
 
   // regular function: name is { name: [{ type: "default", value: "substr" }] }
   if (
@@ -156,11 +160,15 @@ function getFunctionName(nameField: unknown): string | null {
 }
 
 function walkAst(node: unknown): McpError | null {
-  if (node === null || typeof node !== "object") return null;
+  if (node === null || typeof node !== "object") {
+    return null;
+  }
   if (Array.isArray(node)) {
     for (const item of node) {
       const e = walkAst(item);
-      if (e) return e;
+      if (e) {
+        return e;
+      }
     }
     return null;
   }
@@ -194,7 +202,9 @@ function walkAst(node: unknown): McpError | null {
 
   for (const key of Object.keys(obj)) {
     const e = walkAst(obj[key]);
-    if (e) return e;
+    if (e) {
+      return e;
+    }
   }
   return null;
 }

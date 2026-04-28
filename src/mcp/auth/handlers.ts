@@ -18,7 +18,6 @@ import { sendTelegramCode } from "./telegram-code";
 // Minimal subset of @cloudflare/workers-oauth-provider's OAuthHelpers we use.
 // Full type lives in node_modules/@cloudflare/workers-oauth-provider/oauth-provider.d.ts
 export interface OAuthHelpers {
-  parseAuthRequest(request: Request): Promise<unknown>;
   completeAuthorization(opts: {
     request: unknown;
     userId: string;
@@ -26,6 +25,7 @@ export interface OAuthHelpers {
     props: Record<string, unknown>;
     metadata?: Record<string, unknown>;
   }): Promise<{ redirectTo: string }>;
+  parseAuthRequest(request: Request): Promise<unknown>;
 }
 
 interface Env {

@@ -11,7 +11,9 @@ export async function querySqlTool(input: {
   params: z.infer<typeof QuerySqlParams>;
 }) {
   const validated = validateSql(input.params.sql);
-  if (!validated.ok) throw validated.error;
+  if (!validated.ok) {
+    throw validated.error;
+  }
   const result = await executeSelect(input.db, validated.value.normalizedSql);
   return { ...result, truncated: validated.value.injectedLimit };
 }

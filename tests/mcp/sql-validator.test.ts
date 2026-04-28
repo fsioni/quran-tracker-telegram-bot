@@ -43,13 +43,17 @@ describe("validateSql", () => {
   ])("rejects mutation: %s", (sql) => {
     const r = validateSql(sql);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.code).toBe("SQL_NOT_SELECT");
+    if (!r.ok) {
+      expect(r.error.code).toBe("SQL_NOT_SELECT");
+    }
   });
 
   it("rejects multiple statements", () => {
     const r = validateSql("SELECT 1; SELECT 2");
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.code).toBe("SQL_NOT_SELECT");
+    if (!r.ok) {
+      expect(r.error.code).toBe("SQL_NOT_SELECT");
+    }
   });
 
   it.each([
@@ -59,13 +63,17 @@ describe("validateSql", () => {
   ])("rejects forbidden table: %s", (sql) => {
     const r = validateSql(sql);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.code).toBe("SQL_FORBIDDEN_TABLE");
+    if (!r.ok) {
+      expect(r.error.code).toBe("SQL_FORBIDDEN_TABLE");
+    }
   });
 
   it("rejects unwhitelisted functions", () => {
     const r = validateSql("SELECT load_extension('x') FROM sessions");
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.code).toBe("SQL_FORBIDDEN_FUNCTION");
+    if (!r.ok) {
+      expect(r.error.code).toBe("SQL_FORBIDDEN_FUNCTION");
+    }
   });
 
   it("accepts whitelisted aggregate", () => {

@@ -12,7 +12,9 @@ function fromBase64Url(s: string): Uint8Array {
     .padEnd(s.length + ((4 - (s.length % 4)) % 4), "=");
   const bin = atob(padded);
   const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  for (let i = 0; i < bin.length; i++) {
+    out[i] = bin.charCodeAt(i);
+  }
   return out;
 }
 
@@ -57,7 +59,9 @@ export async function verifySessionId(
   secret: string
 ): Promise<string | null> {
   const dot = signed.lastIndexOf(".");
-  if (dot < 1) return null;
+  if (dot < 1) {
+    return null;
+  }
   const id = signed.slice(0, dot);
   const sig = signed.slice(dot + 1);
   const key = await importHmacKey(secret);
@@ -77,10 +81,10 @@ export function newSessionId(): string {
 }
 
 export interface LoginSessionRecord {
-  oauthReqInfo: unknown; // The full AuthRequest from parseAuthRequest. Stored verbatim as JSON.
-  codeHash: string;
   attempts: number;
+  codeHash: string;
   createdAt: number;
+  oauthReqInfo: unknown; // The full AuthRequest from parseAuthRequest. Stored verbatim as JSON.
 }
 
 export const LOGIN_TTL_SECONDS = 5 * 60;
