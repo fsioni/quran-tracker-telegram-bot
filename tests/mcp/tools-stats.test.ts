@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  GetPeriodStatsParams,
   getGlobalStatsTool,
   getPeriodStatsTool,
   getStreakTool,
@@ -60,7 +61,7 @@ describe("getPeriodStatsTool", () => {
     const r = await getPeriodStatsTool({
       db,
       tz: "America/Cancun",
-      params: { period: "week" },
+      params: GetPeriodStatsParams.parse({ period: "week" }),
     });
     expect(r.sessions).toBe(3);
   });
