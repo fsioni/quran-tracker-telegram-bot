@@ -1,0 +1,187 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderLoginPage snapshots > request page (ar) 1`] = `
+"<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — الاتصال</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>ربط Claude ببيانات القراءة</h1>
+  
+        <p>اضغط لاستلام رمز من 6 أرقام عبر تيليجرام.</p>
+        <form method="post" action="/oauth/login/request">
+          <button type="submit">إرسال الرمز</button>
+        </form>
+      
+</body>
+</html>"
+`;
+
+exports[`renderLoginPage snapshots > request page (en) 1`] = `
+"<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — Connect</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>Connect Claude to your reading data</h1>
+  
+        <p>Click the button to receive a 6-digit code via Telegram.</p>
+        <form method="post" action="/oauth/login/request">
+          <button type="submit">Send code</button>
+        </form>
+      
+</body>
+</html>"
+`;
+
+exports[`renderLoginPage snapshots > request page (fr) 1`] = `
+"<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — Connexion</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>Connecter Claude à tes données de lecture</h1>
+  
+        <p>Clique pour recevoir un code à 6 chiffres via Telegram.</p>
+        <form method="post" action="/oauth/login/request">
+          <button type="submit">Envoyer le code</button>
+        </form>
+      
+</body>
+</html>"
+`;
+
+exports[`renderLoginPage snapshots > verify page (ar) 1`] = `
+"<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — الاتصال</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>ربط Claude ببيانات القراءة</h1>
+  
+        
+        
+        <form method="post" action="/oauth/login/verify">
+          <input type="hidden" name="session_id" value="abc.def">
+          <label for="code">أدخل الرمز المكوّن من 6 أرقام</label>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+          <button type="submit">تحقّق</button>
+        </form>
+      
+</body>
+</html>"
+`;
+
+exports[`renderLoginPage snapshots > verify page (en) 1`] = `
+"<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — Connect</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>Connect Claude to your reading data</h1>
+  
+        
+        
+        <form method="post" action="/oauth/login/verify">
+          <input type="hidden" name="session_id" value="abc.def">
+          <label for="code">Enter the 6-digit code</label>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+          <button type="submit">Verify</button>
+        </form>
+      
+</body>
+</html>"
+`;
+
+exports[`renderLoginPage snapshots > verify page (fr) 1`] = `
+"<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quran Tracker — Connexion</title>
+  <style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  button { padding: 0.75rem 1rem; font-size: 1rem; cursor: pointer; }
+  input { padding: 0.75rem; font-size: 1.2rem; letter-spacing: 0.2em; text-align: center; }
+  .notice { color: #2a7a2a; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+  <h1>Connecter Claude à tes données de lecture</h1>
+  
+        
+        
+        <form method="post" action="/oauth/login/verify">
+          <input type="hidden" name="session_id" value="abc.def">
+          <label for="code">Entre le code à 6 chiffres</label>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+          <button type="submit">Vérifier</button>
+        </form>
+      
+</body>
+</html>"
+`;
