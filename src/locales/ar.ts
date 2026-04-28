@@ -3,6 +3,7 @@ import type { Locale } from "./types";
 
 export const ar: Locale = {
   lang: "ar",
+  dir: "rtl",
 
   commands: {
     start: "تشغيل البوت",
@@ -357,6 +358,24 @@ export const ar: Locale = {
     sessionNotFoundShort: (id) => `الجلسة #${id} غير موجودة.`,
     deletionCancelled: "تم إلغاء الحذف.",
   },
+
+  mcpLogin: {
+    pageTitle: "Quran Tracker — الاتصال",
+    heading: "ربط Claude ببيانات القراءة",
+    intro: "اضغط لاستلام رمز من 6 أرقام عبر تيليجرام.",
+    sendCodeButton: "إرسال الرمز",
+    codeInputLabel: "أدخل الرمز المكوّن من 6 أرقام",
+    verifyButton: "تحقّق",
+    codeSentNotice: "تم إرسال الرمز إلى تيليجرام. صالح لمدة 5 دقائق.",
+    errorWrongCode: (remaining) => `رمز خاطئ. تبقّت ${remaining} محاولة.`,
+    errorExpired: "انتهت صلاحية الرمز. أعد الاتصال.",
+    errorRateLimited: (minutes) =>
+      `محاولات كثيرة. أعد المحاولة بعد ${minutes} دقيقة.`,
+    errorTelegramSend: "تعذّر إرسال الرمز عبر تيليجرام. أعد المحاولة.",
+  },
+
+  mcpTelegramCode: (code) =>
+    `رمز الدخول MCP: ${code} (صالح 5 دقائق). تجاهل إن لم تطلبه.`,
 
   import: {
     noData: "لا توجد بيانات للاستيراد",

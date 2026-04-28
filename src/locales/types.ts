@@ -155,6 +155,9 @@ export interface Locale {
   // Language identifier
   lang: "en" | "fr" | "ar";
 
+  // Text direction for rendering HTML
+  dir: "ltr" | "rtl";
+
   // Manage (delete/undo)
   manage: {
     confirm: string;
@@ -173,6 +176,24 @@ export interface Locale {
     sessionNotFoundShort: (id: number) => string;
     deletionCancelled: string;
   };
+
+  // MCP login page
+  mcpLogin: {
+    pageTitle: string;
+    heading: string;
+    intro: string;
+    sendCodeButton: string;
+    codeInputLabel: string;
+    verifyButton: string;
+    codeSentNotice: string;
+    errorWrongCode: (remaining: number) => string;
+    errorExpired: string;
+    errorRateLimited: (minutes: number) => string;
+    errorTelegramSend: string;
+  };
+
+  // MCP Telegram code message
+  mcpTelegramCode: (code: string) => string;
 
   // Milestone proximity
   milestone: {
