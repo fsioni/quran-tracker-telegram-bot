@@ -47,6 +47,8 @@ export interface Env {
   ALLOWED_USER_ID: string;
   BOT_TOKEN: string;
   DB: D1Database;
+  OAUTH_KV: KVNamespace;
+  MCP_SESSION_HMAC_SECRET: string;
 }
 
 async function sendTelegramMessage(

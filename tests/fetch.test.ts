@@ -42,6 +42,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(mockSetMyCommands).toHaveBeenCalledOnce();
@@ -57,6 +59,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
@@ -72,6 +76,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
@@ -84,6 +90,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();
@@ -100,6 +108,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(res.status).toBe(502);
@@ -114,6 +124,8 @@ describe("fetch handler", () => {
       BOT_TOKEN: "TOKEN",
       DB: {} as D1Database,
       ALLOWED_USER_ID: "123",
+      OAUTH_KV: {} as KVNamespace,
+      MCP_SESSION_HMAC_SECRET: "secret",
     });
 
     expect(mockSetMyCommands).not.toHaveBeenCalled();

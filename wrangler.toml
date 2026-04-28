@@ -9,5 +9,9 @@ database_name = "quran-tracker"
 database_id = "<YOUR_D1_DATABASE_ID>"  # Run: wrangler d1 create quran-tracker
 migrations_dir = "migrations"
 
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "TO_PROVISION"  # Run: wrangler kv namespace create OAUTH_KV
+
 [triggers]
 crons = ["*/5 * * * *"]
