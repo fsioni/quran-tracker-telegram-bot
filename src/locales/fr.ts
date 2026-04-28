@@ -2,6 +2,7 @@ import type { Locale } from "./types";
 
 export const fr: Locale = {
   lang: "fr",
+  dir: "ltr",
 
   commands: {
     start: "Démarrer le bot",
@@ -362,6 +363,25 @@ export const fr: Locale = {
     sessionNotFoundShort: (id) => `Session #${id} introuvable.`,
     deletionCancelled: "Suppression annulée.",
   },
+
+  mcpLogin: {
+    pageTitle: "Quran Tracker — Connexion",
+    heading: "Connecter Claude à tes données de lecture",
+    intro: "Clique pour recevoir un code à 6 chiffres via Telegram.",
+    sendCodeButton: "Envoyer le code",
+    codeInputLabel: "Entre le code à 6 chiffres",
+    verifyButton: "Vérifier",
+    codeSentNotice: "Code envoyé sur Telegram. Valable 5 minutes.",
+    errorWrongCode: (remaining) =>
+      `Code incorrect. Encore ${remaining} essai${remaining === 1 ? "" : "s"}.`,
+    errorExpired: "Code expiré. Recommence la connexion.",
+    errorRateLimited: (minutes) =>
+      `Trop de tentatives. Réessaie dans ${minutes} min.`,
+    errorTelegramSend: "Échec de l'envoi du code Telegram. Réessaie.",
+  },
+
+  mcpTelegramCode: (code) =>
+    `Code MCP : ${code} (valable 5 min). Ignore si tu n'as rien demandé.`,
 
   import: {
     noData: "aucune donnée à importer",

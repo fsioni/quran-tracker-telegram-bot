@@ -41,12 +41,18 @@ export function getWeekBounds(today: string): { start: string; end: string } {
   return { start, end };
 }
 
-export function getMonthBounds(today: string): { start: string; end: string } {
-  const d = new Date(`${today}T00:00:00Z`);
-  const year = d.getUTCFullYear();
-  const month = d.getUTCMonth(); // 0-based
-  const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const end = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+export function getMonthBounds(
+  today: string,
+  monthsBack = 0
+): { start: string; end: string } {
+  const [yStr, mStr] = today.split("-");
+  const targetYear = Number(yStr);
+  const targetMonth0 = Number(mStr) - 1 - monthsBack;
+  const date = new Date(Date.UTC(targetYear, targetMonth0, 1));
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
   return { start, end };
 }

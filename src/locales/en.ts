@@ -2,6 +2,7 @@ import type { Locale } from "./types";
 
 export const en: Locale = {
   lang: "en",
+  dir: "ltr",
 
   commands: {
     start: "Start the bot",
@@ -360,6 +361,25 @@ export const en: Locale = {
     sessionNotFoundShort: (id) => `Session #${id} not found.`,
     deletionCancelled: "Deletion cancelled.",
   },
+
+  mcpLogin: {
+    pageTitle: "Quran Tracker — Connect",
+    heading: "Connect Claude to your reading data",
+    intro: "Click the button to receive a 6-digit code via Telegram.",
+    sendCodeButton: "Send code",
+    codeInputLabel: "Enter the 6-digit code",
+    verifyButton: "Verify",
+    codeSentNotice: "Code sent to your Telegram. It is valid for 5 minutes.",
+    errorWrongCode: (remaining) =>
+      `Wrong code. ${remaining} attempt${remaining === 1 ? "" : "s"} left.`,
+    errorExpired: "Code expired. Please restart the login.",
+    errorRateLimited: (minutes) =>
+      `Too many attempts. Try again in ${minutes} min.`,
+    errorTelegramSend: "Failed to send the Telegram code. Please try again.",
+  },
+
+  mcpTelegramCode: (code) =>
+    `MCP login code: ${code} (valid 5 min). Ignore if you didn't request it.`,
 
   import: {
     noData: "no data to import",

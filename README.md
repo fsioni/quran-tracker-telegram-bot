@@ -16,6 +16,7 @@ A Telegram bot for tracking Quran reading sessions with automatic prayer time re
 - Bulk import of past sessions
 - Multi-language support (English, French, Arabic)
 - Khatma (full Quran completion) tracking
+- Conversational data analysis: connect Claude to your reading data via the built-in MCP server (see [docs/MCP.md](docs/MCP.md))
 
 ## Commands
 
@@ -81,20 +82,30 @@ wrangler d1 create quran-tracker
 wrangler d1 execute quran-tracker --remote --file=schema.sql
 ```
 
-### 2. Set secrets
+### 2. Provision the OAuth KV namespace (for the MCP server)
+
+```bash
+wrangler kv namespace create OAUTH_KV
+# Save the returned id; it's needed as the OAUTH_KV_NAMESPACE_ID GitHub secret below
+```
+
+### 3. Set secrets
 
 ```bash
 wrangler secret put BOT_TOKEN
 wrangler secret put ALLOWED_USER_ID
+# 32 random bytes for signing MCP login sessions
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))" \
+  | wrangler secret put MCP_SESSION_HMAC_SECRET
 ```
 
-### 3. Deploy
+### 4. Deploy
 
 ```bash
 wrangler deploy
 ```
 
-### 4. Register the webhook
+### 5. Register the webhook
 
 Point Telegram to your Worker URL:
 
@@ -104,7 +115,7 @@ curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=<WORKER_URL>"
 
 Replace `<BOT_TOKEN>` with your bot token and `<WORKER_URL>` with the deployed Worker URL.
 
-### 5. Register bot commands
+### 6. Register bot commands
 
 ```bash
 curl -X POST <WORKER_URL>/setup -H "Authorization: Bearer <BOT_TOKEN>"
@@ -113,6 +124,10 @@ curl -X POST <WORKER_URL>/setup -H "Authorization: Bearer <BOT_TOKEN>"
 This registers the command menu in Telegram. Run it once after deploying, or again after adding new commands.
 
 The cron trigger (`*/5 * * * *`) handles prayer time reminders automatically.
+
+### 7. (Optional) Connect the MCP server to Claude
+
+Add a custom connector in Claude pointing at `https://<WORKER_URL>/mcp/sse`. See [docs/MCP.md](docs/MCP.md) for the full flow and the list of tools exposed.
 
 ### CI/CD
 
@@ -125,6 +140,7 @@ Required GitHub repository secrets:
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 | `D1_DATABASE_ID` | The D1 database UUID (from `wrangler d1 create`) |
+| `OAUTH_KV_NAMESPACE_ID` | The KV namespace id (from `wrangler kv namespace create OAUTH_KV`) |
 | `BOT_TOKEN` | Telegram bot token (used to register commands post-deploy) |
 
 ## Configuration
@@ -149,6 +165,7 @@ Defaults to Mecca, Saudi Arabia (`Asia/Riyadh`) if not configured.
 | Runtime | Cloudflare Workers |
 | Database | Cloudflare D1 (SQLite) |
 | Bot Framework | grammY |
+| MCP | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk), [@cloudflare/workers-oauth-provider](https://github.com/cloudflare/workers-oauth-provider) |
 | Language | TypeScript |
 | Tests | Vitest |
 

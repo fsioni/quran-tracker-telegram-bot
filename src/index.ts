@@ -1,5 +1,3 @@
-import { Bot, webhookCallback } from "grammy";
-import { createBot } from "./bot";
 import {
   DEFAULT_CITY,
   DEFAULT_COUNTRY,
@@ -9,8 +7,11 @@ import {
 } from "./config";
 import { getNextKahfPage, getNextPage } from "./data/pages";
 import { CALLBACK_TIMER_GO, CALLBACK_TIMER_GO_KAHF } from "./handlers/timer";
-import { getBotCommands, getLocale } from "./locales";
+import { getLocale } from "./locales";
 import type { Locale } from "./locales/types";
+import { createOAuthProvider } from "./mcp/auth/provider";
+import { mcpDefaultHandler } from "./mcp/router";
+import { mcpApiHandler } from "./mcp/server";
 import { getConfig, setConfig } from "./services/db/config";
 import { getTodayInTimezone } from "./services/db/date-helpers";
 import {
@@ -47,6 +48,8 @@ export interface Env {
   ALLOWED_USER_ID: string;
   BOT_TOKEN: string;
   DB: D1Database;
+  MCP_SESSION_HMAC_SECRET: string;
+  OAUTH_KV: KVNamespace;
 }
 
 async function sendTelegramMessage(
@@ -358,34 +361,13 @@ export async function handleScheduled(
   }
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    if (url.pathname === "/setup") {
-      if (request.method !== "POST") {
-        return new Response("Method not allowed", { status: 405 });
-      }
-      if (request.headers.get("Authorization") !== `Bearer ${env.BOT_TOKEN}`) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-      try {
-        const bot = new Bot(env.BOT_TOKEN);
-        const lang = await getConfig(env.DB, "language");
-        const t = getLocale(lang);
-        await bot.api.setMyCommands(getBotCommands(t));
-        return new Response("Commands registered");
-      } catch (e) {
-        console.error(
-          "setMyCommands failed:",
-          e instanceof Error ? e.message : String(e)
-        );
-        return new Response("Failed to register commands", { status: 502 });
-      }
-    }
-    const bot = createBot(env.BOT_TOKEN, env.DB, env.ALLOWED_USER_ID);
-    return webhookCallback(bot, "cloudflare-mod")(request);
-  },
+const oauthProvider = createOAuthProvider({
+  apiHandler: mcpApiHandler as ExportedHandler,
+  defaultHandler: mcpDefaultHandler as ExportedHandler,
+});
 
+export default {
+  fetch: oauthProvider.fetch.bind(oauthProvider),
   scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): void {
     ctx.waitUntil(handleScheduled(env.DB, env.BOT_TOKEN));
   },

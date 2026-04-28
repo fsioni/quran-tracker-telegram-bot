@@ -1,5 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// @cloudflare/workers-oauth-provider uses `cloudflare:workers` which is unavailable in
+// Node/Vitest. Mock the package so importing src/index (for handleScheduled) doesn't fail.
+vi.mock("@cloudflare/workers-oauth-provider", () => ({
+  OAuthProvider: class MockOAuthProvider {
+    fetch() {
+      return Promise.resolve(new Response("mocked"));
+    }
+  },
+}));
+
+// Mock the MCP server and auth provider to avoid pulling in cloudflare-specific packages.
+vi.mock("../src/mcp/server", () => ({
+  mcpApiHandler: { fetch: async () => new Response("mcp", { status: 200 }) },
+}));
+
+vi.mock("../src/mcp/auth/handlers", () => ({
+  handleAuthorize: async () => new Response("authorize"),
+  handleLoginRequest: async () => new Response("login-request"),
+  handleLoginVerify: async () => new Response("login-verify"),
+}));
+
 vi.mock("../src/services/db/config", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../src/services/db/config")>();

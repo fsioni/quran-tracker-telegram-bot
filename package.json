@@ -28,16 +28,22 @@
     "format": "biome format --write .",
     "lint": "biome lint .",
     "check": "biome check --write .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "mcp:gen-schema": "tsx scripts/gen-schema.ts"
   },
   "dependencies": {
-    "grammy": "^1.41.1"
+    "@cloudflare/workers-oauth-provider": "^0.4.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "grammy": "^1.41.1",
+    "node-sql-parser": "^5.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
     "@cloudflare/workers-types": "^4.20260313.1",
     "@types/node": "^25.5.2",
     "miniflare": "^4.20260310.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "ultracite": "^7.3.2",
     "vitest": "^4.1.0",

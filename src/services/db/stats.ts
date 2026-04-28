@@ -74,15 +74,16 @@ export async function getPeriodStats(
   db: D1Database,
   period: "week" | "month",
   tz: string,
-  weekOffset = 0
+  offset = 0
 ): Promise<Result<PeriodStats>> {
   const today = getTodayInTimezone(tz);
-  const baseDay =
-    period === "week" && weekOffset > 0
-      ? addDays(today, -7 * weekOffset)
-      : today;
-  const bounds =
-    period === "week" ? getWeekBounds(baseDay) : getMonthBounds(today);
+  let bounds: { start: string; end: string };
+  if (period === "week") {
+    const baseDay = offset > 0 ? addDays(today, -7 * offset) : today;
+    bounds = getWeekBounds(baseDay);
+  } else {
+    bounds = getMonthBounds(today, offset);
+  }
 
   const row = await db
     .prepare(
