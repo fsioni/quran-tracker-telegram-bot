@@ -77,7 +77,7 @@ export function newSessionId(): string {
 }
 
 export interface LoginSessionRecord {
-  oauthRequestId: string;
+  oauthReqInfo: unknown; // The full AuthRequest from parseAuthRequest. Stored verbatim as JSON.
   codeHash: string;
   attempts: number;
   createdAt: number;

@@ -15,14 +15,17 @@ import {
 } from "./session";
 import { sendTelegramCode } from "./telegram-code";
 
-export interface OAuthProviderShim {
-  parseAuthRequest(request: Request): Promise<{ requestId: string }>;
+// Minimal subset of @cloudflare/workers-oauth-provider's OAuthHelpers we use.
+// Full type lives in node_modules/@cloudflare/workers-oauth-provider/oauth-provider.d.ts
+export interface OAuthHelpers {
+  parseAuthRequest(request: Request): Promise<unknown>;
   completeAuthorization(opts: {
-    request: Request;
-    requestId: string;
+    request: unknown;
     userId: string;
+    scope: string[];
+    props: Record<string, unknown>;
     metadata?: Record<string, unknown>;
-  }): Promise<Response>;
+  }): Promise<{ redirectTo: string }>;
 }
 
 interface Env {
@@ -31,6 +34,7 @@ interface Env {
   DB: D1Database;
   MCP_SESSION_HMAC_SECRET: string;
   OAUTH_KV: KVNamespace;
+  OAUTH_PROVIDER: OAuthHelpers;
 }
 
 async function loadLocale(db: D1Database) {
@@ -47,11 +51,11 @@ function htmlResponse(body: string, status = 200): Response {
 
 export async function handleAuthorize(
   request: Request,
-  env: Env,
-  provider: OAuthProviderShim
+  env: Env
 ): Promise<Response> {
   const t = await loadLocale(env.DB);
-  await provider.parseAuthRequest(request);
+  // Validate the auth request now to reject malformed requests early; the parsed info will be re-parsed in /oauth/login/request.
+  await env.OAUTH_PROVIDER.parseAuthRequest(request);
   const url = new URL(request.url);
   const redirectQuery = url.search;
   return htmlResponse(
@@ -61,8 +65,7 @@ export async function handleAuthorize(
 
 export async function handleLoginRequest(
   request: Request,
-  env: Env,
-  provider: OAuthProviderShim
+  env: Env
 ): Promise<Response> {
   const t = await loadLocale(env.DB);
   const ip = request.headers.get("cf-connecting-ip") ?? "0.0.0.0";
@@ -78,12 +81,14 @@ export async function handleLoginRequest(
     );
   }
 
-  const oauthReq = await provider.parseAuthRequest(request);
+  // Parse the authorization request. This is needed to forward the parsed shape to completeAuthorization later.
+  // We re-parse on the POST because the original GET to /oauth/authorize had the same query string forwarded by the form action.
+  const oauthReqInfo = await env.OAUTH_PROVIDER.parseAuthRequest(request);
   const code = generateCode();
   const codeHash = await hashCode(code, env.MCP_SESSION_HMAC_SECRET);
   const sessionId = newSessionId();
   await putLoginSession(env.OAUTH_KV, sessionId, {
-    oauthRequestId: oauthReq.requestId,
+    oauthReqInfo,
     codeHash,
     attempts: 0,
     createdAt: Math.floor(Date.now() / 1000),
@@ -117,8 +122,7 @@ export async function handleLoginRequest(
 
 export async function handleLoginVerify(
   request: Request,
-  env: Env,
-  provider: OAuthProviderShim
+  env: Env
 ): Promise<Response> {
   const t = await loadLocale(env.DB);
   const form = await request.formData();
@@ -182,9 +186,11 @@ export async function handleLoginVerify(
   }
 
   await deleteLoginSession(env.OAUTH_KV, sessionId);
-  return await provider.completeAuthorization({
-    request,
-    requestId: rec.oauthRequestId,
+  const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
+    request: rec.oauthReqInfo,
     userId: env.ALLOWED_USER_ID,
+    scope: ["mcp:read"],
+    props: { userId: env.ALLOWED_USER_ID },
   });
+  return Response.redirect(redirectTo, 302);
 }

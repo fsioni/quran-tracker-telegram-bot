@@ -19,6 +19,16 @@ describe("handleLoginRequest", () => {
           bind: vi.fn(() => ({ first: vi.fn(async () => null) })),
         })),
       } as unknown as D1Database,
+      OAUTH_PROVIDER: {
+        parseAuthRequest: vi.fn(async () => ({
+          clientId: "c",
+          redirectUri: "https://x",
+          scope: ["mcp:read"],
+          state: "s",
+          responseType: "code",
+        })),
+        completeAuthorization: vi.fn(),
+      },
     };
     global.fetch = vi.fn(
       async () => new Response(null, { status: 200 })
@@ -27,11 +37,7 @@ describe("handleLoginRequest", () => {
       method: "POST",
       headers: { "cf-connecting-ip": "1.2.3.4" },
     });
-    const provider = {
-      parseAuthRequest: vi.fn(async () => ({ requestId: "req-1" })),
-      completeAuthorization: vi.fn(),
-    };
-    const r = await handleLoginRequest(req, env, provider as never);
+    const r = await handleLoginRequest(req, env as never);
     expect(r.status).toBe(200);
     expect(env.OAUTH_KV.put).toHaveBeenCalled();
   });
