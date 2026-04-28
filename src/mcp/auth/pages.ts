@@ -1,10 +1,10 @@
 import type { Locale } from "../../locales/types";
 
 interface RenderContext {
-  signedSessionId: string;
   errorMessage?: string;
   notice?: string;
   redirectQuery?: string;
+  signedSessionId: string;
 }
 
 function escape(s: string): string {
@@ -35,6 +35,7 @@ export function renderLoginPage(
   const inner =
     state === "request"
       ? `
+        ${ctx.errorMessage ? `<p class="error">${escape(ctx.errorMessage)}</p>` : ""}
         <p>${escape(t.mcpLogin.intro)}</p>
         <form method="post" action="${action}${ctx.redirectQuery ?? ""}">
           <button type="submit">${escape(t.mcpLogin.sendCodeButton)}</button>

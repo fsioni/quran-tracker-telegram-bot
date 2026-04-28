@@ -20,6 +20,7 @@ exports[`renderLoginPage snapshots > request page (ar) 1`] = `
 <body>
   <h1>ربط Claude ببيانات القراءة</h1>
   
+        
         <p>اضغط لاستلام رمز من 6 أرقام عبر تيليجرام.</p>
         <form method="post" action="/oauth/login/request">
           <button type="submit">إرسال الرمز</button>
@@ -49,6 +50,7 @@ exports[`renderLoginPage snapshots > request page (en) 1`] = `
 <body>
   <h1>Connect Claude to your reading data</h1>
   
+        
         <p>Click the button to receive a 6-digit code via Telegram.</p>
         <form method="post" action="/oauth/login/request">
           <button type="submit">Send code</button>
@@ -78,6 +80,7 @@ exports[`renderLoginPage snapshots > request page (fr) 1`] = `
 <body>
   <h1>Connecter Claude à tes données de lecture</h1>
   
+        
         <p>Clique pour recevoir un code à 6 chiffres via Telegram.</p>
         <form method="post" action="/oauth/login/request">
           <button type="submit">Envoyer le code</button>
