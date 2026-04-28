@@ -57,7 +57,7 @@ function wrapError(code: string, message: string) {
 }
 
 async function callTool<T>(
-  fn: () => Promise<T>
+  fn: () => T | Promise<T>
 ): Promise<ReturnType<typeof wrapResult> | ReturnType<typeof wrapError>> {
   try {
     return wrapResult(await fn());

@@ -65,16 +65,16 @@ export type ValidateResult =
   | { ok: true; value: ValidatedSql }
   | { ok: false; error: McpError };
 
-type LimitClause = {
+interface LimitClause {
   seperator: string;
   value: { type: string; value: number }[];
-};
+}
 
-type SelectStatement = {
+interface SelectStatement {
   type?: string;
   limit?: LimitClause;
   [key: string]: unknown;
-};
+}
 
 export function validateSql(sql: string): ValidateResult {
   let ast: ReturnType<Parser["astify"]>;
@@ -120,15 +120,15 @@ export function validateSql(sql: string): ValidateResult {
 
   // Build normalized SQL with LIMIT injection/clamping
   let injectedLimit = false;
-  if (!(stmt.limit && stmt.limit.value) || stmt.limit.value.length === 0) {
+  if (!stmt.limit?.value || stmt.limit.value.length === 0) {
     stmt.limit = {
       seperator: "",
       value: [{ type: "number", value: DEFAULT_LIMIT }],
     };
     injectedLimit = true;
   } else {
-    const last = stmt.limit.value[stmt.limit.value.length - 1];
-    if (typeof last.value === "number" && last.value > MAX_LIMIT) {
+    const last = stmt.limit.value.at(-1);
+    if (last && typeof last.value === "number" && last.value > MAX_LIMIT) {
       last.value = MAX_LIMIT;
       injectedLimit = true;
     }
@@ -159,6 +159,36 @@ function getFunctionName(nameField: unknown): string | null {
   return null;
 }
 
+function checkForbiddenTable(obj: Record<string, unknown>): McpError | null {
+  if (!Array.isArray(obj.from)) {
+    return null;
+  }
+  for (const f of obj.from as Record<string, unknown>[]) {
+    const tableName = typeof f.table === "string" ? f.table.toLowerCase() : "";
+    if (FORBIDDEN_TABLES.has(tableName)) {
+      return new McpError(
+        "SQL_FORBIDDEN_TABLE",
+        `Access to internal table '${tableName}' is not allowed.`
+      );
+    }
+  }
+  return null;
+}
+
+function checkForbiddenFunction(obj: Record<string, unknown>): McpError | null {
+  if (obj.type !== "function" && obj.type !== "aggr_func") {
+    return null;
+  }
+  const fnName = getFunctionName(obj.name);
+  if (fnName !== null && !FUNCTION_WHITELIST.has(fnName)) {
+    return new McpError(
+      "SQL_FORBIDDEN_FUNCTION",
+      `Function '${fnName}' is not allowed.`
+    );
+  }
+  return null;
+}
+
 function walkAst(node: unknown): McpError | null {
   if (node === null || typeof node !== "object") {
     return null;
@@ -175,29 +205,14 @@ function walkAst(node: unknown): McpError | null {
 
   const obj = node as Record<string, unknown>;
 
-  // Reject `from` referencing forbidden tables
-  if (Array.isArray(obj.from)) {
-    for (const f of obj.from as Array<Record<string, unknown>>) {
-      const tableName =
-        typeof f.table === "string" ? f.table.toLowerCase() : "";
-      if (FORBIDDEN_TABLES.has(tableName)) {
-        return new McpError(
-          "SQL_FORBIDDEN_TABLE",
-          `Access to internal table '${tableName}' is not allowed.`
-        );
-      }
-    }
+  const tableErr = checkForbiddenTable(obj);
+  if (tableErr) {
+    return tableErr;
   }
 
-  // Reject function calls outside the whitelist
-  if (obj.type === "function" || obj.type === "aggr_func") {
-    const fnName = getFunctionName(obj.name);
-    if (fnName !== null && !FUNCTION_WHITELIST.has(fnName)) {
-      return new McpError(
-        "SQL_FORBIDDEN_FUNCTION",
-        `Function '${fnName}' is not allowed.`
-      );
-    }
+  const fnErr = checkForbiddenFunction(obj);
+  if (fnErr) {
+    return fnErr;
   }
 
   for (const key of Object.keys(obj)) {

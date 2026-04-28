@@ -7,11 +7,12 @@ import {
 } from "../../src/mcp/auth/session";
 
 const SECRET = "test-secret-32-bytes-base64url-x";
+const SIX_DIGIT_RE = /^\d{6}$/;
 
 describe("generateCode", () => {
   it("returns a 6-digit string", () => {
     const code = generateCode();
-    expect(code).toMatch(/^\d{6}$/);
+    expect(code).toMatch(SIX_DIGIT_RE);
   });
 });
 

@@ -1,8 +1,12 @@
 const encoder = new TextEncoder();
+const TRAILING_EQUALS_RE = /=+$/;
 
 function toBase64Url(bytes: Uint8Array): string {
   const bin = String.fromCharCode(...bytes);
-  return btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  return btoa(bin)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(TRAILING_EQUALS_RE, "");
 }
 
 function fromBase64Url(s: string): Uint8Array {
@@ -18,7 +22,7 @@ function fromBase64Url(s: string): Uint8Array {
   return out;
 }
 
-async function importHmacKey(secret: string): Promise<CryptoKey> {
+function importHmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
     encoder.encode(secret),

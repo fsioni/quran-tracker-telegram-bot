@@ -7,7 +7,7 @@ interface RenderContext {
   signedSessionId: string;
 }
 
-function escape(s: string): string {
+function escapeHtml(s: string): string {
   return s
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -35,20 +35,20 @@ export function renderLoginPage(
   const inner =
     state === "request"
       ? `
-        ${ctx.errorMessage ? `<p class="error">${escape(ctx.errorMessage)}</p>` : ""}
-        <p>${escape(t.mcpLogin.intro)}</p>
+        ${ctx.errorMessage ? `<p class="error">${escapeHtml(ctx.errorMessage)}</p>` : ""}
+        <p>${escapeHtml(t.mcpLogin.intro)}</p>
         <form method="post" action="${action}${ctx.redirectQuery ?? ""}">
-          <button type="submit">${escape(t.mcpLogin.sendCodeButton)}</button>
+          <button type="submit">${escapeHtml(t.mcpLogin.sendCodeButton)}</button>
         </form>
       `
       : `
-        ${ctx.notice ? `<p class="notice">${escape(ctx.notice)}</p>` : ""}
-        ${ctx.errorMessage ? `<p class="error">${escape(ctx.errorMessage)}</p>` : ""}
+        ${ctx.notice ? `<p class="notice">${escapeHtml(ctx.notice)}</p>` : ""}
+        ${ctx.errorMessage ? `<p class="error">${escapeHtml(ctx.errorMessage)}</p>` : ""}
         <form method="post" action="${action}">
-          <input type="hidden" name="session_id" value="${escape(ctx.signedSessionId)}">
-          <label for="code">${escape(t.mcpLogin.codeInputLabel)}</label>
+          <input type="hidden" name="session_id" value="${escapeHtml(ctx.signedSessionId)}">
+          <label for="code">${escapeHtml(t.mcpLogin.codeInputLabel)}</label>
           <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
-          <button type="submit">${escape(t.mcpLogin.verifyButton)}</button>
+          <button type="submit">${escapeHtml(t.mcpLogin.verifyButton)}</button>
         </form>
       `;
   return `<!doctype html>
@@ -56,11 +56,11 @@ export function renderLoginPage(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${escape(t.mcpLogin.pageTitle)}</title>
+  <title>${escapeHtml(t.mcpLogin.pageTitle)}</title>
   <style>${baseStyles}</style>
 </head>
 <body>
-  <h1>${escape(t.mcpLogin.heading)}</h1>
+  <h1>${escapeHtml(t.mcpLogin.heading)}</h1>
   ${inner}
 </body>
 </html>`;

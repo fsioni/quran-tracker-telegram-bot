@@ -1,6 +1,8 @@
 import { getLocale } from "../../locales";
 import { getConfig } from "../../services/db/config";
 import { renderLoginPage } from "./pages";
+
+const SIX_DIGIT_CODE_RE = /^\d{6}$/;
 import {
   bumpAttempts,
   checkAndBumpRateLimit,
@@ -154,7 +156,7 @@ export async function handleLoginVerify(
     );
   }
 
-  if (typeof submitted !== "string" || !/^\d{6}$/.test(submitted)) {
+  if (typeof submitted !== "string" || !SIX_DIGIT_CODE_RE.test(submitted)) {
     return htmlResponse(
       renderLoginPage(t, "verify", {
         signedSessionId: signed as string,

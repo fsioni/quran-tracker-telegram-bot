@@ -3,11 +3,13 @@ import { getJuzEndPage, JUZ_START_PAGES } from "../../data/juz";
 import { SURAHS } from "../../data/surahs";
 import { schemaMarkdown } from "../resources/schema-text";
 
+const H2_SPLIT_RE = /\n## /;
+
 export const GetSurahsParams = z.object({
   ids: z.array(z.number().int().min(1).max(114)).optional(),
 });
 
-export async function getSurahsTool(input: {
+export function getSurahsTool(input: {
   params: z.infer<typeof GetSurahsParams>;
 }) {
   const all = SURAHS.map((s) => ({
@@ -33,7 +35,7 @@ const ALL_JUZ = JUZ_START_PAGES.map((startPage, i) => ({
   pageEnd: getJuzEndPage(i + 1),
 }));
 
-export async function getJuzPagesTool(input: {
+export function getJuzPagesTool(input: {
   params: z.infer<typeof GetJuzPagesParams>;
 }) {
   if (input.params.juz === undefined) {
@@ -46,16 +48,17 @@ export const GetSchemaParams = z.object({
   table: z.string().optional(),
 });
 
-export async function getSchemaTool(input: {
+export function getSchemaTool(input: {
   params: z.infer<typeof GetSchemaParams>;
 }) {
-  if (!input.params.table) {
+  const table = input.params.table;
+  if (!table) {
     return schemaMarkdown;
   }
   // Naive section extraction by H2 headings
-  const sections = schemaMarkdown.split(/\n## /);
+  const sections = schemaMarkdown.split(H2_SPLIT_RE);
   const match = sections.find((s) =>
-    s.toLowerCase().startsWith(input.params.table!.toLowerCase())
+    s.toLowerCase().startsWith(table.toLowerCase())
   );
   return match ? `## ${match}` : schemaMarkdown;
 }

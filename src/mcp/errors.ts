@@ -10,11 +10,10 @@ export const MCP_ERROR_CODES = [
 export type McpErrorCode = (typeof MCP_ERROR_CODES)[number];
 
 export class McpError extends Error {
-  constructor(
-    public readonly code: McpErrorCode,
-    message: string
-  ) {
+  readonly code: McpErrorCode;
+  constructor(code: McpErrorCode, message: string) {
     super(message);
     this.name = "McpError";
+    this.code = code;
   }
 }
