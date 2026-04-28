@@ -1,4 +1,4 @@
-# Secrets requis : BOT_TOKEN, ALLOWED_USER_ID
+# Secrets requis : BOT_TOKEN, ALLOWED_USER_ID, MCP_SESSION_HMAC_SECRET
 name = "quran-telegram-bot"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
@@ -11,7 +11,7 @@ migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "<TO_PROVISION>"  # Run: wrangler kv namespace create OAUTH_KV
+id = "<OAUTH_KV_NAMESPACE_ID>"  # Run: wrangler kv namespace create OAUTH_KV
 
 [triggers]
 crons = ["*/5 * * * *"]
