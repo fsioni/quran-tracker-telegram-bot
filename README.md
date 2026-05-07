@@ -82,6 +82,13 @@ wrangler d1 create quran-tracker
 wrangler d1 execute quran-tracker --remote --file=schema.sql
 ```
 
+Subsequent schema changes are tracked in `migrations/`. The CI workflow applies them automatically before each deploy. To apply them manually (e.g. before first deploy or when running locally):
+
+```bash
+wrangler d1 migrations apply quran-tracker --remote   # production
+wrangler d1 migrations apply quran-tracker --local    # local dev DB
+```
+
 ### 2. Provision the OAuth KV namespace (for the MCP server)
 
 ```bash
